@@ -9,6 +9,7 @@ import { createHouseholdRepository } from './household-repository';
 import { createMembershipRepository } from './membership-repository';
 import { Keys } from './table';
 import { testTable } from './test-table';
+import { putItem, transact } from './transactions';
 
 const { table, create, remove } = testTable();
 const households = createHouseholdRepository(table);
@@ -144,5 +145,23 @@ describe('household repository (DynamoDB Local)', () => {
     await expect(broken.createHome(newHome('home-x'))).rejects.toMatchObject({
       name: 'ResourceNotFoundException',
     });
+  });
+});
+
+describe('transactions (DynamoDB Local)', () => {
+  it('refuses more items than one transaction can hold', async () => {
+    const tooMany = Array.from({ length: 101 }, (_, index) =>
+      putItem(table, { pk: 'too-many', sk: String(index) }),
+    );
+    await expect(transact(table, tooMany, 'never shown')).rejects.toThrow(
+      'That changes too many things at once',
+    );
+  });
+
+  it('passes on failures that are not about a condition', async () => {
+    const missingTable = { ...table, name: 'no-such-table' };
+    await expect(
+      transact(missingTable, [putItem(missingTable, { pk: 'a', sk: 'b' })], 'never shown'),
+    ).rejects.toMatchObject({ name: 'ResourceNotFoundException' });
   });
 });

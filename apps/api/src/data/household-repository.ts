@@ -1,13 +1,14 @@
-import { GetCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { householdSchema } from '@cleaning-planner/contracts/household';
 import type { Household, UpdateHouseholdRequest } from '@cleaning-planner/contracts/household';
 import { z } from '@cleaning-planner/contracts/zod';
 import type { HouseholdStore, NewHome } from '../services/household-service';
 import { Errors } from '../utils/errors';
 import { deleteInBatches, putInBatches } from './batch-write';
-import { isConditionFailure } from './conditions';
+import { homeItems } from './home-items';
 import { Keys } from './table';
 import type { Table } from './table';
+import { deleteItem, putItem, transact, updateItem } from './transactions';
 
 const storedHouseholdSchema = z.object(householdSchema.shape);
 const storedKeySchema = z.object({
@@ -15,60 +16,10 @@ const storedKeySchema = z.object({
   sk: z.string(),
   userId: z.optional(z.string()),
 });
-const MAX_MEMBERS_PER_TRANSACTION = 98;
-const NOT_ALREADY_THERE = 'attribute_not_exists(pk)';
-const MUST_EXIST = 'attribute_exists(pk)';
+const storedMemberKeySchema = z.object({ userId: z.string() });
+const KEYS_ONLY = 'pk, sk, userId';
 
 type StoredKey = z.infer<typeof storedKeySchema>;
-type ItemKey = Record<string, string>;
-type TransactItem = NonNullable<
-  ConstructorParameters<typeof TransactWriteCommand>[0]['TransactItems']
->[number];
-
-interface UpdateParts {
-  key: ItemKey;
-  fields: object;
-  condition?: string;
-  conditionValues?: Record<string, unknown>;
-}
-
-function putItem(table: Table, Item: Record<string, unknown>): TransactItem {
-  return { Put: { TableName: table.name, Item, ConditionExpression: NOT_ALREADY_THERE } };
-}
-
-function deleteItem(table: Table, Key: ItemKey): TransactItem {
-  return { Delete: { TableName: table.name, Key, ConditionExpression: MUST_EXIST } };
-}
-
-function updateItem(table: Table, parts: UpdateParts): TransactItem {
-  const entries = Object.entries(parts.fields).filter(([, value]) => value !== undefined);
-  return {
-    Update: {
-      TableName: table.name,
-      Key: parts.key,
-      UpdateExpression: `SET ${entries.map(([field]) => `#${field} = :${field}`).join(', ')}`,
-      ConditionExpression: parts.condition ?? MUST_EXIST,
-      ExpressionAttributeNames: Object.fromEntries(entries.map(([field]) => [`#${field}`, field])),
-      ExpressionAttributeValues: {
-        ...Object.fromEntries(entries.map(([field, value]) => [`:${field}`, value])),
-        ...parts.conditionValues,
-      },
-    },
-  };
-}
-
-async function transact(
-  table: Table,
-  items: TransactItem[],
-  conflictMessage: string,
-): Promise<void> {
-  try {
-    await table.client.send(new TransactWriteCommand({ TransactItems: items }));
-  } catch (error) {
-    if (isConditionFailure(error)) throw Errors.conflict(conflictMessage);
-    throw error;
-  }
-}
 
 async function createHome(table: Table, { household, owner, plan }: NewHome): Promise<void> {
   const home = Keys.household(household.id);
@@ -104,45 +55,18 @@ async function getHousehold(table: Table, householdId: string): Promise<Househol
   return Item === undefined ? null : storedHouseholdSchema.parse(Item);
 }
 
-function keyCondition(
-  householdId: string,
-  prefix: string | undefined,
-): { KeyConditionExpression: string; ExpressionAttributeValues: Record<string, string> } {
-  const home = Keys.household(householdId);
-  if (prefix === undefined) {
-    return { KeyConditionExpression: 'pk = :home', ExpressionAttributeValues: { ':home': home } };
-  }
-  return {
-    KeyConditionExpression: 'pk = :home AND begins_with(sk, :prefix)',
-    ExpressionAttributeValues: { ':home': home, ':prefix': prefix },
-  };
-}
-
 async function homeKeys(table: Table, householdId: string, prefix?: string): Promise<StoredKey[]> {
-  const keys: StoredKey[] = [];
-  let startKey: Record<string, unknown> | undefined;
-  do {
-    const page = await table.client.send(
-      new QueryCommand({
-        TableName: table.name,
-        ...keyCondition(householdId, prefix),
-        ProjectionExpression: 'pk, sk, userId',
-        ConsistentRead: true,
-        ExclusiveStartKey: startKey,
-      }),
-    );
-    keys.push(...(page.Items ?? []).map((item) => storedKeySchema.parse(item)));
-    startKey = page.LastEvaluatedKey;
-  } while (startKey !== undefined);
-  return keys;
+  const items = await homeItems(table, householdId, {
+    projection: KEYS_ONLY,
+    ...(prefix === undefined ? {} : { prefix }),
+  });
+  return items.map((item) => storedKeySchema.parse(item));
 }
 
 function memberIdsOf(keys: readonly StoredKey[]): string[] {
-  const members = keys.filter((key) => key.sk.startsWith(Keys.memberPrefix));
-  if (members.length > MAX_MEMBERS_PER_TRANSACTION) {
-    throw Errors.conflict('This home has too many members to change at once');
-  }
-  return members.flatMap((key) => (key.userId === undefined ? [] : [key.userId]));
+  return keys
+    .filter((key) => key.sk.startsWith(Keys.memberPrefix))
+    .map((key) => storedMemberKeySchema.parse(key).userId);
 }
 
 async function requireHousehold(table: Table, householdId: string): Promise<Household> {
@@ -157,15 +81,13 @@ async function updateHousehold(
   { version, ...changes }: UpdateHouseholdRequest,
 ): Promise<Household> {
   const home = Keys.household(householdId);
-  const renames =
+  const memberIds =
     changes.name === undefined
       ? []
-      : memberIdsOf(await homeKeys(table, householdId, Keys.memberPrefix)).map((userId) =>
-          updateItem(table, {
-            key: { pk: Keys.user(userId), sk: home },
-            fields: { name: changes.name },
-          }),
-        );
+      : memberIdsOf(await homeKeys(table, householdId, Keys.memberPrefix));
+  const renames = memberIds.map((userId) =>
+    updateItem(table, { key: { pk: Keys.user(userId), sk: home }, fields: { name: changes.name } }),
+  );
   const metaUpdate = updateItem(table, {
     key: { pk: home, sk: Keys.meta },
     fields: { ...changes, version: version + 1 },

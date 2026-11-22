@@ -1,13 +1,13 @@
 import { BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
+import type { BatchWriteCommandOutput } from '@aws-sdk/lib-dynamodb';
+import { retryUntilEmpty } from './retry';
 import type { Table } from './table';
 
-type WriteRequest =
+export type WriteRequest =
   | { PutRequest: { Item: Record<string, unknown> } }
   | { DeleteRequest: { Key: Record<string, unknown> } };
 
 const ITEMS_PER_BATCH = 25;
-const MAX_ATTEMPTS = 5;
-const FIRST_RETRY_DELAY_MS = 50;
 
 function chunksOf<Item>(items: readonly Item[], size: number): Item[][] {
   return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
@@ -15,52 +15,48 @@ function chunksOf<Item>(items: readonly Item[], size: number): Item[][] {
   );
 }
 
-function wait(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, milliseconds);
+export function unprocessedRequests(
+  { UnprocessedItems }: Pick<BatchWriteCommandOutput, 'UnprocessedItems'>,
+  tableName: string,
+): WriteRequest[] {
+  return (UnprocessedItems?.[tableName] ?? []).flatMap((request): WriteRequest[] => {
+    if (request.PutRequest?.Item !== undefined) {
+      return [{ PutRequest: { Item: request.PutRequest.Item } }];
+    }
+    if (request.DeleteRequest?.Key !== undefined) {
+      return [{ DeleteRequest: { Key: request.DeleteRequest.Key } }];
+    }
+    return [];
   });
 }
 
-async function writeBatch(table: Table, requests: WriteRequest[]): Promise<void> {
-  let pending = requests;
-  for (let attempt = 1; pending.length > 0; attempt += 1) {
-    if (attempt > MAX_ATTEMPTS) throw new Error('DynamoDB kept throttling a batch write');
-    if (attempt > 1) await wait(FIRST_RETRY_DELAY_MS * 2 ** (attempt - 2));
-    const { UnprocessedItems } = await table.client.send(
-      new BatchWriteCommand({ RequestItems: { [table.name]: pending } }),
-    );
-    pending = (UnprocessedItems?.[table.name] ?? []).flatMap((request): WriteRequest[] => {
-      if (request.PutRequest?.Item !== undefined) {
-        return [{ PutRequest: { Item: request.PutRequest.Item } }];
-      }
-      if (request.DeleteRequest?.Key !== undefined) {
-        return [{ DeleteRequest: { Key: request.DeleteRequest.Key } }];
-      }
-      return [];
+async function writeAll(table: Table, requests: readonly WriteRequest[]): Promise<void> {
+  for (const batch of chunksOf(requests, ITEMS_PER_BATCH)) {
+    await retryUntilEmpty(batch, async (pending) => {
+      const response = await table.client.send(
+        new BatchWriteCommand({ RequestItems: { [table.name]: pending } }),
+      );
+      return unprocessedRequests(response, table.name);
     });
   }
 }
 
-export async function putInBatches(
+export function putInBatches(
   table: Table,
   items: readonly Record<string, unknown>[],
 ): Promise<void> {
-  for (const batch of chunksOf(items, ITEMS_PER_BATCH)) {
-    await writeBatch(
-      table,
-      batch.map((Item) => ({ PutRequest: { Item } })),
-    );
-  }
+  return writeAll(
+    table,
+    items.map((Item) => ({ PutRequest: { Item } })),
+  );
 }
 
-export async function deleteInBatches(
+export function deleteInBatches(
   table: Table,
   keys: readonly Record<string, unknown>[],
 ): Promise<void> {
-  for (const batch of chunksOf(keys, ITEMS_PER_BATCH)) {
-    await writeBatch(
-      table,
-      batch.map((Key) => ({ DeleteRequest: { Key } })),
-    );
-  }
+  return writeAll(
+    table,
+    keys.map((Key) => ({ DeleteRequest: { Key } })),
+  );
 }
