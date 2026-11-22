@@ -22,6 +22,8 @@ function useStartRoute(
   const client = useApiClient();
   return useQuery({
     queryKey: ['start-route'],
+    // Never reuse an answer from before a log in or log out.
+    gcTime: 0,
     queryFn: async (): Promise<StartRoute> => {
       if (!(await isSignedIn())) return startRouteFor({ isSignedIn: false, homeCount: 0 });
       const homes = await client.request({

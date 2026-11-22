@@ -6,8 +6,10 @@ test.describe('content security policy', () => {
     page.on('console', (message) => {
       if (message.text().includes('Content Security Policy')) violations.push(message.text());
     });
-    await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+    await page.goto('/welcome');
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Know what needs cleaning, and when.' }),
+    ).toBeVisible();
     const policy = await page
       .locator('meta[http-equiv="Content-Security-Policy"]')
       .getAttribute('content');
@@ -16,7 +18,7 @@ test.describe('content security policy', () => {
   });
 
   test('blocks a script injected into the page', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/welcome');
     const injectedScriptRan = await page.evaluate(() => {
       const script = document.createElement('script');
       script.textContent = 'document.body.dataset.injected = "yes";';

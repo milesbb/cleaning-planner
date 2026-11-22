@@ -22,7 +22,7 @@ interface PasswordFieldProps extends Omit<
   autoComplete: PasswordPurpose;
   value?: string;
   minimumLength?: number;
-  error?: string;
+  error?: string | undefined;
   className?: string;
 }
 

@@ -45,7 +45,7 @@ export class ApiRequestError extends Error {
   }
 }
 
-export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 export interface ApiRequest<Result> {
   method: HttpMethod;
