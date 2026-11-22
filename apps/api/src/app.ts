@@ -1,13 +1,16 @@
 import express, { type Express } from 'express';
 import { healthRouter } from './controllers/health';
 import { householdsRouter } from './controllers/households';
+import { householdInvitesRouter, invitesRouter } from './controllers/invites';
 import { membersRouter } from './controllers/members';
 import { meRouter } from './controllers/me';
 import { errorHandler } from './middlewares/error-handler';
 import type { MembershipReader } from './middlewares/membership';
 import { signedInUser } from './middlewares/signed-in-user';
 import type { ClaimsReader } from './middlewares/signed-in-user';
+import type { SourceIpReader } from './middlewares/source-ip';
 import type { HouseholdService } from './services/household-service';
+import type { InviteService } from './services/invite-service';
 import type { MemberService } from './services/member-service';
 import type { ProfileService } from './services/profile-service';
 import { Errors } from './utils/errors';
@@ -18,12 +21,14 @@ export interface AppServices {
   profiles: ProfileService;
   households: HouseholdService;
   members: MemberService;
+  invites: InviteService;
   memberships: MembershipReader;
 }
 
 export interface AppConfig {
   version: string;
   readClaims: ClaimsReader;
+  readSourceIp: SourceIpReader;
   services: AppServices;
 }
 
@@ -34,6 +39,11 @@ export function createApp(config: AppConfig): Express {
   app.use('/v1/health', healthRouter(config.version));
   app.use('/v1', signedInUser(config.readClaims));
   app.use('/v1/me', meRouter(config.services.profiles));
+  app.use(
+    '/v1/households/:householdId/invites',
+    householdInvitesRouter(config.services.invites, config.services.memberships),
+  );
+  app.use('/v1/invites', invitesRouter(config.services.invites, config.readSourceIp));
   app.use(
     '/v1/households/:householdId/members',
     membersRouter(config.services.members, config.services.memberships),

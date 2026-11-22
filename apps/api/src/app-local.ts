@@ -23,6 +23,7 @@ const port = localPort();
 createApp({
   version: 'local',
   readClaims: readDevelopmentClaims,
+  readSourceIp: (request) => request.ip,
   services: createServices(process.env),
 }).listen(port, () => {
   logger.info('API listening', { url: `http://localhost:${String(port)}` });
