@@ -1,12 +1,13 @@
 import { logger } from '../utils/logging';
-import { checkHealth, type HealthCheckResult } from './check-health';
+import type { HealthCheckResult } from './check-health';
+import { checkDeployment } from './check-deployment';
 
 const SUCCESS_EXIT_CODE = 0;
 const FAILURE_EXIT_CODE = 1;
 
 export async function runHealthCheck(
   apiUrl: string | undefined,
-  check: (apiUrl: string) => Promise<HealthCheckResult> = checkHealth,
+  check: (apiUrl: string) => Promise<HealthCheckResult> = checkDeployment,
 ): Promise<number> {
   if (apiUrl === undefined || apiUrl === '') {
     logger.error('API_URL is not set');

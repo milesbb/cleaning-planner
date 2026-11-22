@@ -6,6 +6,7 @@ import {
   functionsCannotManageSignIns,
   functionsHaveTimeouts,
   passwordsAreAtLeastTwelveCharacters,
+  routesLeavePreflightsToCors,
 } from './api-rules';
 import { parseTemplate } from './cloudformation-template';
 
@@ -20,7 +21,7 @@ const SIGNED_IN_API = `  HttpApi:
         DefaultAuthorizer: CognitoAuthorizer
 `;
 
-function functionWithRoute(path: string, auth = ''): string {
+function functionWithRoute(path: string, auth = '', method = 'ANY'): string {
   return `  ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -31,7 +32,7 @@ function functionWithRoute(path: string, auth = ''): string {
           Properties:
             ApiId: !Ref HttpApi
             Path: ${path}
-            Method: ANY
+            Method: ${method}
 ${auth}`;
 }
 
@@ -54,6 +55,31 @@ describe('everyApiRouteNeedsSignIn', () => {
     const template = templateWith(SIGNED_IN_API + functionWithRoute('/v1/households', PUBLIC));
     expect(everyApiRouteNeedsSignIn(template)).toEqual([
       'ApiFunction route /v1/households skips sign-in',
+    ]);
+  });
+});
+
+describe('routesLeavePreflightsToCors', () => {
+  it('passes routes that name their methods', () => {
+    const template = templateWith(functionWithRoute('/v1/me', '', 'PATCH'));
+    expect(routesLeavePreflightsToCors(template)).toEqual([]);
+  });
+
+  it('catches an ANY route, which takes browser preflights away from CORS', () => {
+    const template = templateWith(functionWithRoute('/v1/{proxy+}'));
+    expect(routesLeavePreflightsToCors(template)).toEqual([
+      'ApiFunction route ANY /v1/{proxy+} catches browser preflights',
+    ]);
+  });
+
+  it('catches an OPTIONS route and a route with no method', () => {
+    const optionsRoute = functionWithRoute('/v1/me', '', 'OPTIONS');
+    const noMethod = functionWithRoute('/v1/rooms').replace('            Method: ANY\n', '');
+    expect(routesLeavePreflightsToCors(templateWith(optionsRoute))).toEqual([
+      'ApiFunction route OPTIONS /v1/me catches browser preflights',
+    ]);
+    expect(routesLeavePreflightsToCors(templateWith(noMethod))).toEqual([
+      'ApiFunction route ANY /v1/rooms catches browser preflights',
     ]);
   });
 });
@@ -132,12 +158,21 @@ ${routeSettings}`);
   }
 
   const TIGHT_ROUTES = `      RouteSettings:
-        'ANY /v1/invites/{proxy+}':
+        'GET /v1/invites/{proxy+}':
           ThrottlingBurstLimit: 10
           ThrottlingRateLimit: 2
-        'ANY /v1/me':
+        'POST /v1/invites/{proxy+}':
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 2
+        'GET /v1/me':
           ThrottlingBurstLimit: 10
           ThrottlingRateLimit: 5
+        'PATCH /v1/me':
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+        'DELETE /v1/me':
+          ThrottlingBurstLimit: 5
+          ThrottlingRateLimit: 1
 `;
 
   it('passes default throttling with tighter invite and account routes', () => {
@@ -151,8 +186,11 @@ ${routeSettings}`);
 
   it('catches invite and account routes that are not tighter than the default', () => {
     expect(apiRoutesAreThrottled(api(''))).toEqual([
-      'HttpApi does not throttle ANY /v1/invites/{proxy+} more tightly',
-      'HttpApi does not throttle ANY /v1/me more tightly',
+      'HttpApi does not throttle GET /v1/invites/{proxy+} more tightly',
+      'HttpApi does not throttle POST /v1/invites/{proxy+} more tightly',
+      'HttpApi does not throttle GET /v1/me more tightly',
+      'HttpApi does not throttle PATCH /v1/me more tightly',
+      'HttpApi does not throttle DELETE /v1/me more tightly',
     ]);
   });
 });
