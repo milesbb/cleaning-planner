@@ -58,20 +58,21 @@ Check the API: `curl http://localhost:4000/v1/health`.
 
 ### Scripts (from the repo root)
 
-| Command                   | What it does                                                                         |
-| ------------------------- | ------------------------------------------------------------------------------------ |
-| `npm run dev`             | Web app and API in dev mode                                                          |
-| `npm run build`           | Production build of everything (web + Lambda bundle)                                 |
-| `npm run lint`            | ESLint across all workspaces                                                         |
-| `npm run typecheck`       | `tsc --noEmit` across all workspaces                                                 |
-| `npm test`                | Unit tests (Vitest) across all workspaces                                            |
-| `npm run test:e2e`        | Playwright e2e on desktop, Android and iPhone projects                               |
-| `npm run test:smoke`      | Invoke the built Lambda bundle with an API Gateway event (run `npm run build` first) |
-| `npm run format`          | Format everything with Prettier (`format:check` to verify only)                      |
-| `npm run knip`            | Find unused files, exports and dependencies                                          |
-| `npm run dupes`           | Check for copy-pasted code (fails above 3%)                                          |
-| `npm run test:mutation`   | Mutation-test the schedule engine with Stryker (fails below 85%)                     |
-| `npm run test:lighthouse` | Lighthouse scores for the built web app (run `npm run build` first; needs Chrome)    |
+| Command                                                      | What it does                                                                                                                                                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`                                                | Web app and API in dev mode                                                                                                                                                                      |
+| `npm run build`                                              | Production build of everything (web + Lambda bundle)                                                                                                                                             |
+| `npm run lint`                                               | ESLint across all workspaces                                                                                                                                                                     |
+| `npm run typecheck`                                          | `tsc --noEmit` across all workspaces                                                                                                                                                             |
+| `npm test`                                                   | Unit tests (Vitest) across all workspaces                                                                                                                                                        |
+| `npm run test:integration --workspace=@cleaning-planner/api` | API repository tests against DynamoDB Local: start it with `docker run -p 8000:8000 amazon/dynamodb-local` and set `DYNAMODB_ENDPOINT=http://localhost:8000` (CI runs it as a service container) |
+| `npm run test:e2e`                                           | Playwright e2e on desktop, Android and iPhone projects                                                                                                                                           |
+| `npm run test:smoke`                                         | Invoke the built Lambda bundle with an API Gateway event (run `npm run build` first)                                                                                                             |
+| `npm run format`                                             | Format everything with Prettier (`format:check` to verify only)                                                                                                                                  |
+| `npm run knip`                                               | Find unused files, exports and dependencies                                                                                                                                                      |
+| `npm run dupes`                                              | Check for copy-pasted code (fails above 3%)                                                                                                                                                      |
+| `npm run test:mutation`                                      | Mutation-test the schedule engine with Stryker (fails below 85%)                                                                                                                                 |
+| `npm run test:lighthouse`                                    | Lighthouse scores for the built web app (run `npm run build` first; needs Chrome)                                                                                                                |
 
 First run of e2e tests: `npx playwright install chromium webkit` from `apps/web`.
 

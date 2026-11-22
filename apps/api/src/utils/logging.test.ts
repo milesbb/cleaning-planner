@@ -33,3 +33,48 @@ describe('logger', () => {
     expect(firstLineWrittenBy(stderrSpy)).toMatchObject({ level: 'error', message: 'Failed' });
   });
 });
+
+describe('logger redaction', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function loggedContext(context: Record<string, string | number | boolean>): unknown {
+    const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    logger.info('Something happened', context);
+    return firstLineWrittenBy(stdoutSpy);
+  }
+
+  it('never writes email addresses, wherever they appear', () => {
+    expect(
+      loggedContext({ email: 'sam@example.com', note: 'invited alex@example.org' }),
+    ).toMatchObject({
+      email: '[redacted]',
+      note: 'invited [redacted email]',
+    });
+  });
+
+  it('never writes tokens or authorisation headers', () => {
+    const jwt = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEifQ.c2lnbmF0dXJl';
+    expect(
+      loggedContext({ authorization: `Bearer ${jwt}`, idToken: jwt, detail: `token ${jwt}` }),
+    ).toMatchObject({
+      authorization: '[redacted]',
+      idToken: '[redacted]',
+      detail: 'token [redacted token]',
+    });
+  });
+
+  it('never writes invite codes or passwords', () => {
+    expect(loggedContext({ inviteCode: '7K3M9QZA', password: 'hunter2hunter2' })).toMatchObject({
+      inviteCode: '[redacted]',
+      password: '[redacted]',
+    });
+  });
+
+  it('keeps everything else as it was', () => {
+    expect(loggedContext({ householdId: 'home-1', statusCode: 403, isRetry: false })).toMatchObject(
+      { householdId: 'home-1', statusCode: 403, isRetry: false },
+    );
+  });
+});

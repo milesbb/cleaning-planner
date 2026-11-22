@@ -14,6 +14,7 @@ await build({
   target: 'node24',
   format: 'cjs',
   sourcemap: true,
+  minify: true,
   legalComments: 'none',
   define: { 'process.env.APP_VERSION': JSON.stringify(version) },
 });
