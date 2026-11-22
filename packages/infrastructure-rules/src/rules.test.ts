@@ -224,22 +224,27 @@ describe('apiAllowsTheAppOrigins', () => {
     );
   }
 
-  it('passes when the iOS and Android app origins are allowed', () => {
+  it('passes when the Android app origin is allowed', () => {
     const template = templateWithOrigins(
-      'https://example.com,capacitor://localhost,https://localhost',
+      'https://example.com,http://localhost:3000,https://localhost',
     );
     expect(apiAllowsTheAppOrigins(template)).toEqual([]);
   });
 
-  it('names each app origin that is missing', () => {
+  it('names the app origin when it is missing', () => {
     expect(apiAllowsTheAppOrigins(templateWithOrigins('https://example.com'))).toEqual([
-      'AllowedOrigins does not include capacitor://localhost',
       'AllowedOrigins does not include https://localhost',
     ]);
   });
 
+  it('catches an origin API Gateway would reject, such as the iOS app scheme', () => {
+    expect(
+      apiAllowsTheAppOrigins(templateWithOrigins('https://localhost,capacitor://localhost')),
+    ).toEqual(['capacitor://localhost is not an http(s) origin, which API Gateway rejects']);
+  });
+
   it('catches a template with no AllowedOrigins parameter', () => {
-    expect(apiAllowsTheAppOrigins(parseTemplate('Resources: {}\n'))).toHaveLength(2);
+    expect(apiAllowsTheAppOrigins(parseTemplate('Resources: {}\n'))).toHaveLength(1);
   });
 });
 

@@ -13,7 +13,8 @@ const ROLE_TYPE = 'AWS::IAM::Role';
 const SERVERLESS_FUNCTION_TYPE = 'AWS::Serverless::Function';
 const FUNCTION_TYPES = [SERVERLESS_FUNCTION_TYPE, 'AWS::Lambda::Function'];
 const FULL_ACCESS_POLICY = /[A-Za-z0-9]*FullAccess/;
-const APP_ORIGINS = ['capacitor://localhost', 'https://localhost'];
+const APP_ORIGINS = ['https://localhost'];
+const HTTP_ORIGIN = /^https?:\/\/[^/\s]+$/;
 const TIME_TO_LIVE_ATTRIBUTE = 'expiresAt';
 const HOURLY_RESOURCE_TYPES = [/^AWS::EC2::(VPC|NatGateway|Subnet)$/, /^AWS::RDS::/];
 
@@ -108,9 +109,13 @@ export function noHourlyNetworkOrDatabaseResources(template: CloudFormationTempl
 export function apiAllowsTheAppOrigins(template: CloudFormationTemplate): string[] {
   const allowedOrigins = template.parameters.AllowedOrigins?.Default;
   const origins = typeof allowedOrigins === 'string' ? allowedOrigins.split(',') : [];
-  return APP_ORIGINS.filter((origin) => !origins.includes(origin)).map(
+  const missing = APP_ORIGINS.filter((origin) => !origins.includes(origin)).map(
     (origin) => `AllowedOrigins does not include ${origin}`,
   );
+  const rejected = origins
+    .filter((origin) => !HTTP_ORIGIN.test(origin))
+    .map((origin) => `${origin} is not an http(s) origin, which API Gateway rejects`);
+  return [...missing, ...rejected];
 }
 
 function expiresItems(properties: Properties): boolean {
@@ -135,6 +140,6 @@ export const INFRASTRUCTURE_RULES: Record<string, Rule> = {
   'every named resource starts with the stack name': everyNameStartsWithTheStackName,
   'no FullAccess managed policies': noFullAccessPolicies,
   'no VPC, NAT Gateway or RDS': noHourlyNetworkOrDatabaseResources,
-  'the API allows the iOS and Android app origins': apiAllowsTheAppOrigins,
+  'the API allows the Android app origin, and only http(s) origins': apiAllowsTheAppOrigins,
   'data tables remove expired items': dataTablesExpireItems,
 };

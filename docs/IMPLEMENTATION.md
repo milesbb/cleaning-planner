@@ -74,7 +74,7 @@ Routes that refer to a specific record use a query parameter (`?id=`), because a
 - **Native shell (`apps/mobile`).** Capacitor 7 projects for iOS and Android, committed to the repo. Native plugins used through small wrappers in `apps/web/src/lib/native/` that fall back to web behaviour in a browser: push notifications, haptics on "done", share sheet for invites, status bar and splash screen, app badge for late jobs, deep links.
 - **Push.** Browsers and the installed PWA use **Web Push** (VAPID). The iOS and Android apps use **Firebase Cloud Messaging**, which delivers to iOS through Apple's push service with our APNs key. The `notify` Lambda sends to whichever devices a person has registered.
 - **Invite links** (`https://<our domain>/join?code=…`) open the app when it's installed (iOS universal links, Android app links) and the website otherwise. This needs our own domain, serving `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`.
-- **API origins.** CORS allows the website's origin plus the app WebViews (`capacitor://localhost` on iOS, `https://localhost` on Android).
+- **API origins.** CORS allows the website's origin plus the Android WebView (`https://localhost`). API Gateway only accepts http(s) origins, so the iOS app (`capacitor://localhost`) calls the API through Capacitor's native HTTP (`CapacitorHttp`), which CORS doesn't apply to.
 - **Releases.** A merge into `production` deploys the website (Vercel) and backend (CodePipeline), and GitHub Actions builds signed apps and uploads them to **TestFlight** and the **Google Play internal testing** track. Promoting a build to the public stores is a button press in each store console, after store review.
 
 ### Monorepo layout
@@ -211,7 +211,7 @@ One PR per item. Every component gets a test file with the axe check first.
 
 - **Cognito user pool**, Essentials tier, sign-in with **email and password**. Email is the username, confirmed with a six-digit code; forgotten passwords are reset with an emailed code. Password minimum 12 characters with no forced symbols. One public app client with no secret, SRP sign-in plus refresh, refresh tokens for 365 days. Cognito's built-in email sender at first, SES in M6.
 - **JWT authorizer** on every `/v1` route except `/v1/health`; **TTL** on the table for invite codes; `cognito-idp:*` and `scheduler:*` for the deploy role (already inside the permissions boundary).
-- **CORS** gains `capacitor://localhost` and `https://localhost` for the apps.
+- **CORS** gains `https://localhost` for the Android app; the iOS app uses `CapacitorHttp`, because API Gateway rejects `capacitor://` origins.
 - Automated tests for the infrastructure rules in `CLAUDE.md` (#32).
 - **Alarms** (#95): API 5xx, Lambda errors and the reminders dead-letter queue email the owner.
 
