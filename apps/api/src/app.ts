@@ -4,6 +4,7 @@ import { householdsRouter } from './controllers/households';
 import { householdInvitesRouter, invitesRouter } from './controllers/invites';
 import { membersRouter } from './controllers/members';
 import { meRouter } from './controllers/me';
+import { roomsRouter } from './controllers/rooms';
 import { errorHandler } from './middlewares/error-handler';
 import type { MembershipReader } from './middlewares/membership';
 import { signedInUser } from './middlewares/signed-in-user';
@@ -13,6 +14,7 @@ import type { HouseholdService } from './services/household-service';
 import type { InviteService } from './services/invite-service';
 import type { MemberService } from './services/member-service';
 import type { ProfileService } from './services/profile-service';
+import type { RoomService } from './services/room-service';
 import { Errors } from './utils/errors';
 
 const MAX_JSON_BODY_SIZE = '100kb';
@@ -22,6 +24,7 @@ export interface AppServices {
   households: HouseholdService;
   members: MemberService;
   invites: InviteService;
+  rooms: RoomService;
   memberships: MembershipReader;
 }
 
@@ -42,6 +45,10 @@ export function createApp(config: AppConfig): Express {
   app.use(
     '/v1/households/:householdId/invites',
     householdInvitesRouter(config.services.invites, config.services.memberships),
+  );
+  app.use(
+    '/v1/households/:householdId/rooms',
+    roomsRouter(config.services.rooms, config.services.memberships),
   );
   app.use('/v1/invites', invitesRouter(config.services.invites, config.readSourceIp));
   app.use(

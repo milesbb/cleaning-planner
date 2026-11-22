@@ -24,6 +24,8 @@ export const Keys = {
   meta: 'META',
   memberPrefix: 'MEMBER#',
   jobPrefix: 'JOB#',
+  roomPrefix: 'ROOM#',
+  donePrefix: (jobId: string): string => `DONE#${jobId}#`,
   currentInvite: 'INVITE',
   invite: (code: string): string => `INVITE#${code}`,
   attempts: (guardKey: string): string => `ATTEMPTS#${guardKey}`,

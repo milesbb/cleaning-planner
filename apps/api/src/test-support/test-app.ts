@@ -32,6 +32,7 @@ const UNUSED_SERVICES: AppServices = {
   },
   members: { listMembers: notUsed, changeRole: notUsed, removeMember: notUsed },
   invites: { createInvite: notUsed, previewInvite: notUsed, acceptInvite: notUsed },
+  rooms: { listRooms: notUsed, addRoom: notUsed, updateRoom: notUsed, deleteRoom: notUsed },
   memberships: { findMembership: notUsed },
 };
 
