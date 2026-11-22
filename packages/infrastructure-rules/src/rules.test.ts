@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { parseTemplate } from './cloudformation-template';
+import type { CloudFormationTemplate } from './cloudformation-template';
 import {
+  apiAllowsTheAppOrigins,
+  dataTablesExpireItems,
   everyLogGroupHasRetention,
   everyNameStartsWithTheStackName,
   everyRoleHasThePermissionsBoundary,
@@ -211,5 +214,68 @@ describe('noHourlyNetworkOrDatabaseResources', () => {
     expect(noHourlyNetworkOrDatabaseResources(template)).toEqual([
       'Globals put functions in a VPC',
     ]);
+  });
+});
+
+describe('apiAllowsTheAppOrigins', () => {
+  function templateWithOrigins(origins: string): CloudFormationTemplate {
+    return parseTemplate(
+      `Parameters:\n  AllowedOrigins:\n    Type: CommaDelimitedList\n    Default: ${origins}\nResources: {}\n`,
+    );
+  }
+
+  it('passes when the iOS and Android app origins are allowed', () => {
+    const template = templateWithOrigins(
+      'https://example.com,capacitor://localhost,https://localhost',
+    );
+    expect(apiAllowsTheAppOrigins(template)).toEqual([]);
+  });
+
+  it('names each app origin that is missing', () => {
+    expect(apiAllowsTheAppOrigins(templateWithOrigins('https://example.com'))).toEqual([
+      'AllowedOrigins does not include capacitor://localhost',
+      'AllowedOrigins does not include https://localhost',
+    ]);
+  });
+
+  it('catches a template with no AllowedOrigins parameter', () => {
+    expect(apiAllowsTheAppOrigins(parseTemplate('Resources: {}\n'))).toHaveLength(2);
+  });
+});
+
+describe('dataTablesExpireItems', () => {
+  it('passes a table that removes items once expiresAt has passed', () => {
+    const template = parseTemplate(
+      templateWith(`  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+`),
+    );
+    expect(dataTablesExpireItems(template)).toEqual([]);
+  });
+
+  it('catches a table that keeps expired invites forever', () => {
+    const template = parseTemplate(
+      templateWith(
+        `  Table:\n    Type: AWS::DynamoDB::Table\n    Properties:\n      BillingMode: PAY_PER_REQUEST\n`,
+      ),
+    );
+    expect(dataTablesExpireItems(template)).toEqual(['Table does not expire items by expiresAt']);
+  });
+
+  it('catches TTL on the wrong attribute or switched off', () => {
+    const template = parseTemplate(
+      templateWith(`  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: false
+`),
+    );
+    expect(dataTablesExpireItems(template)).toHaveLength(1);
   });
 });

@@ -20,6 +20,16 @@ describe('parseTemplate', () => {
     });
   });
 
+  it('reads the parameters', () => {
+    const template = parseTemplate(`Parameters:
+  Stage:
+    Type: String
+    Default: live
+Resources: {}
+`);
+    expect(template.parameters).toEqual({ Stage: { Type: 'String', Default: 'live' } });
+  });
+
   it('reads the function globals', () => {
     const template = parseTemplate(`Globals:
   Function:
