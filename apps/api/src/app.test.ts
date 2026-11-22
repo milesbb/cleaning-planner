@@ -1,11 +1,18 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { createApp } from './app';
+import type { ProfileService } from './services/profile-service';
+
+const unusedProfiles: ProfileService = {
+  getMyProfile: () => Promise.reject(new Error('not used')),
+  updateMyProfile: () => Promise.reject(new Error('not used')),
+};
 
 const CLAIMS_HEADER = 'x-test-claims';
 
 const app = createApp({
   version: 'test-sha',
+  services: { profiles: unusedProfiles },
   readClaims: (incoming) => {
     const header = incoming.header(CLAIMS_HEADER);
     if (header === undefined) return undefined;

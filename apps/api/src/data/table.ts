@@ -20,6 +20,7 @@ export const Keys = {
   household: (householdId: string): string => `HOUSEHOLD#${householdId}`,
   user: (userId: string): string => `USER#${userId}`,
   member: (userId: string): string => `MEMBER#${userId}`,
+  profile: 'PROFILE',
   homesOfUser: 'HOUSEHOLD#',
 } as const;
 
