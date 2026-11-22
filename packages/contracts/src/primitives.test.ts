@@ -103,7 +103,7 @@ describe('versionSchema', () => {
 
 describe('idempotencyKeySchema', () => {
   it('accepts a UUID', () => {
-    const key = '1b4e28ba-2fa1-41d2-883f-0016d3cca427';
+    const key = '00000000-0000-4000-8000-000000000001';
     expect(idempotencyKeySchema.parse(key)).toBe(key);
   });
 
