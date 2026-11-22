@@ -1,0 +1,115 @@
+name: Release checks
+
+# Heavy checks for the release pull request development -> production.
+# "Release checks passed" is the required status check in the production ruleset,
+# and it fails for any pull request whose source branch is not development.
+on:
+  pull_request:
+    branches: [production]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  source-branch:
+    name: Source branch is development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only development may be merged into production
+        run: |
+          echo "Head branch: ${{ github.head_ref }}"
+          [ "${{ github.head_ref }}" = "development" ] && [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]
+
+  quality:
+    name: Format, lint & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: npm run format:check
+      - run: npx turbo run lint typecheck
+
+  unit:
+    name: Unit tests & coverage gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: npx turbo run test
+
+  build:
+    name: Production builds & Lambda smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: npx turbo run build
+      - name: Invoke the Lambda bundle with an API Gateway event
+        working-directory: apps/api
+        run: |
+          node -e "
+            const { handler } = require('./dist/lambda.js');
+            const event = { version: '2.0', routeKey: 'ANY /v1/{proxy+}', rawPath: '/v1/health', rawQueryString: '',
+              headers: { host: 'localhost' }, isBase64Encoded: false,
+              requestContext: { http: { method: 'GET', path: '/v1/health', sourceIp: '127.0.0.1' }, stage: '\$default', requestId: 'ci' } };
+            handler(event, {}).then((r) => { console.log(r); if (r.statusCode !== 200) process.exit(1); });
+          "
+
+  e2e:
+    name: E2E (desktop, Android, iPhone)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium webkit
+        working-directory: apps/web
+      - run: npx turbo run build --filter=@cleaning-planner/web
+      - run: npm run test:e2e
+        env:
+          CI: true
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 14
+
+  template:
+    name: CloudFormation lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install cfn-lint
+      - run: cfn-lint infrastructure/template.yml
+
+  audit:
+    name: Production dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: npm audit --omit=dev --audit-level=high
+
+  passed:
+    name: Release checks passed
+    runs-on: ubuntu-latest
+    needs: [source-branch, quality, unit, build, e2e, template, audit]
+    if: always()
+    steps:
+      - name: Fail unless every check succeeded
+        run: |
+          echo '${{ toJSON(needs) }}'
+          [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "false" ]

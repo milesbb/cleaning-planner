@@ -1,0 +1,35 @@
+name: Deploy
+
+# Runs when a release PR is merged into production.
+# The AWS backend deploys itself: CodePipeline (infrastructure/template.yml)
+# watches the production branch. This workflow deploys the web app to Vercel.
+on:
+  push:
+    branches: [production]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  web:
+    name: Deploy web app to Vercel
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Skip when Vercel is not configured
+        if: env.VERCEL_TOKEN == ''
+        run: echo "::notice::VERCEL_TOKEN secret not set, skipping web deploy. See README > Deployment setup."
+      - uses: actions/checkout@v4
+        if: env.VERCEL_TOKEN != ''
+      - uses: ./.github/actions/setup
+        if: env.VERCEL_TOKEN != ''
+      - name: Deploy
+        if: env.VERCEL_TOKEN != ''
+        run: npx --yes vercel@latest --prod --yes --token "$VERCEL_TOKEN"
