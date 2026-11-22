@@ -1,5 +1,7 @@
 version: 0.2
 
+# Lint, typecheck and tests already passed in the GitHub release checks before this
+# commit reached production, so the pipeline only installs, bundles and packages.
 phases:
   install:
     commands:
@@ -7,10 +9,10 @@ phases:
       - n "$(cat .nvmrc)"
       - hash -r
       - node --version
-      - npm ci --workspace=apps/api --workspace=packages/schedule --include-workspace-root
-  pre_build:
-    commands:
-      - npx turbo run lint typecheck test --filter=@cleaning-planner/api --filter=@cleaning-planner/schedule
+      - >-
+        npm ci --prefer-offline --no-audit --no-fund
+        --workspace=apps/api --workspace=packages/contracts --workspace=packages/schedule
+        --include-workspace-root
   build:
     commands:
       - npm run build --workspace=apps/api
@@ -25,3 +27,8 @@ artifacts:
   files:
     - packaged.yml
     - apps/api/dist/health-check.mjs
+
+cache:
+  paths:
+    - /root/.npm/**/*
+    - /usr/local/n/versions/**/*
