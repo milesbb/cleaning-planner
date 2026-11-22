@@ -218,28 +218,35 @@ describe('noHourlyNetworkOrDatabaseResources', () => {
 });
 
 describe('apiAllowsTheAppOrigins', () => {
-  function templateWithOrigins(origins: string): CloudFormationTemplate {
+  function apiWithOrigins(origins: string): CloudFormationTemplate {
     return parseTemplate(
-      `Parameters:\n  AllowedOrigins:\n    Type: CommaDelimitedList\n    Default: ${origins}\nResources: {}\n`,
+      templateWith(`  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ${origins}
+`),
     );
   }
 
-  it('passes when the iOS and Android app origins are allowed', () => {
-    const template = templateWithOrigins(
-      'https://example.com,capacitor://localhost,https://localhost',
+  it('passes when the iOS and Android app origins are listed', () => {
+    const template = apiWithOrigins(
+      '[https://example.com, capacitor://localhost, https://localhost]',
     );
     expect(apiAllowsTheAppOrigins(template)).toEqual([]);
   });
 
   it('names each app origin that is missing', () => {
-    expect(apiAllowsTheAppOrigins(templateWithOrigins('https://example.com'))).toEqual([
-      'AllowedOrigins does not include capacitor://localhost',
-      'AllowedOrigins does not include https://localhost',
+    expect(apiAllowsTheAppOrigins(apiWithOrigins('[https://example.com]'))).toEqual([
+      'HttpApi does not allow capacitor://localhost',
+      'HttpApi does not allow https://localhost',
     ]);
   });
 
-  it('catches a template with no AllowedOrigins parameter', () => {
-    expect(apiAllowsTheAppOrigins(parseTemplate('Resources: {}\n'))).toHaveLength(2);
+  it('catches origins taken from a parameter, which stack updates never change', () => {
+    expect(apiAllowsTheAppOrigins(apiWithOrigins('!Ref AllowedOrigins'))).toEqual([
+      'HttpApi must list its CORS origins in the template, not take them from a parameter',
+    ]);
   });
 });
 
