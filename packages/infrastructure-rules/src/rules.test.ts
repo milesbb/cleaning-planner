@@ -220,7 +220,12 @@ describe('noHourlyNetworkOrDatabaseResources', () => {
 describe('apiAllowsTheAppOrigins', () => {
   function templateWithOrigins(origins: string): CloudFormationTemplate {
     return parseTemplate(
-      `Parameters:\n  AllowedOrigins:\n    Type: CommaDelimitedList\n    Default: ${origins}\nResources: {}\n`,
+      `Parameters:
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Default: ${origins}
+Resources: {}
+`,
     );
   }
 
