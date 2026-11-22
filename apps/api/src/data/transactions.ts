@@ -3,7 +3,7 @@ import { Errors } from '../utils/errors';
 import { isConditionFailure } from './conditions';
 import type { Table } from './table';
 
-export const MAX_ITEMS_PER_TRANSACTION = 100;
+const MAX_ITEMS_PER_TRANSACTION = 100;
 const NOT_ALREADY_THERE = 'attribute_not_exists(pk)';
 const MUST_EXIST = 'attribute_exists(pk)';
 
