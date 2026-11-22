@@ -70,6 +70,7 @@ Never write implementation code that is not covered by a test.
   });
   ```
   The `toHaveNoViolations` matcher is defined in `src/test/setup.ts` (the one bundled with `vitest-axe` is incompatible with current Vitest). For open Radix portals/dialogs, pass `document.body` instead of `container`.
+- **Every screen size (Playwright viewport matrix):** every route gets an `e2e/<screen>.viewports.spec.ts` that calls `testAtEveryViewport(name, path)` from `e2e/support/viewport-matrix.ts`. It loads the screen at 10 sizes from a 320px phone to a 1920px desktop (including a phone in landscape) and fails on sideways scrolling, touch targets under 44px (links inside sentences excepted) or axe violations, attaching a screenshot of each size to the report. These run in their own `viewports` project.
 - **E2E (Playwright):** every new page or user flow gets a spec in `e2e/` covering the happy path and at least one error/edge case. Specs run on three projects: `desktop` (Chrome), `android` (Pixel 7) and `iphone` (iPhone 15, WebKit). Run `npm run test:e2e` from `apps/web` (uses `next dev` locally; CI runs against `next start` after a build).
 
 ## Types

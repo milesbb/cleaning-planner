@@ -16,6 +16,7 @@
     "test:lighthouse": "lhci autorun"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@cleaning-planner/schedule": "^0.0.0",
     "@lhci/cli": "^0.16.1",
     "@playwright/test": "^1.65.1",
