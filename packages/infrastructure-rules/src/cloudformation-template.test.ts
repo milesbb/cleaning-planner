@@ -20,6 +20,25 @@ describe('parseTemplate', () => {
     });
   });
 
+  it('reads intrinsic functions written as mappings', () => {
+    const template = parseTemplate(`Resources:
+  Macro:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Body: !Transform { Name: AWS::Include, Parameters: { Location: !Ref Where } }
+      Count: 3
+      Enabled: true
+`);
+    expect(template.resources.Macro?.properties).toEqual({
+      Body: {
+        'Fn::Transform': { Name: 'AWS::Include', Parameters: { Location: { Ref: 'Where' } } },
+      },
+      Count: 3,
+      Enabled: true,
+    });
+  });
+
+
   it('reads the parameters', () => {
     const template = parseTemplate(`Parameters:
   Stage:
