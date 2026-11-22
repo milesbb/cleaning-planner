@@ -6,6 +6,7 @@ import type { HouseholdStore, NewHome } from '../services/household-service';
 import { Errors } from '../utils/errors';
 import { deleteInBatches, putInBatches } from './batch-write';
 import { homeItems } from './home-items';
+import { removeMemberFromHome } from './member-repository';
 import { Keys } from './table';
 import type { Table } from './table';
 import { deleteItem, putItem, transact, updateItem } from './transactions';
@@ -114,24 +115,12 @@ async function deleteHousehold(table: Table, householdId: string): Promise<void>
   await deleteInBatches(table, rest);
 }
 
-async function removeMember(table: Table, householdId: string, userId: string): Promise<void> {
-  const home = Keys.household(householdId);
-  await transact(
-    table,
-    [
-      deleteItem(table, { pk: home, sk: Keys.member(userId) }),
-      deleteItem(table, { pk: Keys.user(userId), sk: home }),
-    ],
-    "You're not a member of this home",
-  );
-}
-
 export function createHouseholdRepository(table: Table): HouseholdStore {
   return {
     createHome: (home) => createHome(table, home),
     getHousehold: (householdId) => getHousehold(table, householdId),
     updateHousehold: (householdId, changes) => updateHousehold(table, householdId, changes),
     deleteHousehold: (householdId) => deleteHousehold(table, householdId),
-    removeMember: (householdId, userId) => removeMember(table, householdId, userId),
+    removeMember: (householdId, userId) => removeMemberFromHome(table, householdId, userId),
   };
 }

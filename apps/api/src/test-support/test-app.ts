@@ -29,6 +29,7 @@ const UNUSED_SERVICES: AppServices = {
     deleteHome: notUsed,
     leaveHome: notUsed,
   },
+  members: { listMembers: notUsed, changeRole: notUsed, removeMember: notUsed },
   memberships: { findMembership: notUsed },
 };
 
