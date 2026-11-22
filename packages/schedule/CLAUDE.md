@@ -20,6 +20,7 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 | `src/time-zone.ts`      | `calendarDateInTimeZone(instant, timeZone)`: the one place an instant becomes a home's day.     |
 | `src/whose-turn.ts`     | `whoseTurn(assignment, completions, memberIds)`: who a job is for right now.                    |
 | `src/agenda.ts`         | `buildAgenda`: late jobs plus each day's due and done jobs, for Today, Week and reminders.      |
+| `src/spread.ts`         | `spreadFirstDueDates(jobs, startDate)`: staggers new jobs so the first month is evenly loaded.  |
 
 ## Rules
 
@@ -33,6 +34,7 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 - A snooze remembers the due date it moved (`from`). It only applies while the schedule still says that date, so doing or skipping the job ends it with no clean-up.
 - Who does a job (`whose-turn.ts`): `anyone` (nobody in particular), one `member` (falls back to anyone if they leave) or `takeTurns` (the next current member after whoever last did it; skips don't move the turn, and people who left are passed over).
 - **Every list of jobs (Today, Week, reminders) comes from `buildAgenda`.** Late jobs are listed in `late` and also on their own day when that day is in the range. "Just me" keeps the person's jobs and jobs for anyone, and only what that person did.
+- At setup, floating jobs start on the quietest day within their first interval (at most 4 weeks), earliest day on ties; fixed jobs keep their own days but count towards the load. The plan is the same whatever order the jobs come in.
 - Import from the specific file (`@cleaning-planner/schedule/next-due`). There is no index barrel.
 
 ## Test-driven development — non-negotiable rules
