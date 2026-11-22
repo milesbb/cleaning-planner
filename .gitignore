@@ -1,0 +1,47 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+npm-debug.log*
+.npm/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# Editors
+.vscode/
+!.vscode/extensions.json
+.idea/
+
+# Turborepo
+.turbo/
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# Vercel
+.vercel/
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Claude Code (personal overrides — don't commit)
+.claude/settings.local.json
