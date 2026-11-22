@@ -21,8 +21,12 @@ function cssBlock(selector: string): string {
 }
 
 function declaredValue(block: string, key: PaletteKey): string | undefined {
-  const match = new RegExp(`${cssVariableName(key)}:\\s*(#[0-9a-f]{6});`, 'i').exec(block);
-  return match?.[1]?.toLowerCase();
+  const propertyName = `${cssVariableName(key)}:`;
+  const declaration = block
+    .split(/[{;]/)
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(propertyName));
+  return declaration?.slice(propertyName.length).trim().toLowerCase();
 }
 
 const palettes: [name: string, selector: string, palette: Palette][] = [
