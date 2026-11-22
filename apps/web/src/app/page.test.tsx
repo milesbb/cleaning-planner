@@ -1,28 +1,38 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
+import type { ApiClient } from '@/lib/api/api-client';
+import { ApiProvider } from '@/lib/api/api-provider';
+import { AccountAuthProvider } from '@/lib/auth/account-auth-provider';
+import { stubAccountAuth } from '@/test/account-auth-stub';
 import HomePage from './page';
 
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: (): typeof router => router }));
+
+const NO_CALLS: ApiClient = { request: () => Promise.reject(new Error('not called')) };
+
+function renderStart(isSignedIn: boolean): void {
+  render(
+    <AccountAuthProvider auth={stubAccountAuth({ isSignedIn: () => Promise.resolve(isSignedIn) })}>
+      <ApiProvider client={NO_CALLS} onSignedOut={vi.fn()}>
+        <HomePage />
+      </ApiProvider>
+    </AccountAuthProvider>,
+  );
+}
+
 describe('HomePage', () => {
-  it('has no accessibility violations', async () => {
-    const { container } = render(<HomePage />);
-    expect(await axe(container)).toHaveNoViolations();
+  it('has no accessibility violations while it decides', async () => {
+    renderStart(false);
+    expect(await axe(document.body)).toHaveNoViolations();
+    expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
-  it('shows the Today heading', () => {
-    render(<HomePage />);
-    expect(screen.getByRole('heading', { level: 1, name: 'Today' })).toBeInTheDocument();
-  });
-
-  it('explains that there are no tasks yet', () => {
-    render(<HomePage />);
-    expect(screen.getByText(/no cleaning tasks yet/i)).toBeInTheDocument();
-  });
-
-  it('shows an example task with its next due date from the schedule engine', () => {
-    render(<HomePage />);
-    const exampleTask = screen.getByRole('region', { name: 'Example task' });
-    expect(exampleTask).toHaveTextContent('Washing machine maintenance wash');
-    expect(exampleTask).toHaveTextContent('Next due 1 December 2026');
+  it('sends someone signed out to Welcome', async () => {
+    renderStart(false);
+    await waitFor(() => {
+      expect(router.replace).toHaveBeenCalledWith('/welcome');
+    });
   });
 });

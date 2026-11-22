@@ -84,6 +84,16 @@ describe('CodeInput', () => {
     expect(digitBoxes()[3]).toHaveFocus();
   });
 
+  it('reports the code so far as it changes', async () => {
+    const onChange = vi.fn();
+    render(<CodeInput label="Code" onComplete={vi.fn()} onChange={onChange} />);
+    await userEvent.click(digitBoxes()[0] ?? document.body);
+    await userEvent.keyboard('12');
+    expect(onChange).toHaveBeenLastCalledWith('12');
+    await userEvent.keyboard('{Backspace}');
+    expect(onChange).toHaveBeenLastCalledWith('1');
+  });
+
   it('reads out an error for the whole code', () => {
     render(<CodeInput label="Code" onComplete={vi.fn()} error="That code has expired." />);
     expect(digitBoxes()[0]).toHaveAttribute('aria-invalid', 'true');

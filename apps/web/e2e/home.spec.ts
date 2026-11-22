@@ -2,16 +2,8 @@ import { expect, test } from '@playwright/test';
 import { APP_NAME } from '../src/lib/app-identity';
 
 test.describe('home page', () => {
-  test('shows today with the example task', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Example task' })).toContainText(
-      'Next due 1 December 2026',
-    );
-  });
-
   test('has no horizontal scroll at any viewport', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/welcome');
     const horizontalOverflowPixels = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );

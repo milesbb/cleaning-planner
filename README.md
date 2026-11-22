@@ -164,7 +164,7 @@ The budget alert is **account-wide** and defaults to $5/month. If the account al
 ### 2. Vercel (web app)
 
 1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new) and set **Root Directory** to `apps/web` (framework: Next.js). In **Settings → Git**, set the **Production Branch** to `production`.
-2. Add the environment variable `NEXT_PUBLIC_API_URL` = the stack's `ApiUrl` output.
+2. Add the environment variables `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_USER_POOL_ID` and `NEXT_PUBLIC_USER_POOL_CLIENT_ID` = the stack's `ApiUrl`, `UserPoolId` and `UserPoolClientId` outputs (Production). They're built into the pages, so redeploy after changing them. None is a secret.
 3. Add the Vercel production URL to the `AllowedOrigins` parameter default in `infrastructure/template.yml` and push (the pipeline updates CORS).
 
 Vercel's GitHub integration also gives every pull request its own preview URL. Previews include the review pages, `/dev/components/` (every component in every state) and `/dev/shell/` (the app frame), so you can check them on a phone; the live site never does.

@@ -43,7 +43,10 @@ interface CodeDigits {
   handleKey: (index: number, event: KeyboardEvent<HTMLInputElement>) => void;
 }
 
-function useCodeDigits(onComplete: (code: string) => void): CodeDigits {
+function useCodeDigits(
+  onComplete: (code: string) => void,
+  onChange: ((code: string) => void) | undefined,
+): CodeDigits {
   const [code, setCode] = useState<readonly string[]>(EMPTY_CODE);
   const boxRefs = useRef<(HTMLInputElement | null)[]>([]);
   const focusBox = (index: number): void => {
@@ -51,6 +54,7 @@ function useCodeDigits(onComplete: (code: string) => void): CodeDigits {
   };
   const updateCode = (nextCode: readonly string[]): void => {
     setCode(nextCode);
+    onChange?.(nextCode.join(''));
     if (!isComplete(code) && isComplete(nextCode)) onComplete(nextCode.join(''));
   };
   const enterText = (index: number, text: string): void => {
@@ -77,13 +81,20 @@ function useCodeDigits(onComplete: (code: string) => void): CodeDigits {
 interface CodeInputProps {
   label: string;
   onComplete: (code: string) => void;
-  error?: string;
+  onChange?: (code: string) => void;
+  error?: string | undefined;
   className?: string;
 }
 
-export function CodeInput({ label, onComplete, error, className }: CodeInputProps): ReactNode {
+export function CodeInput({
+  label,
+  onComplete,
+  onChange,
+  error,
+  className,
+}: CodeInputProps): ReactNode {
   const fieldId = useId();
-  const digits = useCodeDigits(onComplete);
+  const digits = useCodeDigits(onComplete, onChange);
   return (
     <fieldset className={cn('flex flex-col gap-1.5', className)}>
       <legend className={cn(FIELD_LABEL_CLASSES, 'mb-1.5')}>{label}</legend>
