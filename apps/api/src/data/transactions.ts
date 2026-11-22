@@ -67,3 +67,22 @@ export async function transact(
     throw error;
   }
 }
+
+interface VersionedChange {
+  key: ItemKey;
+  changes: { version: number };
+  conflictMessage: string;
+}
+
+export async function updateIfUnchanged(
+  table: Table,
+  { key, changes: { version, ...fields }, conflictMessage }: VersionedChange,
+): Promise<void> {
+  const update = updateItem(table, {
+    key,
+    fields: { ...fields, version: version + 1 },
+    condition: '#version = :expectedVersion',
+    conditionValues: { ':expectedVersion': version },
+  });
+  await transact(table, [update], conflictMessage);
+}

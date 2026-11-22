@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import { healthRouter } from './controllers/health';
 import { householdsRouter } from './controllers/households';
 import { householdInvitesRouter, invitesRouter } from './controllers/invites';
+import { jobsRouter } from './controllers/jobs';
 import { membersRouter } from './controllers/members';
 import { meRouter } from './controllers/me';
 import { roomsRouter } from './controllers/rooms';
@@ -12,6 +13,7 @@ import type { ClaimsReader } from './middlewares/signed-in-user';
 import type { SourceIpReader } from './middlewares/source-ip';
 import type { HouseholdService } from './services/household-service';
 import type { InviteService } from './services/invite-service';
+import type { JobService } from './services/job-service';
 import type { MemberService } from './services/member-service';
 import type { ProfileService } from './services/profile-service';
 import type { RoomService } from './services/room-service';
@@ -25,6 +27,7 @@ export interface AppServices {
   members: MemberService;
   invites: InviteService;
   rooms: RoomService;
+  jobs: JobService;
   memberships: MembershipReader;
 }
 
@@ -49,6 +52,10 @@ export function createApp(config: AppConfig): Express {
   app.use(
     '/v1/households/:householdId/rooms',
     roomsRouter(config.services.rooms, config.services.memberships),
+  );
+  app.use(
+    '/v1/households/:householdId/jobs',
+    jobsRouter(config.services.jobs, config.services.memberships),
   );
   app.use('/v1/invites', invitesRouter(config.services.invites, config.readSourceIp));
   app.use(
