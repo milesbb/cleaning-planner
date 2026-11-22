@@ -1,4 +1,5 @@
 import { createApp } from './app';
+import { createServices } from './composition';
 import type { ClaimsReader } from './middlewares/signed-in-user';
 import { logger } from './utils/logging';
 
@@ -19,6 +20,10 @@ const readDevelopmentClaims: ClaimsReader = (request) => {
 
 const port = localPort();
 
-createApp({ version: 'local', readClaims: readDevelopmentClaims }).listen(port, () => {
+createApp({
+  version: 'local',
+  readClaims: readDevelopmentClaims,
+  services: createServices(process.env),
+}).listen(port, () => {
   logger.info('API listening', { url: `http://localhost:${String(port)}` });
 });

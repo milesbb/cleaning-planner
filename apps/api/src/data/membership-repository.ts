@@ -1,4 +1,3 @@
-import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import { GetCommand, QueryCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { householdRoleSchema, householdSummarySchema } from '@cleaning-planner/contracts/household';
 import type { HouseholdRole, HouseholdSummary } from '@cleaning-planner/contracts/household';
@@ -7,6 +6,7 @@ import { recordIdSchema } from '@cleaning-planner/contracts/primitives';
 import { z } from '@cleaning-planner/contracts/zod';
 import type { Membership, MembershipReader } from '../middlewares/membership';
 import { Errors } from '../utils/errors';
+import { isConditionFailure } from './conditions';
 import { Keys } from './table';
 import type { Table } from './table';
 
@@ -27,13 +27,6 @@ export interface MembershipRepository extends MembershipReader {
 const storedMemberSchema = z.object({ userId: recordIdSchema, role: householdRoleSchema });
 const storedHomeSchema = z.object(householdSummarySchema.shape);
 const NOT_ALREADY_THERE = 'attribute_not_exists(pk)';
-
-function isConditionFailure(error: unknown): boolean {
-  return (
-    error instanceof TransactionCanceledException &&
-    (error.CancellationReasons ?? []).some((reason) => reason.Code === 'ConditionalCheckFailed')
-  );
-}
 
 function addMemberCommand(table: Table, member: NewMember): TransactWriteCommand {
   return new TransactWriteCommand({

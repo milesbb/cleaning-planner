@@ -1,23 +1,12 @@
-import {
-  CreateTableCommand,
-  DeleteTableCommand,
-  waitUntilTableExists,
-} from '@aws-sdk/client-dynamodb';
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createMembershipRepository } from './membership-repository';
 import type { NewMember } from './membership-repository';
-import { Keys, connectToTable, createDynamoClient } from './table';
+import { Keys } from './table';
+import { testTable } from './test-table';
 
-const TABLE_READY_SECONDS = 30;
-
-const table = connectToTable({
-  TABLE_NAME: `test-${randomUUID()}`,
-  DYNAMODB_ENDPOINT: process.env.DYNAMODB_ENDPOINT,
-});
+const { table, create, remove } = testTable();
 const memberships = createMembershipRepository(table);
-const tableAdmin = createDynamoClient(process.env.DYNAMODB_ENDPOINT);
 
 const SAM_OWNS_THE_FLAT: NewMember = {
   householdId: 'home-flat',
@@ -28,30 +17,8 @@ const SAM_OWNS_THE_FLAT: NewMember = {
   role: 'owner',
 };
 
-beforeAll(async () => {
-  await tableAdmin.send(
-    new CreateTableCommand({
-      TableName: table.name,
-      BillingMode: 'PAY_PER_REQUEST',
-      AttributeDefinitions: [
-        { AttributeName: 'pk', AttributeType: 'S' },
-        { AttributeName: 'sk', AttributeType: 'S' },
-      ],
-      KeySchema: [
-        { AttributeName: 'pk', KeyType: 'HASH' },
-        { AttributeName: 'sk', KeyType: 'RANGE' },
-      ],
-    }),
-  );
-  await waitUntilTableExists(
-    { client: tableAdmin, maxWaitTime: TABLE_READY_SECONDS },
-    { TableName: table.name },
-  );
-});
-
-afterAll(async () => {
-  await tableAdmin.send(new DeleteTableCommand({ TableName: table.name }));
-});
+beforeAll(create);
+afterAll(remove);
 
 describe('membership repository (DynamoDB Local)', () => {
   it('writes both sides of a membership and reads it back', async () => {

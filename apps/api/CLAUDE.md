@@ -11,6 +11,11 @@ Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-
 | File                                | Purpose                                                                                                                                                                       |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/app.ts`                        | `createApp(config)` — wires middleware, routers, 404 and the error handler. Used by tests.                                                                                    |
+| `src/composition.ts`                | `createServices(environment)`: builds the table, repositories, Cognito reader and services. Shared by `lambda.ts` and `app-local.ts`.                                         |
+| `src/controllers/me.ts`             | `GET` / `PATCH /v1/me`: the signed-in person's profile, created on first call.                                                                                                |
+| `src/services/profile-service.ts`   | Profile rules: create from Cognito on first call with a stable default colour; only ever the signed-in person.                                                                |
+| `src/identity/cognito-identity.ts`  | Reads email and name with Cognito `GetUser` and the caller's own access token (no IAM permission needed).                                                                     |
+| `src/data/profile-repository.ts`    | Profile item (`USER#id` / `PROFILE`); name and colour changes update every home's member item in the same transaction.                                                        |
 | `src/lambda.ts`                     | Lambda entry point (`lambda.handler`). No logic here.                                                                                                                         |
 | `src/app-local.ts`                  | Local dev server on port 4000 (`npm run dev`).                                                                                                                                |
 | `src/controllers/`                  | One router per resource. HTTP parsing and responses only.                                                                                                                     |
@@ -31,7 +36,7 @@ Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-
 | Layer       | Folder             | Rule                                                                             |
 | ----------- | ------------------ | -------------------------------------------------------------------------------- |
 | Controllers | `src/controllers/` | Parse + validate the request, call a service, send the response. No logic.       |
-| Services    | `src/service/`     | Business rules and household membership checks. No HTTP, no DynamoDB calls.      |
+| Services    | `src/services/`    | Business rules and household membership checks. No HTTP, no DynamoDB calls.      |
 | Data        | `src/data/`        | DynamoDB access only (AWS SDK v3 `DynamoDBDocumentClient`). One file per entity. |
 | Utils       | `src/utils/`       | Shared plumbing. Never imports from controllers or services.                     |
 
@@ -41,7 +46,7 @@ Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-
 - **Every route that reads or writes household data must verify membership in the service layer** and return 403 otherwise. Add a test for the non-member case.
 - The table name comes from `process.env.TABLE_NAME` (set by the template). Never hard-code resource names or ARNs.
 - Secrets (e.g. VAPID private key) live in SSM Parameter Store under `/cleaning-planner/…`; env vars hold the parameter **name**, and the value is fetched at runtime and cached. Grant `ssm:GetParameter` for that exact parameter in the template.
-- CORS is handled by API Gateway (the `HttpApi` `AllowOrigins` list in the template; never a parameter, because pipeline updates keep old parameter values), not by Express.
+- CORS is handled by API Gateway (`AllowedOrigins` in the template), not by Express.
 - Keep the bundle small: import AWS SDK v3 clients individually; no heavy dependencies without a reason.
 
 ## Test-driven development — non-negotiable rules
