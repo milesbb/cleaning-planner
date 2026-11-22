@@ -5,6 +5,8 @@ updates:
     target-branch: development
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       dev-dependencies:
         dependency-type: development
@@ -22,7 +24,11 @@ updates:
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/setup
     target-branch: development
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
