@@ -12,6 +12,7 @@ Next.js App Router, built as a **static export** (`output: 'export'`, `trailingS
 - Pages that show a record read its id from the query string with `readRecordId` (`/job?id=…`), never from a dynamic route segment, because the export can't know users' ids.
 - Metadata routes (`manifest.ts` and similar) declare `export const dynamic = 'force-static'`.
 - Images use `next/image` with `unoptimized` (set in `next.config.ts`); there is no image server.
+- **Content-Security-Policy**: `npm run build` runs `scripts/apply-content-security-policy.ts` after `next build`. It hashes each page's inline scripts and writes a strict policy into that page's `<head>` (only our files, those exact scripts, our API and Cognito). Never add inline event handlers, third-party scripts or `eval`. ESLint bans `dangerouslySetInnerHTML` and `eval`. Other security headers (HSTS, no framing, `nosniff`, referrer and permissions policies) are in `vercel.json`, with tests in `scripts/vercel-headers.test.ts`.
 - Tests run against the exported files: `npm run start` serves `out/` with `serve`, and Playwright and Lighthouse use it in CI.
 
 ## Key files

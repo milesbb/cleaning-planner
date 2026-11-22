@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/apply-content-security-policy.ts",
     "start": "serve out --listen 3000 --no-clipboard --no-request-logging",
     "lint": "next typegen && eslint .",
     "typecheck": "next typegen && tsc --noEmit",
