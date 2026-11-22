@@ -85,11 +85,11 @@ describe('profile repository limits and failures', () => {
   it('passes on errors that are not about a condition, such as a missing table', async () => {
     const missingTable = { ...table, name: 'no-such-table' };
     const broken = createProfileRepository(missingTable, createMembershipRepository(missingTable));
-    await expect(broken.createProfile(SAM)).rejects.toThrow(
-      /no-such-table|not found|ResourceNotFound/i,
-    );
-    await expect(broken.updateProfile('user-sam', { name: 'Sam' })).rejects.toThrow(
-      /no-such-table|not found|ResourceNotFound/i,
-    );
+    await expect(broken.createProfile(SAM)).rejects.toMatchObject({
+      name: 'ResourceNotFoundException',
+    });
+    await expect(broken.updateProfile('user-sam', { name: 'Sam' })).rejects.toMatchObject({
+      name: 'ResourceNotFoundException',
+    });
   });
 });
