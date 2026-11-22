@@ -28,6 +28,6 @@ describe('connectToTable', () => {
         colour: 'blue',
         role: 'owner',
       }),
-    ).rejects.toThrow(/no-such-table|not found|ResourceNotFound/i);
+    ).rejects.toMatchObject({ name: 'ResourceNotFoundException' });
   });
 });
