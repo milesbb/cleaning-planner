@@ -25,6 +25,7 @@ export const Keys = {
   memberPrefix: 'MEMBER#',
   jobPrefix: 'JOB#',
   roomPrefix: 'ROOM#',
+  allDonePrefix: 'DONE#',
   donePrefix: (jobId: string): string => `DONE#${jobId}#`,
   done: (jobId: string, doneAt: string): string => `DONE#${jobId}#${doneAt}`,
   request: (userId: string, key: string): string => `REQUEST#${userId}#${key}`,
