@@ -12,6 +12,7 @@ export default defineConfig({
         'src/data/**',
         'src/lambda.ts',
         'src/composition.ts',
+        'src/test-support/**',
         'src/app-local.ts',
         'src/health-check.ts',
       ],

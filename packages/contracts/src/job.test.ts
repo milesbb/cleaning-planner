@@ -75,6 +75,18 @@ describe('job contracts', () => {
     expectTypeOf<z.infer<typeof completionSchema>>().toExtend<Completion>();
   });
 
+  it('only accept jobs that exist in the library', () => {
+    expect(
+      createJobRequestSchema.safeParse({ ...NEW_JOB, libraryId: 'kitchen.dishwasher-filter' })
+        .success,
+    ).toBe(true);
+    expect(
+      fieldErrorsFor(createJobRequestSchema, { ...NEW_JOB, libraryId: 'kitchen.unicorn' }),
+    ).toEqual({
+      libraryId: 'Pick a job from the library',
+    });
+  });
+
   it('cap how long a job takes', () => {
     expect(fieldErrorsFor(createJobRequestSchema, { ...NEW_JOB, effortMinutes: 600 })).toEqual({
       effortMinutes: 'Allow at most 8 hours',

@@ -1,4 +1,4 @@
-import { JOB_ICON_KEYS } from '@cleaning-planner/schedule/library/job-library';
+import { JOB_ICON_KEYS, findLibraryJob } from '@cleaning-planner/schedule/library/job-library';
 import { calendarDateSchema, recordIdSchema, versionSchema } from './primitives';
 import { assignmentSchema, scheduleSchema, snoozeSchema } from './schedule';
 import { NOTHING_TO_CHANGE, hasAChange } from './updates';
@@ -24,10 +24,14 @@ const effortMinutesSchema = z
 
 export const jobIconSchema = z.enum(JOB_ICON_KEYS);
 
+export const libraryJobIdSchema = z
+  .string()
+  .check(z.refine((id) => findLibraryJob(id) !== undefined, 'Pick a job from the library'));
+
 export const jobSchema = z.strictObject({
   id: recordIdSchema,
   roomId: recordIdSchema,
-  libraryId: z.nullable(recordIdSchema),
+  libraryId: z.nullable(libraryJobIdSchema),
   name: jobNameSchema,
   icon: jobIconSchema,
   schedule: scheduleSchema,
@@ -40,7 +44,7 @@ export const jobSchema = z.strictObject({
 
 export const createJobRequestSchema = z.strictObject({
   roomId: recordIdSchema,
-  libraryId: z.optional(recordIdSchema),
+  libraryId: z.optional(libraryJobIdSchema),
   name: jobNameSchema,
   icon: jobIconSchema,
   schedule: scheduleSchema,

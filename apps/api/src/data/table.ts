@@ -21,6 +21,10 @@ export const Keys = {
   user: (userId: string): string => `USER#${userId}`,
   member: (userId: string): string => `MEMBER#${userId}`,
   profile: 'PROFILE',
+  meta: 'META',
+  memberPrefix: 'MEMBER#',
+  room: (roomId: string): string => `ROOM#${roomId}`,
+  job: (jobId: string): string => `JOB#${jobId}`,
   homesOfUser: 'HOUSEHOLD#',
 } as const;
 
