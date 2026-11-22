@@ -4,20 +4,22 @@
 
 `README.md` at the repo root is the developer setup guide. If your changes affect anything it documents — env vars, SSM parameters, CI/CD steps, deploy/bootstrap instructions — update `README.md` to match.
 
-Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-express`, behind an API Gateway **HTTP API**. Infrastructure lives in `infrastructure/template.yml`; the CodePipeline defined there builds, tests and deploys this app on every push to `main` that touches it.
+Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-express`, behind an API Gateway **HTTP API**. Infrastructure lives in `infrastructure/template.yml`; the CodePipeline defined there builds, tests and deploys this app on every merge into `production` that touches it, then checks `/v1/health`.
 
 ## Key files
 
-| File                               | Purpose                                                                                    |
-| ---------------------------------- | ------------------------------------------------------------------------------------------ |
-| `src/app.ts`                       | `createApp(config)` — wires middleware, routers, 404 and the error handler. Used by tests. |
-| `src/lambda.ts`                    | Lambda entry point (`lambda.handler`). No logic here.                                      |
-| `src/app-local.ts`                 | Local dev server on port 4000 (`npm run dev`).                                             |
-| `src/controllers/`                 | One router per resource. HTTP parsing and responses only.                                  |
-| `src/middlewares/error-handler.ts` | Maps `AppError` to its status, malformed JSON to 400, everything else to a logged 500.     |
-| `src/utils/errors.ts`              | `AppError` and the `Errors.*` factory. Throw these, never plain strings.                   |
-| `src/utils/logging.ts`             | JSON-lines `logger` for CloudWatch. Never use `console.*`.                                 |
-| `build.mjs`                        | esbuild bundle → `dist/lambda.js` (CommonJS) with the git SHA baked in as `APP_VERSION`.   |
+| File                               | Purpose                                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `src/app.ts`                       | `createApp(config)` — wires middleware, routers, 404 and the error handler. Used by tests.                    |
+| `src/lambda.ts`                    | Lambda entry point (`lambda.handler`). No logic here.                                                         |
+| `src/app-local.ts`                 | Local dev server on port 4000 (`npm run dev`).                                                                |
+| `src/controllers/`                 | One router per resource. HTTP parsing and responses only.                                                     |
+| `src/middlewares/error-handler.ts` | Maps `AppError` to its status, malformed JSON to 400, everything else to a logged 500.                        |
+| `src/utils/errors.ts`              | `AppError` and the `Errors.*` factory. Throw these, never plain strings.                                      |
+| `src/utils/logging.ts`             | JSON-lines `logger` for CloudWatch. Never use `console.*`.                                                    |
+| `src/deploy-check/`                | `checkHealth` and `runHealthCheck`: the post-deploy check the pipeline runs against `/v1/health`.             |
+| `src/health-check.ts`              | Entry point for that check (`dist/health-check.mjs`). No logic here.                                          |
+| `build.mjs`                        | esbuild bundles → `dist/lambda.js` (CommonJS, git SHA baked in as `APP_VERSION`) and `dist/health-check.mjs`. |
 
 ## Layer responsibilities (same as Ride Logger)
 

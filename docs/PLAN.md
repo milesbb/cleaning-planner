@@ -263,6 +263,7 @@ merge into production touching apps/api/**, packages/schedule/**, infrastructure
              npm ci (api + schedule only) → lint, typecheck, tests → esbuild bundle
              → aws cloudformation package (uploads the bundle to the artifact bucket)
   → Deploy:  CloudFormation CHANGE_SET_REPLACE → CHANGE_SET_EXECUTE, using a dedicated deploy role
+  → Verify:  CodeBuild calls the deployed /v1/health and fails the run unless it answers ok
 ```
 
 Improvements over playlist-transfer-backend:

@@ -18,4 +18,14 @@ await build({
   define: { 'process.env.APP_VERSION': JSON.stringify(version) },
 });
 
+await build({
+  entryPoints: ['src/health-check.ts'],
+  outfile: 'dist/health-check.mjs',
+  bundle: true,
+  platform: 'node',
+  target: 'node20',
+  format: 'esm',
+  legalComments: 'none',
+});
+
 await writeFile('dist/package.json', JSON.stringify({ type: 'commonjs' }));
