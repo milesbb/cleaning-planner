@@ -28,16 +28,18 @@ The repository is **public**: never commit secrets, personal data or account ide
 
 ## What this is
 
-Household cleaning planner (installable web app / PWA). Users see what needs cleaning today, this week and later, with recommended frequencies they can adjust, and get reminders (Web Push, optional email). People sign up with email and password and share one or more homes ("households") with the people they live with.
+Household cleaning planner, shipped as a **website (PWA), an iOS app and an Android app from one codebase**: `apps/web` is a Next.js static export, and `apps/mobile` wraps that build with Capacitor. Every screen must work at every size, from a 320px phone to a 1920px desktop. Users see what needs cleaning today, this week and later, with recommended frequencies they can adjust, and get reminders (Web Push, optional email). People sign up with email and password and share one or more homes ("households") with the people they live with.
 
 ## Repo structure
 
 ```
 apps/
-  web/            Next.js App Router PWA, deployed to Vercel
+  web/            Next.js App Router, static export: the website (Vercel) and the UI inside both apps
+  mobile/         Capacitor iOS and Android projects wrapping the web build
   api/            Express on AWS Lambda (controllers → service → data), bundled with esbuild
 packages/
   schedule/       Pure TypeScript recurrence engine + task library (shared by web, api and reminders)
+  contracts/      zod request/response schemas shared by the API and the web app
 infrastructure/
   template.yml    SAM/CloudFormation: API, DynamoDB, budget, self-updating CodePipeline
   buildspec.yml   CodeBuild steps run by the pipeline
@@ -51,11 +53,12 @@ Each app/package has its own `CLAUDE.md` with local rules. Read it before workin
 | Layer          | Choice                                                                                                                                          |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Monorepo       | Turborepo + npm workspaces                                                                                                                      |
-| Frontend       | Next.js App Router, Tailwind, shadcn/ui, PWA (manifest + service worker), Vercel                                                                |
+| Frontend       | Next.js App Router as a static export (`output: 'export'`), Tailwind, shadcn/ui, PWA, Vercel                                                    |
+| Native apps    | Capacitor (iOS + Android) wrapping the same build; FCM push, haptics, share, deep links; fastlane to TestFlight and Play internal testing       |
 | API            | Express 5 on Lambda (Node 24, arm64) behind API Gateway HTTP API                                                                                |
 | Data           | DynamoDB, single table (`pk`/`sk`), on-demand, point-in-time recovery                                                                           |
 | Auth           | Cognito user pool, JWT authorizer on the HTTP API _(Phase 1)_                                                                                   |
-| Notifications  | Web Push (VAPID) + SES email from a `notify` Lambda on EventBridge Scheduler _(Phase 2)_                                                        |
+| Notifications  | Web Push (browsers) + Firebase Cloud Messaging (apps) + SES email from a `notify` Lambda on EventBridge Scheduler                               |
 | Infrastructure | CloudFormation/SAM in `infrastructure/template.yml`, region `ap-southeast-2`                                                                    |
 | CI/CD          | GitHub Actions: PR checks (→ development), release checks (→ production), Vercel deploy; AWS CodePipeline deploys the backend from `production` |
 
@@ -75,6 +78,37 @@ Each app/package has its own `CLAUDE.md` with local rules. Read it before workin
 - Your own AWS access (the `claude` profile) is view-only plus starting/retrying the pipeline. Deploys happen by merging a release PR into `production` (or `aws codepipeline start-pipeline-execution` to re-run); never try to deploy with `sam deploy` or change IAM yourself.
 - Set `RetentionInDays` on every log group.
 - Template changes must pass `cfn-lint` (run in both PR and release checks).
+
+---
+
+## Security — non-negotiable rules
+
+Full list with tests: `docs/IMPLEMENTATION.md` §4.1. In short:
+
+- **Authorise on the server, every time.** Every household route goes through the membership (or owner) middleware, with a 403 test for outsiders. Never trust ids, roles or prices sent by the client.
+- **Validate every input** with a strict `packages/contracts` schema before any logic: unknown fields rejected, lengths and ranges capped. Same schema on the client for forms.
+- **No secrets or personal data in code, logs or URLs.** Logs never include emails, tokens or invite codes. Secrets live in SSM or GitHub secrets only.
+- **No `dangerouslySetInnerHTML`, no `eval`, no third-party scripts** on the web; the strict CSP must keep passing. In the apps, tokens live in the Keychain or Keystore, never plain WebView storage.
+- Random, unguessable ids and invite codes from a cryptographic source; rate limits and lockouts on anything guessable.
+- Least privilege everywhere (IAM, API routes, app permissions). Ask before widening any permission.
+
+## Robustness — non-negotiable rules
+
+Details: `docs/IMPLEMENTATION.md` §4.2.
+
+- Every network call has a timeout and a user-facing failure path; every screen has loading, empty, error and offline states.
+- Writes are idempotent (client idempotency key) and conditional (version checks, transactions), so retries and races can't corrupt data.
+- Optimistic updates always roll back cleanly on failure, with a message.
+- Background work (reminders) retries and dead-letters; alarms tell the owner when something breaks.
+
+## Speed and smoothness — non-negotiable rules
+
+Budgets: `docs/IMPLEMENTATION.md` §4.3 (LCP < 1.5 s on a mid-range phone, INP < 100 ms, CLS < 0.05, < 150 KB JS per route, tap feedback < 100 ms).
+
+- Show cached data instantly and refresh in the background; update the UI before the server answers.
+- Animate only transform and opacity; respect "reduce motion"; reserve space so nothing jumps.
+- Don't add a dependency without checking its size; import AWS SDK clients individually.
+- Every screen is checked at 320–1920px wide (the Playwright viewport matrix) and must have no horizontal scroll, no axe violations and 44px touch targets.
 
 ---
 
