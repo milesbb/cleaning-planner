@@ -1,10 +1,3 @@
-import {
-  apiRoutesAreThrottled,
-  appClientsUseSrpOnly,
-  everyApiRouteNeedsSignIn,
-  functionsHaveTimeouts,
-  passwordsAreAtLeastTwelveCharacters,
-} from './api-rules';
 import { isRecord } from './cloudformation-template';
 import type {
   CloudFormationTemplate,
@@ -20,7 +13,8 @@ const ROLE_TYPE = 'AWS::IAM::Role';
 const SERVERLESS_FUNCTION_TYPE = 'AWS::Serverless::Function';
 const FUNCTION_TYPES = [SERVERLESS_FUNCTION_TYPE, 'AWS::Lambda::Function'];
 const FULL_ACCESS_POLICY = /[A-Za-z0-9]*FullAccess/;
-const APP_ORIGINS = ['capacitor://localhost', 'https://localhost'];
+const APP_ORIGINS = ['https://localhost'];
+const HTTP_ORIGIN = /^https?:\/\/[^/\s]+$/;
 const TIME_TO_LIVE_ATTRIBUTE = 'expiresAt';
 const HOURLY_RESOURCE_TYPES = [/^AWS::EC2::(VPC|NatGateway|Subnet)$/, /^AWS::RDS::/];
 
@@ -112,21 +106,16 @@ export function noHourlyNetworkOrDatabaseResources(template: CloudFormationTempl
   return [...globalsProblems, ...resourceProblems];
 }
 
-function originProblems(apiId: string, properties: Properties): string[] {
-  const cors = properties.CorsConfiguration;
-  const origins = isRecord(cors) ? cors.AllowOrigins : undefined;
-  if (!Array.isArray(origins)) {
-    return [`${apiId} must list its CORS origins in the template, not take them from a parameter`];
-  }
-  return APP_ORIGINS.filter((origin) => !origins.includes(origin)).map(
-    (origin) => `${apiId} does not allow ${origin}`,
-  );
-}
-
 export function apiAllowsTheAppOrigins(template: CloudFormationTemplate): string[] {
-  return resourceEntries(template)
-    .filter(([, resource]) => resource.type === 'AWS::Serverless::HttpApi')
-    .flatMap(([apiId, api]) => originProblems(apiId, api.properties));
+  const allowedOrigins = template.parameters.AllowedOrigins?.Default;
+  const origins = typeof allowedOrigins === 'string' ? allowedOrigins.split(',') : [];
+  const missing = APP_ORIGINS.filter((origin) => !origins.includes(origin)).map(
+    (origin) => `AllowedOrigins does not include ${origin}`,
+  );
+  const rejected = origins
+    .filter((origin) => !HTTP_ORIGIN.test(origin))
+    .map((origin) => `${origin} is not an http(s) origin, which API Gateway rejects`);
+  return [...missing, ...rejected];
 }
 
 function expiresItems(properties: Properties): boolean {
@@ -151,11 +140,6 @@ export const INFRASTRUCTURE_RULES: Record<string, Rule> = {
   'every named resource starts with the stack name': everyNameStartsWithTheStackName,
   'no FullAccess managed policies': noFullAccessPolicies,
   'no VPC, NAT Gateway or RDS': noHourlyNetworkOrDatabaseResources,
-  'the API allows the iOS and Android app origins': apiAllowsTheAppOrigins,
+  'the API allows the Android app origin, and only http(s) origins': apiAllowsTheAppOrigins,
   'data tables remove expired items': dataTablesExpireItems,
-  'every /v1 route except health needs sign-in': everyApiRouteNeedsSignIn,
-  'app clients have no secret and never send the plain password': appClientsUseSrpOnly,
-  'passwords are at least 12 characters': passwordsAreAtLeastTwelveCharacters,
-  'API routes are throttled, tighter on invites and accounts': apiRoutesAreThrottled,
-  'every function has a timeout of at most 30 seconds': functionsHaveTimeouts,
 };

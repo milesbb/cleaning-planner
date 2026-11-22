@@ -1,4 +1,6 @@
 import { createApp } from './app';
+import { createServices } from './composition';
+import type { ClaimsReader } from './middlewares/signed-in-user';
 import { logger } from './utils/logging';
 
 const DEFAULT_LOCAL_PORT = 4000;
@@ -11,8 +13,17 @@ function localPort(): number {
   return configuredPort;
 }
 
+const readDevelopmentClaims: ClaimsReader = (request) => {
+  const userId = request.header('x-dev-user-id');
+  return userId === undefined ? undefined : { sub: userId, token_use: 'access' };
+};
+
 const port = localPort();
 
-createApp({ version: 'local' }).listen(port, () => {
+createApp({
+  version: 'local',
+  readClaims: readDevelopmentClaims,
+  services: createServices(process.env),
+}).listen(port, () => {
   logger.info('API listening', { url: `http://localhost:${String(port)}` });
 });

@@ -3,6 +3,9 @@ import process from 'node:process';
 
 const SUCCESS_STATUS_CODE = 200;
 
+// The bundle connects to its table when it loads, as it does in Lambda; health never touches it.
+process.env.TABLE_NAME ??= 'smoke-test';
+
 const healthCheckEvent = {
   version: '2.0',
   routeKey: 'ANY /v1/{proxy+}',

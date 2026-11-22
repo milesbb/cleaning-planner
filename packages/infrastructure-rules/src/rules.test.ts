@@ -218,35 +218,33 @@ describe('noHourlyNetworkOrDatabaseResources', () => {
 });
 
 describe('apiAllowsTheAppOrigins', () => {
-  function apiWithOrigins(origins: string): CloudFormationTemplate {
+  function templateWithOrigins(origins: string): CloudFormationTemplate {
     return parseTemplate(
-      templateWith(`  HttpApi:
-    Type: AWS::Serverless::HttpApi
-    Properties:
-      CorsConfiguration:
-        AllowOrigins: ${origins}
-`),
+      `Parameters:\n  AllowedOrigins:\n    Type: CommaDelimitedList\n    Default: ${origins}\nResources: {}\n`,
     );
   }
 
-  it('passes when the iOS and Android app origins are listed', () => {
-    const template = apiWithOrigins(
-      '[https://example.com, capacitor://localhost, https://localhost]',
+  it('passes when the Android app origin is allowed', () => {
+    const template = templateWithOrigins(
+      'https://example.com,http://localhost:3000,https://localhost',
     );
     expect(apiAllowsTheAppOrigins(template)).toEqual([]);
   });
 
-  it('names each app origin that is missing', () => {
-    expect(apiAllowsTheAppOrigins(apiWithOrigins('[https://example.com]'))).toEqual([
-      'HttpApi does not allow capacitor://localhost',
-      'HttpApi does not allow https://localhost',
+  it('names the app origin when it is missing', () => {
+    expect(apiAllowsTheAppOrigins(templateWithOrigins('https://example.com'))).toEqual([
+      'AllowedOrigins does not include https://localhost',
     ]);
   });
 
-  it('catches origins taken from a parameter, which stack updates never change', () => {
-    expect(apiAllowsTheAppOrigins(apiWithOrigins('!Ref AllowedOrigins'))).toEqual([
-      'HttpApi must list its CORS origins in the template, not take them from a parameter',
-    ]);
+  it('catches an origin API Gateway would reject, such as the iOS app scheme', () => {
+    expect(
+      apiAllowsTheAppOrigins(templateWithOrigins('https://localhost,capacitor://localhost')),
+    ).toEqual(['capacitor://localhost is not an http(s) origin, which API Gateway rejects']);
+  });
+
+  it('catches a template with no AllowedOrigins parameter', () => {
+    expect(apiAllowsTheAppOrigins(parseTemplate('Resources: {}\n'))).toHaveLength(1);
   });
 });
 
