@@ -59,6 +59,8 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit
         working-directory: apps/web
       - run: npx turbo run build --filter=@cleaning-planner/web
+        env:
+          INCLUDE_DEV_PAGES: 'true'
       - run: npm run test:e2e
         env:
           CI: true

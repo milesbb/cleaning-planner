@@ -55,33 +55,29 @@ export function HomeSwitcher(props: HomeSwitcherProps): ReactNode {
   const [isOpen, setIsOpen] = useState(false);
   const currentHome = props.homes.find((home) => home.id === props.currentHomeId);
   const currentName = currentHome?.name ?? 'Your home';
+  const trigger = (
+    <button
+      type="button"
+      aria-label={`${currentName}, switch home`}
+      className="flex min-h-11 max-w-full items-center gap-1.5 rounded-full border-2 border-ink bg-card px-3 font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+    >
+      <HomeIcon size={20} strokeWidth={2.2} />
+      <span className="truncate">{currentName}</span>
+      <ChevronDownIcon size={18} strokeWidth={2.6} />
+    </button>
+  );
   return (
-    <>
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        aria-label={`${currentName}, switch home`}
-        onClick={() => {
-          setIsOpen(true);
+    <BottomSheet title="Your homes" open={isOpen} onOpenChange={setIsOpen} trigger={trigger}>
+      <HomeList
+        {...props}
+        onChosen={() => {
+          setIsOpen(false);
         }}
-        className="flex min-h-11 max-w-full items-center gap-1.5 rounded-full border-2 border-ink bg-card px-3 font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        <HomeIcon size={20} strokeWidth={2.2} />
-        <span className="truncate">{currentName}</span>
-        <ChevronDownIcon size={18} strokeWidth={2.6} />
-      </button>
-      <BottomSheet title="Your homes" open={isOpen} onOpenChange={setIsOpen}>
-        <HomeList
-          {...props}
-          onChosen={() => {
-            setIsOpen(false);
-          }}
-        />
-        <ButtonLink href="/homes/new" variant="dashed">
-          <PlusIcon />
-          Start or join a home
-        </ButtonLink>
-      </BottomSheet>
-    </>
+      />
+      <ButtonLink href="/homes/new" variant="dashed">
+        <PlusIcon />
+        Start or join a home
+      </ButtonLink>
+    </BottomSheet>
   );
 }

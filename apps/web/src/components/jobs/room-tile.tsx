@@ -26,7 +26,9 @@ export function RoomTile({ room, name, jobCount, lateCount, href }: RoomTileProp
     >
       <IconTile icon={appearance.icon} colourClass="bg-card" />
       <span className="flex flex-col gap-0.5">
-        <span className="font-display text-[1.375rem] font-extrabold break-words">{name}</span>{' '}
+        <span className="font-display text-lg font-extrabold break-words min-[400px]:text-[1.375rem]">
+          {name}
+        </span>{' '}
         <span className="text-sm">{countOf(jobCount, 'job')}</span>
       </span>
       {lateCount > 0 ? (

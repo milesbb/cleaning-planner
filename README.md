@@ -166,7 +166,7 @@ The budget alert is **account-wide** and defaults to $5/month. If the account al
 2. Add the environment variable `NEXT_PUBLIC_API_URL` = the stack's `ApiUrl` output.
 3. Add the Vercel production URL to `AllowedOrigins` in `infrastructure/template.yml` and push (the pipeline updates CORS).
 
-Vercel's GitHub integration also gives every pull request its own preview URL.
+Vercel's GitHub integration also gives every pull request its own preview URL. Previews include the review pages, `/dev/components/` (every component in every state) and `/dev/shell/` (the app frame), so you can check them on a phone; the live site never does.
 
 ## Licence
 
