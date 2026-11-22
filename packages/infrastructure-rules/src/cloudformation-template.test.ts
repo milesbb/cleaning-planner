@@ -38,7 +38,6 @@ describe('parseTemplate', () => {
     });
   });
 
-
   it('reads the parameters', () => {
     const template = parseTemplate(`Parameters:
   Stage:
