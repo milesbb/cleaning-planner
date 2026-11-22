@@ -1,6 +1,6 @@
 # Cleaning Planner: Plan
 
-Status: **Phase 0 in progress** (2026-11-22). Stack approved as recommended below; monorepo, CI and Claude setup scaffolded.
+Status: **Phase 0 in progress** (2026-11-22). Stack approved as recommended below; monorepo, CI and Claude setup scaffolded. Designs agreed (Wall chart, with room for commissioned art); accounts and households are now part of the MVP. The build order is in [`IMPLEMENTATION.md`](IMPLEMENTATION.md).
 
 ---
 
@@ -21,22 +21,23 @@ We want one place that answers three questions without anyone having to remember
 - **Today / Tomorrow / This week / Later** views. Mark a task done in one tap; snooze or skip.
 - **Reminders**: a daily "today's jobs" notification and a weekly "this week" summary, each with a time we choose.
 - Works on both our phones (iOS + Android) and on desktop.
+- **Accounts** (decided 2026-11-22): sign up and log in with email and password, reset a forgotten password, edit your details, delete your account.
+- **Households** (decided 2026-11-22): start a home or join one by invite link or code, see the same jobs, assign them (anyone, a person, or take turns), see who did what, and belong to more than one home.
 
-### Secondary (designed for now, built later)
+### Secondary (built after the MVP)
 
-- **Household**: more than one person, assign tasks, see who did what, rotate chores.
-- More channels (email, calendar feed, group chat), stats/history, app-store builds.
+- More channels (calendar feed, group chat), stats, dark mode, app-store builds.
 
 ### Non-goals for now
 
 - Gamification/points/leaderboards (reviews of Sweepy show points get gamed and cause friction, see §3).
-- Multi-household SaaS, payments, public sign-up.
+- Payments.
 
 ---
 
 ## 2. Recommendation in one paragraph
 
-Build an **installable web app (PWA)** with **Next.js (App Router) + TypeScript + Tailwind + shadcn/ui** on **Vercel**, backed by a **serverless AWS API** (Express on Lambda behind API Gateway, DynamoDB, Cognito, EventBridge Scheduler, SES) defined in **CloudFormation/SAM** with a **self-updating CodePipeline**, in a **Turborepo + npm workspaces monorepo**. GitHub Actions runs the PR checks (lint, typecheck, unit tests, e2e, template lint). This mirrors **Ride Logger** (web app, rules) and **playlist-transfer-backend** (IaC + pipeline). Expected AWS cost is **about $0–1/month** (§7). Reminders start as **Web Push** (free; works on Android and on iPhone once the app is added to the Home Screen) plus an optional **email digest** via SES. Model **households from day one** in the database (it costs almost nothing) but only expose a single household in the UI. If we later want real App Store / Google Play apps, wrap the same web app with **Capacitor** and switch to native push. No rewrite needed.
+Build an **installable web app (PWA)** with **Next.js (App Router) + TypeScript + Tailwind + shadcn/ui** on **Vercel**, backed by a **serverless AWS API** (Express on Lambda behind API Gateway, DynamoDB, Cognito, EventBridge Scheduler, SES) defined in **CloudFormation/SAM** with a **self-updating CodePipeline**, in a **Turborepo + npm workspaces monorepo**. GitHub Actions runs the PR checks (lint, typecheck, unit tests, e2e, template lint). This mirrors **Ride Logger** (web app, rules) and **playlist-transfer-backend** (IaC + pipeline). Expected AWS cost is **about $0–1/month** (§7). Reminders start as **Web Push** (free; works on Android and on iPhone once the app is added to the Home Screen) plus an optional **email digest** via SES. **Accounts and households are in the MVP**: anyone can sign up, start a home and invite the people they live with. If we later want real App Store / Google Play apps, wrap the same web app with **Capacitor** and switch to native push. No rewrite needed.
 
 ---
 
@@ -187,7 +188,7 @@ In DynamoDB these live in **one table** keyed by household, e.g. `pk = HOUSEHOLD
 | Styling    | Tailwind + shadcn/ui                                                                                                                                                                  | Same as Ride Logger; accessible, mobile-first.                                                                                                                                   |
 | API        | Express 5 on Lambda via `@codegenie/serverless-express`, behind API Gateway **HTTP API**; esbuild bundle                                                                              | Same Express + controllers/service/data layering as Ride Logger and playlist-transfer-backend. HTTP API is ~70% cheaper than the REST API type.                                  |
 | Data       | DynamoDB on-demand, single table, point-in-time recovery; TanStack Query in the web app                                                                                               | ~$0 at our scale, no connection pooling, no VPC. _Alt:_ Aurora DSQL (Postgres-compatible, also ~$0, no foreign keys).                                                            |
-| Auth       | Cognito user pool (Essentials, email one-time codes), JWT authorizer on API Gateway                                                                                                   | Free under 10,000 monthly users. **Differs from Ride Logger** (hand-rolled JWT), less to secure ourselves.                                                                       |
+| Auth       | Cognito user pool (Essentials, email and password), JWT authorizer on API Gateway                                                                                                     | Free under 10,000 monthly users. **Differs from Ride Logger** (hand-rolled JWT), less to secure ourselves.                                                                       |
 | IaC/deploy | SAM/CloudFormation template + CodePipeline V2 (GitHub via CodeConnections) + CodeBuild                                                                                                | Same self-updating pattern as playlist-transfer-backend; pipeline only triggers on API/infra paths.                                                                              |
 | Dates      | `date-fns` + `@date-fns/tz`                                                                                                                                                           | Timezones/DST matter for reminder times.                                                                                                                                         |
 | Tests      | Vitest + React Testing Library + `vitest-axe` (every component), Playwright on desktop Chrome **and** mobile (Pixel 7 + iPhone), supertest for the API, DynamoDB Local for data tests | Same rules as Ride Logger: TDD, tests next to source, e2e for every flow.                                                                                                        |
@@ -292,6 +293,8 @@ First deploy is a one-off `sam deploy` from a laptop (see README). After that, e
 
 ## 9. UX sketch
 
+The finished designs (the **Wall chart** direction, plus a version with room for commissioned art) are in the private design canvas and listed screen by screen in [`IMPLEMENTATION.md`](IMPLEMENTATION.md) §1. The sketch below was the starting brief.
+
 **Home = "Today"**
 
 - Greeting + count ("4 jobs today, ~35 min").
@@ -314,13 +317,19 @@ Design principles: calm not naggy; one-tap actions; works one-handed; dark mode;
 
 ## 10. Phased delivery
 
-| Phase                | Scope                                                                                                                                                                                              | Done when                                                       |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **0. Foundations**   | Repo, monorepo scaffold, `.claude/` personas, CI green, CloudFormation stack + pipeline bootstrapped, API health endpoint live, empty PWA on Vercel                                                | A PR shows checks; `/v1/health` answers from AWS; web has a URL |
-| **1. Core MVP**      | `packages/schedule` recurrence engine (heavily unit-tested), task library seed, Cognito auth, DynamoDB access patterns, single household, Today/Week/Areas views, complete/snooze/skip, onboarding | We use it daily on both phones from the Home Screen             |
-| **2. Reminders**     | Push subscription flow + iOS install guide, `notify` Lambda on EventBridge Scheduler, daily + weekly reminders, notification settings, optional SES email digest                                   | Reminders arrive at the chosen time on both phones              |
-| **3. Household**     | Invite partner/others, assignees, rotation, history ("done by"), per-person reminders                                                                                                              | Each person gets only their jobs (or all, by preference)        |
-| **4. Nice-to-haves** | ICS calendar feed, Telegram bot, stats, load balancing suggestions, offline mode, Capacitor store builds                                                                                           | As wanted                                                       |
+The detailed, PR-by-PR order is in [`IMPLEMENTATION.md`](IMPLEMENTATION.md). In short:
+
+| Milestone                            | Done when                                                                  |
+| ------------------------------------ | -------------------------------------------------------------------------- |
+| **0. Foundations**                   | A merge into `production` deploys the API and the web app with no commands |
+| **1. Design system in code**         | Every shared component built, tested and reviewed on a phone               |
+| **2. Scheduling engine and library** | `packages/schedule` answers "what is due, for whom" for every rule         |
+| **3. Accounts and data API**         | Sign up, homes, invites, rooms, jobs and history all work through the API  |
+| **4. Account and household screens** | A new person can sign up, start or join a home and finish setup            |
+| **5. Planning screens**              | We use it daily on both phones from the Home Screen                        |
+| **6. Reminders**                     | Reminders arrive at the chosen time on both phones                         |
+| **7. Polish and art**                | Commissioned art in, Lighthouse green, first real release                  |
+| **Later**                            | ICS calendar feed, Telegram bot, stats, dark mode, Capacitor store builds  |
 
 ---
 
@@ -328,8 +337,8 @@ Design principles: calm not naggy; one-tap actions; works one-handed; dark mode;
 
 1. **Name** of the app/repo (working title: _Cleaning Planner_).
 2. ~~Backend~~: **decided** (2026-11-22): AWS instead of Supabase, IaC + pipeline like playlist-transfer-backend.
-3. **Database**: DynamoDB (chosen by default as recommended) or Aurora DSQL if SQL is preferred. Only the table resource and data layer differ; nothing is built on it yet.
-4. **Email digest in MVP**, or push only?
+3. ~~Database~~: **DynamoDB**, single table; the key design is in `IMPLEMENTATION.md` §6.4.
+4. ~~Email digest~~: **optional weekly email** alongside push, switched on per person in Settings (Milestone 6).
 5. Are we in the **EU/UK**? (Affects nothing technical today. Apple kept Home Screen web apps in the EU after briefly removing them in 2024, but worth re-checking before relying on iOS push.)
 
 ---

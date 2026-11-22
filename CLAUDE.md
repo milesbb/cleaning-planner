@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0 (foundations). `docs/PLAN.md` is the agreed source of truth for scope, stack and phases. Read it before starting any work, and update it when a decision changes.
+Phase 0 (foundations). `docs/PLAN.md` is the agreed source of truth for scope, stack and costs, and `docs/IMPLEMENTATION.md` for the build order, screens, data design and endpoints. Read both before starting any work, and update them when a decision changes.
 
 ## README
 
@@ -28,7 +28,7 @@ The repository is **public**: never commit secrets, personal data or account ide
 
 ## What this is
 
-Household cleaning planner (installable web app / PWA). Users see what needs cleaning today, this week and later, with recommended frequencies they can adjust, and get reminders (Web Push, optional email). Households with multiple members are modelled in the database from day one but exposed later.
+Household cleaning planner (installable web app / PWA). Users see what needs cleaning today, this week and later, with recommended frequencies they can adjust, and get reminders (Web Push, optional email). People sign up with email and password and share one or more homes ("households") with the people they live with.
 
 ## Repo structure
 
