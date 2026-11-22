@@ -10,7 +10,7 @@ import { describeContract, fieldErrorsFor } from './test-support';
 import type { z } from './zod';
 
 const WEEKLY = { type: 'floating', every: { value: 1, unit: 'week' } };
-const IDEMPOTENCY_KEY = '1b4e28ba-2fa1-41d2-883f-0016d3cca427';
+const IDEMPOTENCY_KEY = '00000000-0000-4000-8000-000000000001';
 
 const NEW_JOB = {
   roomId: 'room-1',
