@@ -3,6 +3,7 @@ import { createApp } from '../app';
 import type { AppServices } from '../app';
 
 export const CLAIMS_HEADER = 'x-test-claims';
+export const SOURCE_IP_HEADER = 'x-test-source-ip';
 
 function readTestClaims(request: Request): unknown {
   const header = request.header(CLAIMS_HEADER);
@@ -30,6 +31,7 @@ const UNUSED_SERVICES: AppServices = {
     leaveHome: notUsed,
   },
   members: { listMembers: notUsed, changeRole: notUsed, removeMember: notUsed },
+  invites: { createInvite: notUsed, previewInvite: notUsed, acceptInvite: notUsed },
   memberships: { findMembership: notUsed },
 };
 
@@ -37,6 +39,7 @@ export function testApp(services: Partial<AppServices> = {}): Express {
   return createApp({
     version: 'test-sha',
     readClaims: readTestClaims,
+    readSourceIp: (request) => request.header(SOURCE_IP_HEADER),
     services: { ...UNUSED_SERVICES, ...services },
   });
 }

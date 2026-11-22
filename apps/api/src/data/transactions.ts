@@ -23,6 +23,14 @@ export function putItem(table: Table, Item: Record<string, unknown>): TransactIt
   return { Put: { TableName: table.name, Item, ConditionExpression: NOT_ALREADY_THERE } };
 }
 
+export function overwriteItem(table: Table, Item: Record<string, unknown>): TransactItem {
+  return { Put: { TableName: table.name, Item } };
+}
+
+export function deleteIfPresent(table: Table, Key: ItemKey): TransactItem {
+  return { Delete: { TableName: table.name, Key } };
+}
+
 export function deleteItem(table: Table, Key: ItemKey): TransactItem {
   return { Delete: { TableName: table.name, Key, ConditionExpression: MUST_EXIST } };
 }

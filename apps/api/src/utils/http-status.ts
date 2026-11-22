@@ -7,6 +7,7 @@ export const HttpStatus = {
   forbidden: 403,
   notFound: 404,
   conflict: 409,
+  gone: 410,
   tooManyRequests: 429,
   internalServerError: 500,
 } as const;
