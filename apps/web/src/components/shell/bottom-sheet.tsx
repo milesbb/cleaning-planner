@@ -11,11 +11,32 @@ interface BottomSheetProps {
   description?: string;
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  trigger?: ReactNode;
   children: ReactNode;
+}
+
+interface FocusReturn {
+  onOpenAutoFocus?: () => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 const SHEET_CLASSES =
   'fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col gap-4 overflow-y-auto rounded-t-[1.5rem] border-2 border-b-0 border-ink bg-paper px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-ink shadow-hard focus:outline-hidden motion-safe:animate-sheet-up sm:inset-0 sm:m-auto sm:h-fit sm:w-[min(32rem,calc(100vw-2rem))] sm:rounded-card sm:border-b-2 sm:pb-5 sm:motion-safe:animate-fade-in';
+
+function useFocusReturnToOpener(hasTrigger: boolean): FocusReturn {
+  const openerRef = useRef<HTMLElement | null>(null);
+  if (hasTrigger) return {};
+  return {
+    onOpenAutoFocus: (): void => {
+      openerRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    },
+    onCloseAutoFocus: (event): void => {
+      event.preventDefault();
+      openerRef.current?.focus();
+    },
+  };
+}
 
 function SheetHeader({
   title,
@@ -44,23 +65,18 @@ export function BottomSheet({
   description,
   open,
   onOpenChange,
+  trigger,
   children,
 }: BottomSheetProps): ReactNode {
-  const openerRef = useRef<HTMLElement | null>(null);
+  const focusReturn = useFocusReturnToOpener(trigger !== undefined);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      {trigger === undefined ? null : <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>}
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/40 motion-safe:animate-fade-in" />
         <Dialog.Content
           className={SHEET_CLASSES}
-          onOpenAutoFocus={() => {
-            openerRef.current =
-              document.activeElement instanceof HTMLElement ? document.activeElement : null;
-          }}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            openerRef.current?.focus();
-          }}
+          {...focusReturn}
           {...(description === undefined ? { 'aria-describedby': undefined } : {})}
         >
           <SheetHeader title={title} description={description} />

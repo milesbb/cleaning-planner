@@ -9,7 +9,7 @@ import type { PersonColour } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { IconTile } from './icon-tile';
 
-type JobRowStatus =
+export type JobRowStatus =
   | { kind: 'due'; lateBy?: string; onDone: () => void }
   | { kind: 'done'; doneBy: string; doneAt: string; nextDue?: string; onUndo: () => void }
   | { kind: 'upcoming' };
