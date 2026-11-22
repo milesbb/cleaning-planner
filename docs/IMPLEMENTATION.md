@@ -139,19 +139,19 @@ These apply to every issue. A PR isn't done until it meets them and has tests pr
 
 ### 4.3 Speed and smoothness
 
-| Budget                    | Target                                               |
-| ------------------------- | ---------------------------------------------------- |
-| Largest Contentful Paint  | under 1.5 s on a mid-range phone (Lighthouse mobile) |
-| Interaction to Next Paint | under 100 ms                                         |
-| Cumulative Layout Shift   | under 0.05                                           |
-| JavaScript per route      | under 150 KB gzipped on first load                   |
-| Tap feedback              | under 100 ms, every time                             |
-| API (warm)                | p95 under 300 ms for the agenda and writes           |
+| Budget                    | Target                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Largest Contentful Paint  | under 1.5 s on a mid-range phone (Lighthouse mobile)                                                                               |
+| Interaction to Next Paint | under 100 ms                                                                                                                       |
+| Cumulative Layout Shift   | under 0.05                                                                                                                         |
+| JavaScript per route      | first load at most 220 KB gzipped (the shared Next.js and React runtime is about 170 KB), with at most 60 KB specific to the route |
+| Tap feedback              | under 100 ms, every time                                                                                                           |
+| API (warm)                | p95 under 300 ms for the agenda and writes                                                                                         |
 
 - **Instant by default.** Cached data shows immediately and refreshes in the background. Ticking a job updates the screen before the server answers. Next page data is prefetched when a link scrolls into view.
 - **No jank.** Animations use transform and opacity only, run at 60fps, and respect "reduce motion". Space is reserved for content so nothing jumps. Fonts load with matched fallbacks.
 - **Small and lean.** Static files from a CDN, route-level code splitting, no heavy libraries without a reason, a small Lambda bundle with AWS SDK clients imported one by one.
-- **Enforced in CI.** Lighthouse performance becomes a failing gate (0.9) and a bundle-size check fails the build if a route goes over budget.
+- **Enforced in CI.** Release checks fail if Lighthouse (mobile, throttled) scores below 0.9 for performance, LCP goes over 2.5 s on its slowed-down test phone (comfortably under 1.5 s on a real mid-range phone), CLS over 0.05 or total blocking time over 200 ms, or if `npm run check:bundle-size` finds a route over its JavaScript budget.
 
 ---
 
