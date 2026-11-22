@@ -106,7 +106,7 @@ feature/… ──PR──► development ──release PR──► production �
 
 **Security (GitHub, free because the repo is public)**
 
-- **CodeQL** (default setup, extended query suite) scans JavaScript/TypeScript and the workflow files on every PR and weekly. Both rulesets **block merges** when CodeQL reports an error-level issue or a high/critical security alert.
+- **CodeQL** (`.github/workflows/codeql.yml`, `security-extended` queries) scans JavaScript/TypeScript and the workflow files on every PR, every push to `development`/`production`, and weekly. It runs without path filters because the rulesets need a result for every PR. Both rulesets **block merges** when CodeQL reports an error-level issue or a high/critical security alert.
 - **Secret scanning with push protection** rejects pushes that contain credentials.
 - **Dependabot** security alerts and automatic security-fix PRs, plus weekly version updates into `development`. Major upgrades of TypeScript, ESLint, `@eslint/js` and `@types/node` are skipped until the toolchain supports them (see `.github/dependabot.yml`).
 
