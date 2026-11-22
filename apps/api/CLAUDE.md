@@ -8,18 +8,23 @@ Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-
 
 ## Key files
 
-| File                               | Purpose                                                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `src/app.ts`                       | `createApp(config)` — wires middleware, routers, 404 and the error handler. Used by tests.                    |
-| `src/lambda.ts`                    | Lambda entry point (`lambda.handler`). No logic here.                                                         |
-| `src/app-local.ts`                 | Local dev server on port 4000 (`npm run dev`).                                                                |
-| `src/controllers/`                 | One router per resource. HTTP parsing and responses only.                                                     |
-| `src/middlewares/error-handler.ts` | Maps `AppError` to its status, malformed JSON to 400, everything else to a logged 500.                        |
-| `src/utils/errors.ts`              | `AppError` and the `Errors.*` factory. Throw these, never plain strings.                                      |
-| `src/utils/logging.ts`             | JSON-lines `logger` for CloudWatch. Never use `console.*`.                                                    |
-| `src/deploy-check/`                | `checkHealth` and `runHealthCheck`: the post-deploy check the pipeline runs against `/v1/health`.             |
-| `src/health-check.ts`              | Entry point for that check (`dist/health-check.mjs`). No logic here.                                          |
-| `build.mjs`                        | esbuild bundles → `dist/lambda.js` (CommonJS, git SHA baked in as `APP_VERSION`) and `dist/health-check.mjs`. |
+| File                                | Purpose                                                                                                                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app.ts`                        | `createApp(config)` — wires middleware, routers, 404 and the error handler. Used by tests.                                                                                    |
+| `src/lambda.ts`                     | Lambda entry point (`lambda.handler`). No logic here.                                                                                                                         |
+| `src/app-local.ts`                  | Local dev server on port 4000 (`npm run dev`).                                                                                                                                |
+| `src/controllers/`                  | One router per resource. HTTP parsing and responses only.                                                                                                                     |
+| `src/middlewares/error-handler.ts`  | Maps `AppError` to its status, malformed JSON to 400, everything else to a logged 500.                                                                                        |
+| `src/utils/errors.ts`               | `AppError` (status, contract error code, message, optional field errors) and the `Errors.*` factory. Throw these, never plain strings.                                        |
+| `src/utils/validation.ts`           | `parseOrThrow(schema, value)`: parse with a `packages/contracts` schema or throw a 400 with one message per field.                                                            |
+| `src/middlewares/signed-in-user.ts` | `signedInUser(readClaims)` (401 without a valid access token's claims) and `signedInUserOf(response)`. Lambda reads claims from API Gateway; tests and local dev inject them. |
+| `src/middlewares/membership.ts`     | `requireMember` / `requireOwner`: load the membership once per request from `:householdId` (403 for outsiders, and for members on owner-only routes).                         |
+| `src/data/table.ts`                 | `connectToTable` (one DocumentClient, `TABLE_NAME`, optional `DYNAMODB_ENDPOINT` for DynamoDB Local) and `Keys`: the only place pk/sk strings are built.                      |
+| `src/data/membership-repository.ts` | Memberships: both sides written in one conditional transaction, `findMembership`, `listHomesOf`.                                                                              |
+| `src/utils/logging.ts`              | JSON-lines `logger` for CloudWatch. Never use `console.*`. Redacts email addresses, tokens, passwords and invite codes, by field name and by pattern.                         |
+| `src/deploy-check/`                 | `checkHealth` and `runHealthCheck`: the post-deploy check the pipeline runs against `/v1/health`.                                                                             |
+| `src/health-check.ts`               | Entry point for that check (`dist/health-check.mjs`). No logic here.                                                                                                          |
+| `build.mjs`                         | esbuild bundles → `dist/lambda.js` (CommonJS, git SHA baked in as `APP_VERSION`) and `dist/health-check.mjs`.                                                                 |
 
 ## Layer responsibilities (same as Ride Logger)
 
@@ -47,7 +52,7 @@ Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-
 
 - **Controllers:** supertest against `createApp(...)`, mocking the service layer.
 - **Services:** mock the data layer.
-- **Data:** run against DynamoDB Local (added with the first data file in Phase 1).
+- **Data:** `*.integration.test.ts` next to the repository, run against DynamoDB Local with `npm run test:integration` (CI starts it as a service container). Each test file creates its own table. The unit test run excludes `src/data/`; the integration run has its own 90% coverage gate for it.
 - **Bug fixes:** start with a failing test that reproduces the bug.
 
 ## Tests

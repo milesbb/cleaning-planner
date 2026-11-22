@@ -4,5 +4,12 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "vitest.config.ts", "eslint.config.mjs", "build.mjs"]
+  "include": [
+    "src",
+    "vitest.config.ts",
+    "vitest.integration.config.ts",
+    "integration-setup.ts",
+    "eslint.config.mjs",
+    "build.mjs"
+  ]
 }
