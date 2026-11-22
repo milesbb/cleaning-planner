@@ -68,21 +68,33 @@ export async function transact(
   }
 }
 
+interface VersionedFields {
+  version: number;
+  [field: string]: unknown;
+}
+
 interface VersionedChange {
   key: ItemKey;
-  changes: { version: number };
+  changes: VersionedFields;
   conflictMessage: string;
 }
 
-export async function updateIfUnchanged(
+export function versionedUpdate(
   table: Table,
-  { key, changes: { version, ...fields }, conflictMessage }: VersionedChange,
-): Promise<void> {
-  const update = updateItem(table, {
+  key: ItemKey,
+  { version, ...fields }: VersionedFields,
+): TransactItem {
+  return updateItem(table, {
     key,
     fields: { ...fields, version: version + 1 },
     condition: '#version = :expectedVersion',
     conditionValues: { ':expectedVersion': version },
   });
-  await transact(table, [update], conflictMessage);
+}
+
+export async function updateIfUnchanged(
+  table: Table,
+  { key, changes, conflictMessage }: VersionedChange,
+): Promise<void> {
+  await transact(table, [versionedUpdate(table, key, changes)], conflictMessage);
 }

@@ -8,6 +8,7 @@ import { createJobRepository } from './data/job-repository';
 import { createMemberRepository } from './data/member-repository';
 import { createMembershipRepository } from './data/membership-repository';
 import { createProfileRepository } from './data/profile-repository';
+import { createProgressRepository } from './data/progress-repository';
 import { createRoomRepository } from './data/room-repository';
 import { connectToTable } from './data/table';
 import type { Table } from './data/table';
@@ -17,6 +18,7 @@ import { createHouseholdService } from './services/household-service';
 import type { HouseholdStore } from './services/household-service';
 import { generateInviteCode } from './services/invite-code';
 import { createInviteService } from './services/invite-service';
+import { createJobProgressService } from './services/job-progress-service';
 import { createJobService } from './services/job-service';
 import { createMemberService } from './services/member-service';
 import { createProfileService } from './services/profile-service';
@@ -34,8 +36,9 @@ function createPlanningServices({
   householdStore,
   memberships,
   now,
-}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs'> {
+}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs' | 'progress'> {
   const roomStore = createRoomRepository(table);
+  const jobStore = createJobRepository(table);
   return {
     rooms: createRoomService({
       store: roomStore,
@@ -44,12 +47,18 @@ function createPlanningServices({
       newId: randomUUID,
     }),
     jobs: createJobService({
-      store: createJobRepository(table),
+      store: jobStore,
       rooms: roomStore,
       households: householdStore,
       memberships,
       now,
       newId: randomUUID,
+    }),
+    progress: createJobProgressService({
+      store: createProgressRepository(table),
+      jobs: jobStore,
+      households: householdStore,
+      now,
     }),
   };
 }

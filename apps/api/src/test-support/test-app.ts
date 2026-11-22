@@ -40,6 +40,7 @@ const UNUSED_SERVICES: AppServices = {
     updateJob: notUsed,
     deleteJob: notUsed,
   },
+  progress: { completeJob: notUsed, undoLatest: notUsed, snoozeJob: notUsed },
   memberships: { findMembership: notUsed },
 };
 
