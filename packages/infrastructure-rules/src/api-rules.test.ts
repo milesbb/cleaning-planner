@@ -3,6 +3,7 @@ import {
   apiRoutesAreThrottled,
   appClientsUseSrpOnly,
   everyApiRouteNeedsSignIn,
+  functionsCannotManageSignIns,
   functionsHaveTimeouts,
   passwordsAreAtLeastTwelveCharacters,
 } from './api-rules';
@@ -177,6 +178,34 @@ describe('functionsHaveTimeouts', () => {
     );
     expect(functionsHaveTimeouts(template)).toEqual([
       'ApiFunction can run for more than 30 seconds',
+    ]);
+  });
+});
+
+describe('functionsCannotManageSignIns', () => {
+  it('passes a function that only reaches its table', () => {
+    const template = templateWith(`  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DataTable
+`);
+    expect(functionsCannotManageSignIns(template)).toEqual([]);
+  });
+
+  it('catches a function allowed to call Cognito, even on one user pool', () => {
+    const template = templateWith(`  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:AdminDeleteUser
+              Resource: !GetAtt UserPool.Arn
+`);
+    expect(functionsCannotManageSignIns(template)).toEqual([
+      'ApiFunction can call Cognito with its own role',
     ]);
   });
 });

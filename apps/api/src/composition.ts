@@ -12,8 +12,12 @@ import { createProgressRepository } from './data/progress-repository';
 import { createRoomRepository } from './data/room-repository';
 import { connectToTable } from './data/table';
 import type { Table } from './data/table';
-import { createCognitoIdentityReader } from './identity/cognito-identity';
+import {
+  createCognitoAccountRemover,
+  createCognitoIdentityReader,
+} from './identity/cognito-identity';
 import type { MembershipReader } from './middlewares/membership';
+import { createAccountService } from './services/account-service';
 import { createAgendaService } from './services/agenda-service';
 import { createHouseholdService } from './services/household-service';
 import type { HouseholdStore } from './services/household-service';
@@ -78,13 +82,20 @@ function createPlanningServices({
 export function createServices(environment: NodeJS.ProcessEnv): AppServices {
   const table = connectToTable(environment);
   const memberships = createMembershipRepository(table);
-  const identity = createCognitoIdentityReader(new CognitoIdentityProviderClient({}));
+  const cognito = new CognitoIdentityProviderClient({});
   const profileStore = createProfileRepository(table, memberships);
   const householdStore = createHouseholdRepository(table);
   const memberStore = createMemberRepository(table);
   const now = (): string => new Date().toISOString();
   return {
-    profiles: createProfileService(profileStore, identity),
+    profiles: createProfileService(profileStore, createCognitoIdentityReader(cognito)),
+    accounts: createAccountService({
+      homes: memberships,
+      members: memberStore,
+      households: householdStore,
+      profiles: profileStore,
+      identity: createCognitoAccountRemover(cognito),
+    }),
     households: createHouseholdService({
       store: householdStore,
       memberships,

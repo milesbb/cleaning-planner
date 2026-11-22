@@ -9,6 +9,9 @@ import type { MembershipRepository } from './membership-repository';
 import { isConditionFailure } from './conditions';
 import { Keys } from './table';
 import type { Table } from './table';
+import type { ProfileRemover } from '../services/account-service';
+import { deleteInBatches } from './batch-write';
+import { partitionItemKeys } from './home-items';
 
 const storedProfileSchema = z.object(profileSchema.shape);
 const MAX_HOMES_PER_PERSON = 50;
@@ -94,11 +97,16 @@ async function updateProfile(
   return requireProfile(table, userId);
 }
 
+async function deleteProfile(table: Table, userId: string): Promise<void> {
+  await deleteInBatches(table, await partitionItemKeys(table, Keys.user(userId)));
+}
+
 export function createProfileRepository(
   table: Table,
   memberships: MembershipRepository,
-): ProfileStore {
+): ProfileStore & ProfileRemover {
   return {
+    deleteProfile: (userId) => deleteProfile(table, userId),
     getProfile: (userId) => getProfile(table, userId),
     createProfile: (profile) => createProfile(table, profile),
     updateProfile: (userId, changes) => updateProfile(table, memberships, userId, changes),

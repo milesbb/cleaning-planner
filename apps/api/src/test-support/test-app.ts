@@ -42,6 +42,7 @@ const UNUSED_SERVICES: AppServices = {
   },
   progress: { completeJob: notUsed, undoLatest: notUsed, snoozeJob: notUsed },
   agenda: { getAgenda: notUsed },
+  accounts: { deleteAccount: notUsed },
   memberships: { findMembership: notUsed },
 };
 

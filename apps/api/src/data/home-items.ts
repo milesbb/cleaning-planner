@@ -9,22 +9,21 @@ interface HomeItemsQuery {
 }
 
 function keyCondition(
-  householdId: string,
+  pk: string,
   prefix: string | undefined,
 ): { KeyConditionExpression: string; ExpressionAttributeValues: Record<string, string> } {
-  const home = Keys.household(householdId);
   if (prefix === undefined) {
-    return { KeyConditionExpression: 'pk = :home', ExpressionAttributeValues: { ':home': home } };
+    return { KeyConditionExpression: 'pk = :pk', ExpressionAttributeValues: { ':pk': pk } };
   }
   return {
-    KeyConditionExpression: 'pk = :home AND begins_with(sk, :prefix)',
-    ExpressionAttributeValues: { ':home': home, ':prefix': prefix },
+    KeyConditionExpression: 'pk = :pk AND begins_with(sk, :prefix)',
+    ExpressionAttributeValues: { ':pk': pk, ':prefix': prefix },
   };
 }
 
-export async function homeItems(
+async function partitionItems(
   table: Table,
-  householdId: string,
+  pk: string,
   { prefix, projection }: HomeItemsQuery = {},
 ): Promise<Record<string, unknown>[]> {
   const items: Record<string, unknown>[] = [];
@@ -33,7 +32,7 @@ export async function homeItems(
     const page = await table.client.send(
       new QueryCommand({
         TableName: table.name,
-        ...keyCondition(householdId, prefix),
+        ...keyCondition(pk, prefix),
         ...(projection === undefined ? {} : { ProjectionExpression: projection }),
         ConsistentRead: true,
         ExclusiveStartKey: startKey,
@@ -43,6 +42,14 @@ export async function homeItems(
     startKey = page.LastEvaluatedKey;
   } while (startKey !== undefined);
   return items;
+}
+
+export function homeItems(
+  table: Table,
+  householdId: string,
+  query: HomeItemsQuery = {},
+): Promise<Record<string, unknown>[]> {
+  return partitionItems(table, Keys.household(householdId), query);
 }
 
 const storedKeySchema = z.object({ pk: z.string(), sk: z.string() });
@@ -68,11 +75,22 @@ export async function findHomeItem(
   return Item;
 }
 
-export async function homeItemKeys(
+export async function partitionItemKeys(
+  table: Table,
+  pk: string,
+  prefix?: string,
+): Promise<ItemKey[]> {
+  const items = await partitionItems(table, pk, {
+    ...(prefix === undefined ? {} : { prefix }),
+    projection: 'pk, sk',
+  });
+  return items.map((item) => storedKeySchema.parse(item));
+}
+
+export function homeItemKeys(
   table: Table,
   householdId: string,
   prefix: string,
 ): Promise<ItemKey[]> {
-  const items = await homeItems(table, householdId, { prefix, projection: 'pk, sk' });
-  return items.map((item) => storedKeySchema.parse(item));
+  return partitionItemKeys(table, Keys.household(householdId), prefix);
 }
