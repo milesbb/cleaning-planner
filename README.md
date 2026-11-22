@@ -115,8 +115,9 @@ feature/… ──PR──► development ──release PR──► production �
 1. A push to `production` (i.e. a merged release PR) that touches `apps/api/**`, `packages/schedule/**`, `infrastructure/**` or the lockfile triggers the pipeline.
 2. **CodeBuild** (`infrastructure/buildspec.yml`) installs, lints, typechecks, tests, bundles the Lambda, and runs `aws cloudformation package`.
 3. **CloudFormation** creates a change set for the stack and executes it. That covers code _and_ infrastructure changes, including changes to the pipeline itself.
+4. **Verify**: a small CodeBuild project (`cleaning-planner-health-check`) calls the deployed `/v1/health` and fails the pipeline if it doesn't answer `{ "status": "ok" }` within 10 seconds, so a broken deploy shows up red straight away.
 
-Build logs: CodeBuild → `cleaning-planner-build`. Deploy history: CloudFormation → `cleaning-planner` → Events.
+Build logs: CodeBuild → `cleaning-planner-build` (both projects log there). Deploy history: CloudFormation → `cleaning-planner` → Events.
 
 ## Deployment setup (one-off)
 

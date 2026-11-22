@@ -24,3 +24,4 @@ phases:
 artifacts:
   files:
     - packaged.yml
+    - apps/api/dist/health-check.mjs
