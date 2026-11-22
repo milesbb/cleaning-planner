@@ -1,4 +1,5 @@
-import { DEFAULT_SCHEMA, Type, load } from 'js-yaml';
+import { CORE_SCHEMA, defineMappingTag, defineScalarTag, defineSequenceTag, load } from 'js-yaml';
+import type { TagDefinition } from 'js-yaml';
 
 export type Properties = Record<string, unknown>;
 
@@ -34,24 +35,46 @@ const INTRINSIC_FUNCTIONS = [
   'Transform',
 ] as const;
 
-const YAML_NODE_KINDS = ['scalar', 'sequence', 'mapping'] as const;
-
 function longFormOf(functionName: string): string {
   return functionName === 'Ref' || functionName === 'Condition'
     ? functionName
     : `Fn::${functionName}`;
 }
 
-const CLOUDFORMATION_SCHEMA = DEFAULT_SCHEMA.extend(
-  INTRINSIC_FUNCTIONS.flatMap((functionName) =>
-    YAML_NODE_KINDS.map(
-      (kind) =>
-        new Type(`!${functionName}`, {
-          kind,
-          construct: (data: unknown): Properties => ({ [longFormOf(functionName)]: data }),
-        }),
-    ),
-  ),
+// Load-only: the rules never write YAML, so no value is ever dumped with these tags.
+const NEVER_DUMPED = (): boolean => false;
+
+// `!Sub x`, `!Join [..]` and `!Transform {..}` each become `{ "Fn::Name": value }`.
+function intrinsicFunctionTags(functionName: string): TagDefinition[] {
+  const tagName = `!${functionName}`;
+  const wrap = (value: unknown): Properties => ({ [longFormOf(functionName)]: value });
+  return [
+    defineScalarTag(tagName, { resolve: wrap, identify: NEVER_DUMPED }),
+    defineSequenceTag<unknown[], Properties>(tagName, {
+      create: () => [],
+      addItem: (items, item) => {
+        items.push(item);
+      },
+      finalize: wrap,
+      identify: NEVER_DUMPED,
+    }),
+    defineMappingTag<Properties, Properties>(tagName, {
+      create: () => ({}),
+      addPair: (mapping, key, value) => {
+        mapping[String(key)] = value;
+        return '';
+      },
+      has: (mapping, key) => Object.hasOwn(mapping, String(key)),
+      keys: (result) => Object.keys(result),
+      get: (result, key) => result[String(key)],
+      finalize: wrap,
+      identify: NEVER_DUMPED,
+    }),
+  ];
+}
+
+const CLOUDFORMATION_SCHEMA = CORE_SCHEMA.withTags(
+  INTRINSIC_FUNCTIONS.flatMap(intrinsicFunctionTags),
 );
 
 export function isRecord(value: unknown): value is Properties {
