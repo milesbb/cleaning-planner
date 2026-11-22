@@ -16,10 +16,13 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 | `src/next-due.ts`       | `nextDueDate(schedule, history)` for both schedule types, honouring a snooze.                   |
 | `src/snooze.ts`         | `createSnooze` validates a snooze and records the due date it moves.                            |
 | `src/completions.ts`    | `lastCompletedOn` (done or skipped) and `lastDone` (real completions only).                     |
+| `src/due-status.ts`     | `classifyDue` (late, today, tomorrow, this week, later) and `lastDayOfWeek`.                    |
+| `src/time-zone.ts`      | `calendarDateInTimeZone(instant, timeZone)`: the one place an instant becomes a home's day.     |
 
 ## Rules
 
-- **Work in calendar dates (`CalendarDate`), not `Date` objects or timestamps.** Cleaning tasks are due on a day, not at an instant. Convert to/from the household timezone only at the edges (web app, Lambdas), never in here.
+- **Work in calendar dates (`CalendarDate`), not `Date` objects or timestamps.** Cleaning tasks are due on a day, not at an instant. The only conversion is `calendarDateInTimeZone` in `time-zone.ts`, which the edges (API, Lambdas, web app) call once to get "today" for a home; nothing else in here touches instants or time zones.
+- "This week" runs to the end of the home's week (`weekStartsOn`); tomorrow is always "tomorrow", even when it starts the next week.
 - Create `CalendarDate` values only through `parseCalendarDate` / `isCalendarDate`. Never cast a string to `CalendarDate`.
 - Month arithmetic clamps to the last day of shorter months (31 Jan + 1 month = 28/29 Feb).
 - Floating schedules are measured from the **last completion**; never from the original start date once the task has been done.
