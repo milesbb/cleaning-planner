@@ -66,6 +66,22 @@ export function addInterval(date: CalendarDate, interval: Interval): CalendarDat
   return parseCalendarDate(timestampToCalendarText(timestamp));
 }
 
+export function weekdayNumberOf(date: CalendarDate): number {
+  const { year, monthIndex, day } = toDateParts(date);
+  return new Date(Date.UTC(year, monthIndex, day)).getUTCDay();
+}
+
+export function lastDayOfMonth(date: CalendarDate): number {
+  const { year, monthIndex } = toDateParts(date);
+  return daysInMonth(year, monthIndex);
+}
+
+export function withDayOfMonth(date: CalendarDate, requestedDay: number): CalendarDate {
+  const { year, monthIndex } = toDateParts(date);
+  const clampedDay = Math.min(requestedDay, daysInMonth(year, monthIndex));
+  return parseCalendarDate(timestampToCalendarText(Date.UTC(year, monthIndex, clampedDay)));
+}
+
 export function compareDates(first: CalendarDate, second: CalendarDate): number {
   if (first < second) return -1;
   return first > second ? 1 : 0;

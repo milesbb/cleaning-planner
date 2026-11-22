@@ -8,11 +8,12 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 
 ## Key files
 
-| File                   | Purpose                                                                           |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| `src/types.ts`         | Schedule rule types (`FloatingSchedule`, `Interval`).                             |
-| `src/calendar-date.ts` | `CalendarDate` branded `YYYY-MM-DD` type, parsing, `addInterval`, `compareDates`. |
-| `src/next-due.ts`      | `nextDueDate(schedule, history)`.                                                 |
+| File                    | Purpose                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/types.ts`          | Schedule rule types: `Schedule` = `FloatingSchedule` \| `FixedSchedule`, `Interval`, `Weekday`. |
+| `src/calendar-date.ts`  | `CalendarDate` branded `YYYY-MM-DD` type, parsing, `addInterval`, month and weekday helpers.    |
+| `src/fixed-schedule.ts` | `firstFixedOccurrence(rule, from)` for weekdays and day-of-month rules.                         |
+| `src/next-due.ts`       | `nextDueDate(schedule, history)` for both schedule types.                                       |
 
 ## Rules
 
@@ -20,6 +21,7 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 - Create `CalendarDate` values only through `parseCalendarDate` / `isCalendarDate`. Never cast a string to `CalendarDate`.
 - Month arithmetic clamps to the last day of shorter months (31 Jan + 1 month = 28/29 Feb).
 - Floating schedules are measured from the **last completion**; never from the original start date once the task has been done.
+- Fixed schedules are due on the first matching day (weekday, day of month or last day) **after** the last completion, or on or after the start date if never done. A day of the month past a month's end falls on that month's last day.
 - Import from the specific file (`@cleaning-planner/schedule/next-due`). There is no index barrel.
 
 ## Test-driven development — non-negotiable rules
