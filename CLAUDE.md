@@ -24,6 +24,8 @@ Phase 0 (foundations). `docs/PLAN.md` is the agreed source of truth for scope, s
 
 Never: commit or push directly to `development` or `production`; open a PR into `production` from any branch other than `development`; merge with failing or pending checks; force-push either branch; disable or weaken the rulesets or required checks.
 
+The repository is **public**: never commit secrets, personal data or account identifiers (push protection will reject secrets). CodeQL must report no error-level or high-severity issues for a PR to merge; fix the code, never dismiss an alert without the user agreeing.
+
 ## What this is
 
 Household cleaning planner (installable web app / PWA). Users see what needs cleaning today, this week and later, with recommended frequencies they can adjust, and get reminders (Web Push, optional email). Households with multiple members are modelled in the database from day one but exposed later.

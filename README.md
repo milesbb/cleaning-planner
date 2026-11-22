@@ -104,6 +104,12 @@ feature/… ──PR──► development ──release PR──► production �
 | `release-checks.yml` | PRs into `production` (or run manually from the Actions tab) | Source branch is `development` · format, lint & typecheck · unit tests · production builds + Lambda smoke test · Playwright e2e on desktop/Android/iPhone · `cfn-lint` · `npm audit` of production deps · **Knip** (dead code/deps) · **jscpd** (duplication ≤ 3%) · **Stryker** mutation testing of the schedule engine (≥ 85%) · **Lighthouse** (accessibility ≥ 95, best practices ≥ 95, SEO ≥ 90) · **Semgrep** SAST · **Gitleaks** secrets scan · **actionlint** → **Release checks passed** |
 | `deploy.yml`         | Push to `production` (a merge)                               | Deploy web app to Vercel (skips until the Vercel secrets exist)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
+**Security (GitHub, free because the repo is public)**
+
+- **CodeQL** (`.github/workflows/codeql.yml`, `security-extended` queries) scans JavaScript/TypeScript and the workflow files on every PR, every push to `development`/`production`, and weekly. It runs without path filters because the rulesets need a result for every PR. Both rulesets **block merges** when CodeQL reports an error-level issue or a high/critical security alert.
+- **Secret scanning with push protection** rejects pushes that contain credentials.
+- **Dependabot** security alerts and automatic security-fix PRs, plus weekly version updates into `development`. Major upgrades of TypeScript, ESLint, `@eslint/js` and `@types/node` are skipped until the toolchain supports them (see `.github/dependabot.yml`).
+
 **Backend deploys: AWS CodePipeline** (defined in `infrastructure/template.yml`, same pattern as playlist-transfer-backend)
 
 1. A push to `production` (i.e. a merged release PR) that touches `apps/api/**`, `packages/schedule/**`, `infrastructure/**` or the lockfile triggers the pipeline.
