@@ -44,3 +44,8 @@ test-results/
 
 # Next.js generated types
 next-env.d.ts
+
+# Quality tooling output
+.stryker-tmp/
+reports/
+.lighthouseci/

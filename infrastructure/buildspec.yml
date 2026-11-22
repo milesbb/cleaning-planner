@@ -4,7 +4,7 @@ phases:
   install:
     commands:
       - npm install --global n
-      - n 24
+      - n "$(cat .nvmrc)"
       - hash -r
       - node --version
       - npm ci --workspace=apps/api --workspace=packages/schedule --include-workspace-root

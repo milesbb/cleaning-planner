@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, ThemeColors } from '@/lib/app-identity';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'Cleaning Planner', template: '%s · Cleaning Planner' },
-  description: 'Know what needs cleaning today and this week, with reminders.',
-  applicationName: 'Cleaning Planner',
-  appleWebApp: { capable: true, title: 'Cleaning', statusBarStyle: 'default' },
+  title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
+  description: APP_DESCRIPTION,
+  applicationName: APP_NAME,
+  appleWebApp: { capable: true, title: APP_SHORT_NAME, statusBarStyle: 'default' },
   icons: { apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }] },
 };
 
@@ -15,8 +16,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f6faf9' },
-    { media: '(prefers-color-scheme: dark)', color: '#0b1514' },
+    { media: '(prefers-color-scheme: light)', color: ThemeColors.lightBackground },
+    { media: '(prefers-color-scheme: dark)', color: ThemeColors.darkBackground },
   ],
 };
 

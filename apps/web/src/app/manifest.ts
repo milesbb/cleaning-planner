@@ -1,19 +1,31 @@
 import type { MetadataRoute } from 'next';
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, ThemeColors } from '@/lib/app-identity';
+
+type ManifestIcon = NonNullable<MetadataRoute.Manifest['icons']>[number];
+
+function pngIcon(path: string, sizePixels: number, purpose: ManifestIcon['purpose']): ManifestIcon {
+  return {
+    src: path,
+    sizes: `${String(sizePixels)}x${String(sizePixels)}`,
+    type: 'image/png',
+    purpose,
+  };
+}
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Cleaning Planner',
-    short_name: 'Cleaning',
-    description: 'Know what needs cleaning today and this week, with reminders.',
+    name: APP_NAME,
+    short_name: APP_SHORT_NAME,
+    description: APP_DESCRIPTION,
     start_url: '/',
     scope: '/',
     display: 'standalone',
-    background_color: '#f6faf9',
-    theme_color: '#0f766e',
+    background_color: ThemeColors.lightBackground,
+    theme_color: ThemeColors.brand,
     icons: [
-      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      pngIcon('/icons/icon-192.png', 192, 'any'),
+      pngIcon('/icons/icon-512.png', 512, 'any'),
+      pngIcon('/icons/maskable-512.png', 512, 'maskable'),
     ],
   };
 }

@@ -17,6 +17,7 @@ Phase 0 (foundations). `docs/PLAN.md` is the agreed source of truth for scope, s
 1. `git switch development && git pull`, then branch off it: `feature/<name>`, `fix/<name>` or `chore/<name>`.
 2. Do the work on that branch (TDD as below).
 3. Before pushing, run and pass: `npm run format:check && npm run lint && npm run typecheck && npm test`. Fix failures; never push a branch you know fails.
+   Before opening a release PR, also run `npm run knip && npm run dupes && npm run test:mutation` so the release checks don't fail on them.
 4. Push the branch and open a PR **into `development`**. Wait for **PR checks passed**; fix and push again until it's green. Squash-merge only when it passes.
 5. To release, open a PR **from `development` into `production`** (title `Release: <summary>`). Wait for **Release checks passed** (e2e on 3 devices, builds, audit). Merge with a merge commit only when it passes.
 6. The merge into `production` deploys automatically (Vercel + CodePipeline). Afterwards, check the pipeline and `/v1/health`.
@@ -88,6 +89,47 @@ Each app/package has its own `CLAUDE.md` with local rules. Read it before workin
 
 ---
 
+## Readability — non-negotiable rules
+
+Code is written for the human engineer who reviews and maintains it. If a reviewer has to stop and decode something, rewrite it.
+
+### Names
+
+- **Every name says what the thing is or does.** `householdTimezone`, `nextDueDate`, `completedTasks`, never `tz`, `d`, `res`, `tmp`, `data2`.
+- **No one-letter names, ever**: not in callbacks (`tasks.map((task) => …)`, not `(t) => …`), loop variables, catch clauses (`catch (error)`), comparators or tests. The only exception is `_` for an intentionally unused parameter. ESLint `id-length` enforces this.
+- No unexplained abbreviations. Spell words out (`interval`, not `intv`; `response`, not `resp`). Well-known acronyms (`id`, `url`, `api`, `ui`) are fine.
+- Booleans read as yes/no questions: `isOverdue`, `hasCompletions`, `canSnooze`.
+- Functions are verbs or describe what they return: `addInterval`, `formatLongDate`, `isCalendarDate`.
+
+### Comments
+
+- **Comments are a last resort.** Code must explain itself through names, small functions and clear structure. If you feel a comment is needed, first rename or extract until it isn't.
+- The only acceptable comment explains a **why** that code cannot express: an external constraint, a platform bug, or a deliberate non-obvious choice. Never comment _what_ code does, never leave commented-out code, never add TODOs without a linked issue.
+- No inline (end-of-line) comments (ESLint `no-inline-comments`).
+
+### Functions and structure
+
+- **Small and single-purpose.** Aim for ~20 lines; ESLint fails anything over 40 (tests excepted), more than 4 parameters, nesting deeper than 3, or cyclomatic complexity over 10. Extract named helpers rather than raising limits.
+- One level of abstraction per function: a function either orchestrates named steps or does one low-level thing, not both.
+- No nested ternaries (`no-nested-ternary`); extract a named helper or use early returns.
+- Prefer early returns over `else` chains. Prefer `async/await` over promise chains.
+- Files stay focused and under 300 lines (enforced). One component, router, or concept per file; file names match their main export (`next-due.ts` exports `nextDueDate`).
+- Organise by feature/layer exactly as described in each package's `CLAUDE.md`; a reviewer should be able to guess where something lives before searching.
+
+### DRY and robustness
+
+- **Don't repeat knowledge.** If the same logic, constant or rule appears twice, extract it to one named place (shared config like `eslint.shared.mjs`, a helper, or `packages/schedule`). jscpd fails release checks above 3% duplication.
+- But don't abstract speculatively: wait for real duplication, not imagined future cases.
+- **Robust at the edges, simple inside**: validate everything entering the system (request bodies, form input, external responses, environment variables) and fail loudly with a clear error; trust types internally instead of re-checking impossible states.
+- Handle every error path deliberately (map to an `AppError`, show a user-facing message, or let it reach the error handler). Never swallow errors silently.
+- No magic numbers or strings: name them (`DAYS_PER_WEEK`, `MAX_SNOOZE_DAYS`).
+
+### Before you finish any change
+
+Re-read your diff as a reviewer would: names obvious, no comments that restate code, no duplication, functions short, files in the right place. `npm run lint` must pass; it enforces the mechanical parts of these rules.
+
+---
+
 ## Code style — non-negotiable rules
 
 ### Types
@@ -100,18 +142,9 @@ Each app/package has its own `CLAUDE.md` with local rules. Read it before workin
 - Prefer discriminated unions over optional fields when a value's presence depends on a state flag.
 - Use `satisfies` to validate object literals and `as const` on enum-like objects.
 
-### Functions and implementation
+### Implementation
 
-- Small and single-purpose, roughly 20 lines maximum. Extract named helpers.
-- Name functions after what they return or do.
-- Prefer `async/await` over promise chains.
-- Simple over clever. No abstractions until a pattern appears three times.
-- No defensive coding for impossible cases, no feature flags, no speculative generality.
-- Validate only at system boundaries (forms, API request bodies, external API responses).
-
-### Comments
-
-- No comments by default. Only explain a non-obvious **why**.
+- Simple over clever. No feature flags or speculative generality.
 
 ### Imports
 

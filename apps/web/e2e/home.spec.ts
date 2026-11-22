@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { APP_NAME } from '../src/lib/app-identity';
 
 test.describe('home page', () => {
   test('shows today with the example task', async ({ page }) => {
@@ -11,10 +12,10 @@ test.describe('home page', () => {
 
   test('has no horizontal scroll at any viewport', async ({ page }) => {
     await page.goto('/');
-    const overflow = await page.evaluate(
+    const horizontalOverflowPixels = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
-    expect(overflow).toBeLessThanOrEqual(0);
+    expect(horizontalOverflowPixels).toBeLessThanOrEqual(0);
   });
 
   test('returns 404 for an unknown route', async ({ page }) => {
@@ -26,12 +27,12 @@ test.describe('home page', () => {
 test.describe('installable web app', () => {
   test('links a manifest that opens standalone', async ({ page, request }) => {
     await page.goto('/');
-    const href = await page.locator('link[rel="manifest"]').getAttribute('href');
-    expect(href).not.toBeNull();
-    const response = await request.get(href ?? '');
+    const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
+    expect(manifestHref).not.toBeNull();
+    const response = await request.get(manifestHref ?? '');
     expect(response.ok()).toBe(true);
     const manifest: unknown = await response.json();
-    expect(manifest).toMatchObject({ name: 'Cleaning Planner', display: 'standalone' });
+    expect(manifest).toMatchObject({ name: APP_NAME, display: 'standalone' });
   });
 
   test('serves the iOS home screen icon', async ({ request }) => {

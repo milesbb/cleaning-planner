@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '../utils/errors';
+import { HttpStatus } from '../utils/http-status';
 import { logger } from '../utils/logging';
 
 interface ErrorBody {
@@ -14,6 +15,10 @@ function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function sendError(response: Response<ErrorBody>, statusCode: number, message: string): void {
+  response.status(statusCode).json({ error: message });
+}
+
 export function errorHandler(
   error: unknown,
   _request: Request,
@@ -21,13 +26,13 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (error instanceof AppError) {
-    response.status(error.status).json({ error: error.message });
+    sendError(response, error.statusCode, error.message);
     return;
   }
   if (isBodyParseError(error)) {
-    response.status(400).json({ error: 'Malformed JSON body' });
+    sendError(response, HttpStatus.badRequest, 'Malformed JSON body');
     return;
   }
   logger.error('Unhandled error', { error: describeError(error) });
-  response.status(500).json({ error: 'Internal server error' });
+  sendError(response, HttpStatus.internalServerError, 'Internal server error');
 }

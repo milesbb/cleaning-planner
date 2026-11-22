@@ -1,6 +1,11 @@
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 import tseslint from 'typescript-eslint';
+import {
+  strictRules,
+  testFileOverrides,
+  typeCheckedLanguageOptions,
+} from '../../eslint.shared.mjs';
 
 export default tseslint.config(
   {
@@ -10,6 +15,7 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       'coverage/**',
+      '.lighthouseci/**',
     ],
   },
   ...nextVitals,
@@ -17,14 +23,8 @@ export default tseslint.config(
   {
     files: ['**/*.{ts,tsx}'],
     extends: [...tseslint.configs.strictTypeChecked],
-    languageOptions: {
-      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
-    },
-    rules: {
-      '@typescript-eslint/explicit-function-return-type': 'error',
-      '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
-      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-      'no-console': 'error',
-    },
+    languageOptions: typeCheckedLanguageOptions(import.meta.dirname),
+    rules: strictRules,
   },
+  testFileOverrides,
 );

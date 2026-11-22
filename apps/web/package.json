@@ -12,11 +12,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "typegen": "next typegen"
+    "typegen": "next typegen",
+    "test:lighthouse": "lhci autorun"
   },
   "devDependencies": {
     "@cleaning-planner/schedule": "^0.0.0",
-    "@eslint/js": "^9.39.5",
+    "@lhci/cli": "^0.16.1",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/dom": "^10.4.2",
@@ -36,10 +37,8 @@
     "vitest-axe": "^0.1.0"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
     "next": "^16.4.6",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "tailwind-merge": "^3.7.1"
+    "react-dom": "^19.3.1"
   }
 }

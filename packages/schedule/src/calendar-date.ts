@@ -10,25 +10,27 @@ interface DateParts {
   day: number;
 }
 
-const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DAYS_PER_WEEK = 7;
+const CALENDAR_DATE_LENGTH = 'YYYY-MM-DD'.length;
+const LAST_DAY_OF_PREVIOUS_MONTH = 0;
 
-function toParts(value: string): DateParts {
+function toDateParts(value: string): DateParts {
+  const [yearText, monthText, dayText] = value.split('-');
   return {
-    year: Number(value.slice(0, 4)),
-    monthIndex: Number(value.slice(5, 7)) - 1,
-    day: Number(value.slice(8, 10)),
+    year: Number(yearText),
+    monthIndex: Number(monthText) - 1,
+    day: Number(dayText),
   };
 }
 
-function formatUtc(timestamp: number): string {
-  return new Date(timestamp).toISOString().slice(0, 10);
+function timestampToCalendarText(timestamp: number): string {
+  return new Date(timestamp).toISOString().slice(0, CALENDAR_DATE_LENGTH);
 }
 
 export function isCalendarDate(value: string): value is CalendarDate {
-  if (!ISO_DATE_PATTERN.test(value)) return false;
-  const { year, monthIndex, day } = toParts(value);
-  return formatUtc(Date.UTC(year, monthIndex, day)) === value;
+  const { year, monthIndex, day } = toDateParts(value);
+  const timestamp = Date.UTC(year, monthIndex, day);
+  return !Number.isNaN(timestamp) && timestampToCalendarText(timestamp) === value;
 }
 
 export function parseCalendarDate(value: string): CalendarDate {
@@ -37,7 +39,8 @@ export function parseCalendarDate(value: string): CalendarDate {
 }
 
 function daysInMonth(year: number, monthIndex: number): number {
-  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+  const lastDayOfMonth = new Date(Date.UTC(year, monthIndex + 1, LAST_DAY_OF_PREVIOUS_MONTH));
+  return lastDayOfMonth.getUTCDate();
 }
 
 function addMonths({ year, monthIndex, day }: DateParts, months: number): number {
@@ -50,16 +53,20 @@ function addDays({ year, monthIndex, day }: DateParts, days: number): number {
   return Date.UTC(year, monthIndex, day + days);
 }
 
-export function addInterval(date: CalendarDate, interval: Interval): CalendarDate {
-  const parts = toParts(date);
-  const timestamp =
-    interval.unit === 'month'
-      ? addMonths(parts, interval.value)
-      : addDays(parts, interval.unit === 'week' ? interval.value * DAYS_PER_WEEK : interval.value);
-  return parseCalendarDate(formatUtc(timestamp));
+function intervalInDays(interval: Interval): number {
+  return interval.unit === 'week' ? interval.value * DAYS_PER_WEEK : interval.value;
 }
 
-export function compareDates(a: CalendarDate, b: CalendarDate): number {
-  if (a === b) return 0;
-  return a < b ? -1 : 1;
+export function addInterval(date: CalendarDate, interval: Interval): CalendarDate {
+  const dateParts = toDateParts(date);
+  const timestamp =
+    interval.unit === 'month'
+      ? addMonths(dateParts, interval.value)
+      : addDays(dateParts, intervalInDays(interval));
+  return parseCalendarDate(timestampToCalendarText(timestamp));
+}
+
+export function compareDates(first: CalendarDate, second: CalendarDate): number {
+  if (first < second) return -1;
+  return first > second ? 1 : 0;
 }

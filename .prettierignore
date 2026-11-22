@@ -7,3 +7,6 @@ playwright-report
 test-results
 package-lock.json
 next-env.d.ts
+.stryker-tmp
+reports
+.lighthouseci

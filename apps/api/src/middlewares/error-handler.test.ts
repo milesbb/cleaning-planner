@@ -24,13 +24,13 @@ describe('errorHandler', () => {
   });
 
   it('hides unexpected errors behind a generic 500 and logs them', async () => {
-    const logError = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+    const errorLogSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
     const response = await request(appThatThrows(new Error('database password leaked'))).get(
       '/boom',
     );
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ error: 'Internal server error' });
-    expect(logError).toHaveBeenCalledWith('Unhandled error', {
+    expect(errorLogSpy).toHaveBeenCalledWith('Unhandled error', {
       error: 'database password leaked',
     });
   });

@@ -1,8 +1,6 @@
 name: Deploy
 
-# Runs when a release PR is merged into production.
-# The AWS backend deploys itself: CodePipeline (infrastructure/template.yml)
-# watches the production branch. This workflow deploys the web app to Vercel.
+# The AWS backend is not deployed here: CodePipeline (infrastructure/template.yml) deploys it from production.
 on:
   push:
     branches: [production]

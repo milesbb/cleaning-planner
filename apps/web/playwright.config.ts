@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const port = 3000;
+const LOCAL_SERVER_PORT = 3000;
+const SERVER_START_TIMEOUT_MS = 120_000;
+const LOCAL_SERVER_URL = `http://localhost:${String(LOCAL_SERVER_PORT)}`;
 const isCI = Boolean(process.env.CI);
 
 export default defineConfig({
@@ -9,7 +11,7 @@ export default defineConfig({
   retries: isCI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: `http://localhost:${String(port)}`,
+    baseURL: LOCAL_SERVER_URL,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
   },
@@ -20,9 +22,9 @@ export default defineConfig({
   ],
   webServer: {
     command: isCI ? 'npm run start' : 'npm run dev',
-    url: `http://localhost:${String(port)}`,
+    url: LOCAL_SERVER_URL,
     reuseExistingServer: !isCI,
-    timeout: 120_000,
+    timeout: SERVER_START_TIMEOUT_MS,
     stdout: 'pipe',
     stderr: 'pipe',
   },

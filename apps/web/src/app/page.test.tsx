@@ -21,8 +21,8 @@ describe('HomePage', () => {
 
   it('shows an example task with its next due date from the schedule engine', () => {
     render(<HomePage />);
-    const example = screen.getByRole('region', { name: 'Example task' });
-    expect(example).toHaveTextContent('Washing machine maintenance wash');
-    expect(example).toHaveTextContent('Next due 1 December 2026');
+    const exampleTask = screen.getByRole('region', { name: 'Example task' });
+    expect(exampleTask).toHaveTextContent('Washing machine maintenance wash');
+    expect(exampleTask).toHaveTextContent('Next due 1 December 2026');
   });
 });

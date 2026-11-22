@@ -1,7 +1,6 @@
 name: PR checks
 
-# Fast checks for every pull request into development.
-# "PR checks passed" is the required status check in the development ruleset.
+# "PR checks passed" is the required status check in the development ruleset; renaming it blocks merges.
 on:
   pull_request:
     branches: [development]
@@ -14,38 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Format, lint & typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: npm run format:check
-      - run: npx turbo run lint typecheck
-
-  unit:
-    name: Unit tests & coverage gates
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: npx turbo run test
-
-  template:
-    name: CloudFormation lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - run: pip install cfn-lint
-      - run: cfn-lint infrastructure/template.yml
+  core:
+    uses: ./.github/workflows/core-checks.yml
 
   passed:
     name: PR checks passed
     runs-on: ubuntu-latest
-    needs: [quality, unit, template]
+    needs: [core]
     if: always()
     steps:
       - name: Fail unless every check succeeded

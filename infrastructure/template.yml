@@ -36,8 +36,6 @@ Globals:
         NODE_OPTIONS: --enable-source-maps
 
 Resources:
-  # ---------- Application ----------
-
   DataTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -132,8 +130,6 @@ Resources:
           Subscribers:
             - SubscriptionType: EMAIL
               Address: !Ref BudgetAlertEmail
-
-  # ---------- CI/CD pipeline ----------
 
   ArtifactBucket:
     Type: AWS::S3::Bucket

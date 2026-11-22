@@ -13,15 +13,24 @@
     "test": "turbo run test",
     "test:e2e": "npm run test:e2e --workspace=@cleaning-planner/web",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "knip": "knip",
+    "dupes": "jscpd apps packages",
+    "test:mutation": "npm run test:mutation --workspace=@cleaning-planner/schedule",
+    "test:lighthouse": "npm run test:lighthouse --workspace=@cleaning-planner/web",
+    "test:smoke": "npm run test:smoke --workspace=@cleaning-planner/api"
   },
   "engines": {
     "node": ">=24"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "jscpd": "^5.4.3",
+    "knip": "^6.47.0",
     "prettier": "^3.10.1",
     "turbo": "^2.11.13",
-    "typescript": "~6.0.0"
+    "typescript": "~6.0.0",
+    "typescript-eslint": "^8.73.0"
   },
   "packageManager": "npm@11.19.1"
 }
