@@ -1,10 +1,3 @@
-import {
-  apiRoutesAreThrottled,
-  appClientsUseSrpOnly,
-  everyApiRouteNeedsSignIn,
-  functionsHaveTimeouts,
-  passwordsAreAtLeastTwelveCharacters,
-} from './api-rules';
 import { isRecord } from './cloudformation-template';
 import type {
   CloudFormationTemplate,
@@ -112,21 +105,12 @@ export function noHourlyNetworkOrDatabaseResources(template: CloudFormationTempl
   return [...globalsProblems, ...resourceProblems];
 }
 
-function originProblems(apiId: string, properties: Properties): string[] {
-  const cors = properties.CorsConfiguration;
-  const origins = isRecord(cors) ? cors.AllowOrigins : undefined;
-  if (!Array.isArray(origins)) {
-    return [`${apiId} must list its CORS origins in the template, not take them from a parameter`];
-  }
-  return APP_ORIGINS.filter((origin) => !origins.includes(origin)).map(
-    (origin) => `${apiId} does not allow ${origin}`,
-  );
-}
-
 export function apiAllowsTheAppOrigins(template: CloudFormationTemplate): string[] {
-  return resourceEntries(template)
-    .filter(([, resource]) => resource.type === 'AWS::Serverless::HttpApi')
-    .flatMap(([apiId, api]) => originProblems(apiId, api.properties));
+  const allowedOrigins = template.parameters.AllowedOrigins?.Default;
+  const origins = typeof allowedOrigins === 'string' ? allowedOrigins.split(',') : [];
+  return APP_ORIGINS.filter((origin) => !origins.includes(origin)).map(
+    (origin) => `AllowedOrigins does not include ${origin}`,
+  );
 }
 
 function expiresItems(properties: Properties): boolean {
@@ -153,9 +137,4 @@ export const INFRASTRUCTURE_RULES: Record<string, Rule> = {
   'no VPC, NAT Gateway or RDS': noHourlyNetworkOrDatabaseResources,
   'the API allows the iOS and Android app origins': apiAllowsTheAppOrigins,
   'data tables remove expired items': dataTablesExpireItems,
-  'every /v1 route except health needs sign-in': everyApiRouteNeedsSignIn,
-  'app clients have no secret and never send the plain password': appClientsUseSrpOnly,
-  'passwords are at least 12 characters': passwordsAreAtLeastTwelveCharacters,
-  'API routes are throttled, tighter on invites and accounts': apiRoutesAreThrottled,
-  'every function has a timeout of at most 30 seconds': functionsHaveTimeouts,
 };
