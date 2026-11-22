@@ -48,6 +48,44 @@ describe('nextDueDate (floating)', () => {
   });
 });
 
+describe('nextDueDate (snoozed)', () => {
+  const neverDone = { startDate: parseCalendarDate('2026-11-22'), lastDoneOn: null };
+  const snoozeToTuesday = {
+    from: parseCalendarDate('2026-11-22'),
+    until: parseCalendarDate('2026-11-24'),
+  };
+
+  it('is the snooze date while the snooze applies', () => {
+    expect(nextDueDate(fortnightlySchedule, { ...neverDone, snooze: snoozeToTuesday })).toBe(
+      '2026-11-24',
+    );
+  });
+
+  it('ends the snooze once the job is done, so the schedule takes over again', () => {
+    expect(
+      nextDueDate(fortnightlySchedule, {
+        ...neverDone,
+        lastDoneOn: parseCalendarDate('2026-11-23'),
+        snooze: snoozeToTuesday,
+      }),
+    ).toBe('2026-12-07');
+  });
+
+  it('works for fixed schedules', () => {
+    const snoozeFromMonday = {
+      from: parseCalendarDate('2026-11-23'),
+      until: parseCalendarDate('2026-11-25'),
+    };
+    expect(
+      nextDueDate(binsOnMonday, {
+        startDate: parseCalendarDate('2026-11-01'),
+        lastDoneOn: parseCalendarDate('2026-11-16'),
+        snooze: snoozeFromMonday,
+      }),
+    ).toBe('2026-11-25');
+  });
+});
+
 describe('nextDueDate (fixed)', () => {
   it('is the first matching day on or after the start date when never completed', () => {
     expect(

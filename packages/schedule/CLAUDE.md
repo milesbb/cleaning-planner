@@ -13,7 +13,9 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 | `src/types.ts`          | Schedule rule types: `Schedule` = `FloatingSchedule` \| `FixedSchedule`, `Interval`, `Weekday`. |
 | `src/calendar-date.ts`  | `CalendarDate` branded `YYYY-MM-DD` type, parsing, `addInterval`, month and weekday helpers.    |
 | `src/fixed-schedule.ts` | `firstFixedOccurrence(rule, from)` for weekdays and day-of-month rules.                         |
-| `src/next-due.ts`       | `nextDueDate(schedule, history)` for both schedule types.                                       |
+| `src/next-due.ts`       | `nextDueDate(schedule, history)` for both schedule types, honouring a snooze.                   |
+| `src/snooze.ts`         | `createSnooze` validates a snooze and records the due date it moves.                            |
+| `src/completions.ts`    | `lastCompletedOn` (done or skipped) and `lastDone` (real completions only).                     |
 
 ## Rules
 
@@ -22,6 +24,8 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 - Month arithmetic clamps to the last day of shorter months (31 Jan + 1 month = 28/29 Feb).
 - Floating schedules are measured from the **last completion**; never from the original start date once the task has been done.
 - Fixed schedules are due on the first matching day (weekday, day of month or last day) **after** the last completion, or on or after the start date if never done. A day of the month past a month's end falls on that month's last day.
+- A skip is a completion with outcome `skipped`: it moves the schedule on (`lastCompletedOn`) but never counts as "done by" anyone (`lastDone`).
+- A snooze remembers the due date it moved (`from`). It only applies while the schedule still says that date, so doing or skipping the job ends it with no clean-up.
 - Import from the specific file (`@cleaning-planner/schedule/next-due`). There is no index barrel.
 
 ## Test-driven development — non-negotiable rules

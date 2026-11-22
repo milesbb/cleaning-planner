@@ -1,3 +1,5 @@
+import type { CalendarDate } from './calendar-date';
+
 export type IntervalUnit = 'day' | 'week' | 'month';
 
 export interface Interval {
@@ -31,3 +33,16 @@ export interface FixedSchedule {
 }
 
 export type Schedule = FloatingSchedule | FixedSchedule;
+
+export type CompletionOutcome = 'done' | 'skipped';
+
+export interface Completion {
+  completedOn: CalendarDate;
+  completedBy: string;
+  outcome: CompletionOutcome;
+}
+
+export interface Snooze {
+  from: CalendarDate;
+  until: CalendarDate;
+}
