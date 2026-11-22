@@ -17,6 +17,8 @@ export const SkipIcon = createIcon(
 
 export const PlusIcon = createIcon('PlusIcon', <path d="M12 5v14M5 12h14" />);
 
+export const MinusIcon = createIcon('MinusIcon', <path d="M5 12h14" />);
+
 export const CloseIcon = createIcon('CloseIcon', <path d="M6 6l12 12M18 6L6 18" />);
 
 export const TodayIcon = createIcon(
