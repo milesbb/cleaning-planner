@@ -11,7 +11,7 @@ jobs:
     name: Format, lint & typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npm run format:check
       - run: npx turbo run lint typecheck
@@ -20,7 +20,7 @@ jobs:
     name: Unit tests & coverage gates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npx turbo run test
 
@@ -28,7 +28,7 @@ jobs:
     name: CloudFormation lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
