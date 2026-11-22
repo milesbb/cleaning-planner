@@ -34,7 +34,7 @@ jobs:
     name: Production builds & Lambda smoke test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npx turbo run build
       - run: npm run test:smoke
@@ -43,7 +43,7 @@ jobs:
     name: E2E (desktop, Android, iPhone)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - name: Cache Playwright browsers
         uses: actions/cache@v6
@@ -68,7 +68,7 @@ jobs:
     name: Production dependency audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npm audit --omit=dev --audit-level=high
 
@@ -76,7 +76,7 @@ jobs:
     name: Dead code & duplication (Knip, jscpd)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npm run knip
       - run: npm run dupes
@@ -85,7 +85,7 @@ jobs:
     name: Mutation testing (schedule engine)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npm run test:mutation
       - name: Upload mutation report
@@ -100,7 +100,7 @@ jobs:
     name: Lighthouse (accessibility, best practices, SEO)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npx turbo run build --filter=@cleaning-planner/web
       - run: npm run test:lighthouse
@@ -117,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     container: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: >-
           semgrep scan --error --metrics=off
           --config p/default --config p/typescript --config p/react
@@ -128,7 +128,7 @@ jobs:
     name: Gitleaks (secrets in history)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v3
@@ -139,7 +139,7 @@ jobs:
     name: actionlint (workflow files)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:latest -color
 
   passed:
