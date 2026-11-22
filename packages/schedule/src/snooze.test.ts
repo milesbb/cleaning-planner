@@ -39,6 +39,19 @@ describe('createSnooze', () => {
     ).toThrow('A snooze must move the job to a later day');
   });
 
+  it.each([
+    ['its due date', '2026-11-25'],
+    ['a day between today and its due date', '2026-11-24'],
+  ])('rejects snoozing an upcoming job to %s', (_, requestedText) => {
+    expect(() =>
+      createSnooze({
+        currentDueDate: parseCalendarDate('2026-11-25'),
+        requestedDate: parseCalendarDate(requestedText),
+        today,
+      }),
+    ).toThrow('A snooze must move the job to a later day');
+  });
+
   it('rejects snoozing a late job to today or earlier', () => {
     expect(() =>
       createSnooze({
