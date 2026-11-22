@@ -15,14 +15,12 @@ export function ExampleTask(): ReactNode {
   return (
     <section
       aria-label="Example task"
-      className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
+      className="rounded-card border-2 border-ink bg-card p-4 shadow-hard sm:p-5"
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Example</p>
+      <p className="font-display text-xs font-extrabold uppercase tracking-widest">Example</p>
       <p className="mt-1 text-base font-semibold">Washing machine maintenance wash</p>
-      <p className="mt-1 text-sm text-muted">
-        Every month · last done {formatLongDate(exampleLastDoneOn)}
-      </p>
-      <p className="mt-3 inline-flex rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary">
+      <p className="mt-1 text-sm">Every month · last done {formatLongDate(exampleLastDoneOn)}</p>
+      <p className="mt-3 inline-flex rounded-full border-2 border-ink bg-kitchen px-3 py-1 text-sm font-bold">
         Next due {formatLongDate(dueDate)}
       </p>
     </section>

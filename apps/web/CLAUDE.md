@@ -8,20 +8,22 @@ Next.js App Router PWA, deployed to Vercel. Mobile-first: most use is from a pho
 
 ## Key files
 
-| File                      | Purpose                                                                                               |
-| ------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `src/app/layout.tsx`      | Root layout, metadata, viewport/theme colour, iOS home-screen settings.                               |
-| `src/app/manifest.ts`     | Web app manifest. `display: standalone` is required for iOS web push — never change it.               |
-| `src/app/globals.css`     | Tailwind v4 theme tokens (light + dark). Add colours here as tokens, not as raw hex in components.    |
-| `src/lib/format-date.ts`  | Display formatting for `CalendarDate` values (en-GB).                                                 |
-| `src/lib/app-identity.ts` | App name, short name, description and theme colours. The single source for metadata and the manifest. |
-| `public/icons/`           | PNG app icons, generated from `src/app/icon.svg`. Regenerate all sizes if the SVG changes.            |
+| File                       | Purpose                                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/layout.tsx`       | Root layout, metadata, viewport/theme colour, iOS home-screen settings.                                                                                                 |
+| `src/app/manifest.ts`      | Web app manifest. `display: standalone` is required for iOS web push — never change it.                                                                                 |
+| `src/app/globals.css`      | Wall chart tokens as CSS variables (softened palette by default, `data-palette="original"` for the original) and the Tailwind `@theme`, paper grain, shadows and radii. |
+| `src/lib/design-tokens.ts` | The palettes in TypeScript. Tests keep them identical to `globals.css` and check every text/background pair is at least 4.5:1.                                          |
+| `src/lib/format-date.ts`   | Display formatting for `CalendarDate` values (en-GB).                                                                                                                   |
+| `src/lib/app-identity.ts`  | App name, short name, description and theme colours. The single source for metadata and the manifest.                                                                   |
+| `public/icons/`            | PNG app icons, generated from `src/app/icon.svg`. Regenerate all sizes if the SVG changes.                                                                              |
 
 ## Rules
 
 - **Scheduling logic lives in `@cleaning-planner/schedule`.** Never compute due dates or intervals in a component; import from the package (`@cleaning-planner/schedule/next-due`).
 - Use shadcn/ui components (`npx shadcn add <component>`, into `src/components/ui/`) before writing custom UI elements. The first `shadcn add` also creates `src/lib/utils.ts` with its `cn()` class merger: keep that name, because generated components import it. It is the one exception to the naming rules.
-- Tailwind only for styling — no CSS modules, no inline style objects. Use the theme tokens (`bg-card`, `text-muted`, `text-primary`…) so dark mode keeps working.
+- Tailwind only for styling — no CSS modules, no inline style objects. Use the Wall chart tokens (`bg-paper`, `bg-card`, `text-ink`, `bg-kitchen`…`bg-whole-home`, `bg-late`, `shadow-hard`, `rounded-card`, `font-display`), never raw hex. A new colour goes into both palettes in `design-tokens.ts` and `globals.css`.
+- Text is always `text-ink` (or `text-card` on an ink background); there is no grey text, because it fails contrast on the room colours.
 - Never disable pinch-zoom (`maximumScale` / `userScalable`) in the viewport.
 - Respect safe areas (`env(safe-area-inset-*)`) — the app runs full-screen from the iOS home screen.
 
@@ -36,7 +38,7 @@ Next.js App Router PWA, deployed to Vercel. Mobile-first: most use is from a pho
 
 - Mobile-first; layer up with `sm:` / `md:` / `lg:`.
 - Touch targets at least 44×44px. No hover-only interactions.
-- Before marking any UI task complete, check it at a narrow mobile viewport and a laptop viewport, in light **and** dark mode.
+- Before marking any UI task complete, check it at a narrow mobile viewport and a laptop viewport. The app is light-only for now; dark mode is a later item in `docs/PLAN.md`.
 
 ## Test-driven development — non-negotiable rules
 
