@@ -13,6 +13,7 @@ import type { MembershipReader } from './middlewares/membership';
 import { signedInUser } from './middlewares/signed-in-user';
 import type { ClaimsReader } from './middlewares/signed-in-user';
 import type { SourceIpReader } from './middlewares/source-ip';
+import type { AccountService } from './services/account-service';
 import type { AgendaService } from './services/agenda-service';
 import type { HouseholdService } from './services/household-service';
 import type { InviteService } from './services/invite-service';
@@ -27,6 +28,7 @@ const MAX_JSON_BODY_SIZE = '100kb';
 
 export interface AppServices {
   profiles: ProfileService;
+  accounts: AccountService;
   households: HouseholdService;
   members: MemberService;
   invites: InviteService;
@@ -64,7 +66,7 @@ export function createApp(config: AppConfig): Express {
   app.use(express.json({ limit: MAX_JSON_BODY_SIZE }));
   app.use('/v1/health', healthRouter(config.version));
   app.use('/v1', signedInUser(config.readClaims));
-  app.use('/v1/me', meRouter(config.services.profiles));
+  app.use('/v1/me', meRouter(config.services.profiles, config.services.accounts));
   app.use('/v1/invites', invitesRouter(config.services.invites, config.readSourceIp));
   for (const [path, router] of householdRouters(config.services)) {
     app.use(`${ONE_HOME}${path}`, router);

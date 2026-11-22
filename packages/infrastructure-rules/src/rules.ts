@@ -2,6 +2,7 @@ import {
   apiRoutesAreThrottled,
   appClientsUseSrpOnly,
   everyApiRouteNeedsSignIn,
+  functionsCannotManageSignIns,
   functionsHaveTimeouts,
   passwordsAreAtLeastTwelveCharacters,
 } from './api-rules';
@@ -154,4 +155,6 @@ export const INFRASTRUCTURE_RULES: Record<string, Rule> = {
   'passwords are at least 12 characters': passwordsAreAtLeastTwelveCharacters,
   'API routes are throttled, tighter on invites and accounts': apiRoutesAreThrottled,
   'every function has a timeout of at most 30 seconds': functionsHaveTimeouts,
+  'functions reach Cognito only with the caller’s own token, never their role':
+    functionsCannotManageSignIns,
 };

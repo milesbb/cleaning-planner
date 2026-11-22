@@ -107,3 +107,11 @@ export function functionsHaveTimeouts(template: CloudFormationTemplate): string[
     },
   );
 }
+
+export function functionsCannotManageSignIns(template: CloudFormationTemplate): string[] {
+  return resourcesOfType(template, 'AWS::Serverless::Function')
+    .filter(([, resource]) =>
+      JSON.stringify(resource.properties.Policies ?? []).includes('cognito-idp'),
+    )
+    .map(([functionId]) => `${functionId} can call Cognito with its own role`);
+}
