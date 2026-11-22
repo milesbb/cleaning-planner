@@ -24,7 +24,7 @@ jobs:
       - name: Skip when Vercel is not configured
         if: env.VERCEL_TOKEN == ''
         run: echo "::notice::VERCEL_TOKEN secret not set, skipping web deploy. See README > Deployment setup."
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: env.VERCEL_TOKEN != ''
       - uses: ./.github/actions/setup
         if: env.VERCEL_TOKEN != ''
