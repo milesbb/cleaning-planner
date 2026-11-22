@@ -8,6 +8,7 @@ export interface TemplateResource {
 }
 
 export interface CloudFormationTemplate {
+  parameters: Record<string, Properties>;
   functionGlobals: Properties;
   resources: Record<string, TemplateResource>;
 }
@@ -67,6 +68,16 @@ function readResource(logicalId: string, resource: unknown): TemplateResource {
   };
 }
 
+function readParameters(parameters: unknown): Record<string, Properties> {
+  if (!isRecord(parameters)) return {};
+  return Object.fromEntries(
+    Object.entries(parameters).map(([name, parameter]) => [
+      name,
+      isRecord(parameter) ? parameter : {},
+    ]),
+  );
+}
+
 function readFunctionGlobals(globals: unknown): Properties {
   return isRecord(globals) && isRecord(globals.Function) ? globals.Function : {};
 }
@@ -80,6 +91,7 @@ export function parseTemplate(text: string): CloudFormationTemplate {
     ([logicalId, resource]) => [logicalId, readResource(logicalId, resource)] as const,
   );
   return {
+    parameters: readParameters(document.Parameters),
     functionGlobals: readFunctionGlobals(document.Globals),
     resources: Object.fromEntries(resources),
   };

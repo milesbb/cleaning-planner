@@ -12,8 +12,8 @@ Parameters:
     Default: production
   AllowedOrigins:
     Type: CommaDelimitedList
-    Default: https://cleaning-planner-coral.vercel.app,http://localhost:3000
-    Description: Browser origins allowed to call the API (the website, plus localhost for development)
+    Default: https://cleaning-planner-coral.vercel.app,http://localhost:3000,capacitor://localhost,https://localhost
+    Description: Browser origins allowed to call the API (the website, localhost for development, and the iOS and Android apps)
   BudgetAlertEmail:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /cleaning-planner/budget-alert-email
@@ -55,6 +55,9 @@ Resources:
           KeyType: RANGE
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
       DeletionProtectionEnabled: true
 
   HttpApi:
@@ -272,10 +275,12 @@ Resources:
                   - codeconnections:*
                   - codepipeline:*
                   - codestar-connections:*
+                  - cognito-idp:*
                   - dynamodb:*
                   - lambda:*
                   - logs:*
                   - s3:*
+                  - scheduler:*
                   - ssm:GetParameter
                   - ssm:GetParameters
                 Resource: '*'

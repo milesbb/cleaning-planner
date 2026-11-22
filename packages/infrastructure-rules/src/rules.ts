@@ -13,6 +13,8 @@ const ROLE_TYPE = 'AWS::IAM::Role';
 const SERVERLESS_FUNCTION_TYPE = 'AWS::Serverless::Function';
 const FUNCTION_TYPES = [SERVERLESS_FUNCTION_TYPE, 'AWS::Lambda::Function'];
 const FULL_ACCESS_POLICY = /[A-Za-z0-9]*FullAccess/;
+const APP_ORIGINS = ['capacitor://localhost', 'https://localhost'];
+const TIME_TO_LIVE_ATTRIBUTE = 'expiresAt';
 const HOURLY_RESOURCE_TYPES = [/^AWS::EC2::(VPC|NatGateway|Subnet)$/, /^AWS::RDS::/];
 
 function resourceEntries(template: CloudFormationTemplate): [string, TemplateResource][] {
@@ -103,10 +105,36 @@ export function noHourlyNetworkOrDatabaseResources(template: CloudFormationTempl
   return [...globalsProblems, ...resourceProblems];
 }
 
+export function apiAllowsTheAppOrigins(template: CloudFormationTemplate): string[] {
+  const allowedOrigins = template.parameters.AllowedOrigins?.Default;
+  const origins = typeof allowedOrigins === 'string' ? allowedOrigins.split(',') : [];
+  return APP_ORIGINS.filter((origin) => !origins.includes(origin)).map(
+    (origin) => `AllowedOrigins does not include ${origin}`,
+  );
+}
+
+function expiresItems(properties: Properties): boolean {
+  const timeToLive = properties.TimeToLiveSpecification;
+  return (
+    isRecord(timeToLive) &&
+    timeToLive.AttributeName === TIME_TO_LIVE_ATTRIBUTE &&
+    timeToLive.Enabled === true
+  );
+}
+
+export function dataTablesExpireItems(template: CloudFormationTemplate): string[] {
+  return resourceEntries(template)
+    .filter(([, resource]) => resource.type === 'AWS::DynamoDB::Table')
+    .filter(([, table]) => !expiresItems(table.properties))
+    .map(([logicalId]) => `${logicalId} does not expire items by ${TIME_TO_LIVE_ATTRIBUTE}`);
+}
+
 export const INFRASTRUCTURE_RULES: Record<string, Rule> = {
   'every IAM role and function has the permissions boundary': everyRoleHasThePermissionsBoundary,
   'every log group sets RetentionInDays': everyLogGroupHasRetention,
   'every named resource starts with the stack name': everyNameStartsWithTheStackName,
   'no FullAccess managed policies': noFullAccessPolicies,
   'no VPC, NAT Gateway or RDS': noHourlyNetworkOrDatabaseResources,
+  'the API allows the iOS and Android app origins': apiAllowsTheAppOrigins,
+  'data tables remove expired items': dataTablesExpireItems,
 };
