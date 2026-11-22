@@ -7,6 +7,7 @@ import { createInviteRepository } from './data/invite-repository';
 import { createMemberRepository } from './data/member-repository';
 import { createMembershipRepository } from './data/membership-repository';
 import { createProfileRepository } from './data/profile-repository';
+import { createRoomRepository } from './data/room-repository';
 import { connectToTable } from './data/table';
 import { createCognitoIdentityReader } from './identity/cognito-identity';
 import { createHouseholdService } from './services/household-service';
@@ -14,6 +15,7 @@ import { generateInviteCode } from './services/invite-code';
 import { createInviteService } from './services/invite-service';
 import { createMemberService } from './services/member-service';
 import { createProfileService } from './services/profile-service';
+import { createRoomService } from './services/room-service';
 
 export function createServices(environment: NodeJS.ProcessEnv): AppServices {
   const table = connectToTable(environment);
@@ -42,6 +44,12 @@ export function createServices(environment: NodeJS.ProcessEnv): AppServices {
       profiles: profileStore,
       now,
       newCode: () => generateInviteCode(),
+    }),
+    rooms: createRoomService({
+      store: createRoomRepository(table),
+      households: householdStore,
+      now,
+      newId: randomUUID,
     }),
     memberships,
   };
