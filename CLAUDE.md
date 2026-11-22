@@ -50,17 +50,17 @@ Each app/package has its own `CLAUDE.md` with local rules. Read it before workin
 
 ## Stack
 
-| Layer          | Choice                                                                                                                                          |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Monorepo       | Turborepo + npm workspaces                                                                                                                      |
-| Frontend       | Next.js App Router as a static export (`output: 'export'`), Tailwind, shadcn/ui, PWA, Vercel                                                    |
-| Native apps    | Capacitor (iOS + Android) wrapping the same build; FCM push, haptics, share, deep links; fastlane to TestFlight and Play internal testing       |
-| API            | Express 5 on Lambda (Node 24, arm64) behind API Gateway HTTP API                                                                                |
-| Data           | DynamoDB, single table (`pk`/`sk`), on-demand, point-in-time recovery                                                                           |
-| Auth           | Cognito user pool, JWT authorizer on the HTTP API _(Phase 1)_                                                                                   |
-| Notifications  | Web Push (browsers) + Firebase Cloud Messaging (apps) + SES email from a `notify` Lambda on EventBridge Scheduler                               |
-| Infrastructure | CloudFormation/SAM in `infrastructure/template.yml`, region `ap-southeast-2`                                                                    |
-| CI/CD          | GitHub Actions: PR checks (→ development), release checks (→ production), Vercel deploy; AWS CodePipeline deploys the backend from `production` |
+| Layer          | Choice                                                                                                                                                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo       | Turborepo + npm workspaces                                                                                                                                                                                                  |
+| Frontend       | Next.js App Router as a static export (`output: 'export'`), Tailwind, shadcn/ui, PWA, Vercel                                                                                                                                |
+| Native apps    | Capacitor (iOS + Android) wrapping the same build; FCM push, haptics, share, deep links; fastlane to TestFlight and Play internal testing                                                                                   |
+| API            | Express 5 on Lambda (Node 24, arm64) behind API Gateway HTTP API                                                                                                                                                            |
+| Data           | DynamoDB, single table (`pk`/`sk`), on-demand, point-in-time recovery                                                                                                                                                       |
+| Auth           | Cognito user pool, JWT authorizer on the HTTP API _(Phase 1)_                                                                                                                                                               |
+| Notifications  | Web Push (browsers) + Firebase Cloud Messaging (apps) + SES email from a `notify` Lambda on EventBridge Scheduler                                                                                                           |
+| Infrastructure | CloudFormation/SAM in `infrastructure/template.yml`, region `ap-southeast-2`                                                                                                                                                |
+| CI/CD          | GitHub Actions: PR checks (→ development), release checks (→ production); Vercel's GitHub integration deploys the website from `production` (and previews every PR); AWS CodePipeline deploys the backend from `production` |
 
 ## Domain rules
 
