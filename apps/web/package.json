@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "serve out --listen 3000 --no-clipboard --no-request-logging",
     "lint": "next typegen && eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
@@ -31,6 +31,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.6",
     "jsdom": "^31.0.1",
+    "serve": "^14.2.8",
     "tailwindcss": "^4.3.5",
     "typescript-eslint": "^8.73.0",
     "vitest": "^5.1.1",

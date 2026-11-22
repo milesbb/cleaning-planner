@@ -4,7 +4,15 @@
 
 `README.md` at the repo root is the developer setup guide. If your changes affect anything it documents — stack choices, env vars, CI/CD behaviour, or setup steps — update `README.md` to match.
 
-Next.js App Router PWA, deployed to Vercel. Mobile-first: most use is from a phone home screen.
+Next.js App Router, built as a **static export** (`output: 'export'`, `trailingSlash: true`): the files in `out/` are the website on Vercel **and** the UI inside the iOS and Android apps (`apps/mobile`). Mobile-first, and every screen must work from 320px to 1920px wide.
+
+## Static export — non-negotiable rules
+
+- No server-only features: no route handlers, server actions, middleware, `cookies()`/`headers()`, or data fetching on the server. All data comes from the API at runtime in the browser.
+- Pages that show a record read its id from the query string with `readRecordId` (`/job?id=…`), never from a dynamic route segment, because the export can't know users' ids.
+- Metadata routes (`manifest.ts` and similar) declare `export const dynamic = 'force-static'`.
+- Images use `next/image` with `unoptimized` (set in `next.config.ts`); there is no image server.
+- Tests run against the exported files: `npm run start` serves `out/` with `serve`, and Playwright and Lighthouse use it in CI.
 
 ## Key files
 
@@ -14,6 +22,7 @@ Next.js App Router PWA, deployed to Vercel. Mobile-first: most use is from a pho
 | `src/app/manifest.ts`      | Web app manifest. `display: standalone` is required for iOS web push — never change it.                                                                                 |
 | `src/app/globals.css`      | Wall chart tokens as CSS variables (softened palette by default, `data-palette="original"` for the original) and the Tailwind `@theme`, paper grain, shadows and radii. |
 | `src/lib/design-tokens.ts` | The palettes in TypeScript. Tests keep them identical to `globals.css` and check every text/background pair is at least 4.5:1.                                          |
+| `src/lib/record-id.ts`     | `readRecordId(query, name)`: the only way pages read a record id from the URL (validated, `null` when missing or malformed).                                            |
 | `src/lib/format-date.ts`   | Display formatting for `CalendarDate` values (en-GB).                                                                                                                   |
 | `src/lib/app-identity.ts`  | App name, short name, description and theme colours. The single source for metadata and the manifest.                                                                   |
 | `public/icons/`            | PNG app icons, generated from `src/app/icon.svg`. Regenerate all sizes if the SVG changes.                                                                              |
