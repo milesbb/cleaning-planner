@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, ThemeColors } from '@/lib/app-identity';
 
+export const dynamic = 'force-static';
+
 type ManifestIcon = NonNullable<MetadataRoute.Manifest['icons']>[number];
 
 function pngIcon(path: string, sizePixels: number, purpose: ManifestIcon['purpose']): ManifestIcon {
