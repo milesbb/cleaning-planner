@@ -8,6 +8,7 @@ export const API_ERROR_CODES = [
   'forbidden',
   'notFound',
   'conflict',
+  'gone',
   'tooManyRequests',
   'internal',
 ] as const;

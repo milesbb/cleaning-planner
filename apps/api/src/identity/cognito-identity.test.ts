@@ -1,9 +1,13 @@
-import { GetUserCommand, NotAuthorizedException } from '@aws-sdk/client-cognito-identity-provider';
+import {
+  DeleteUserCommand,
+  GetUserCommand,
+  NotAuthorizedException,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
-import { createCognitoIdentityReader } from './cognito-identity';
+import { createCognitoAccountRemover, createCognitoIdentityReader } from './cognito-identity';
 
-type Send = (command: GetUserCommand) => Promise<unknown>;
+type Send = (command: GetUserCommand | DeleteUserCommand) => Promise<unknown>;
 
 function clientReturning(attributes: { Name: string; Value: string }[]): { send: Mock<Send> } {
   return { send: vi.fn<Send>(() => Promise.resolve({ UserAttributes: attributes })) };
@@ -48,6 +52,29 @@ describe('Cognito identity reader', () => {
     const client = { send: vi.fn<Send>(() => Promise.reject(new Error('network down'))) };
     await expect(createCognitoIdentityReader(client).readIdentity('token')).rejects.toThrow(
       'network down',
+    );
+  });
+});
+
+describe('Cognito account remover', () => {
+  it('deletes the person’s own sign-in with their access token, needing no IAM permission', async () => {
+    const client = { send: vi.fn<Send>(() => Promise.resolve({})) };
+    await createCognitoAccountRemover(client).deleteIdentity('the-access-token');
+    const [command] = client.send.mock.calls[0] ?? [];
+    expect(command).toBeInstanceOf(DeleteUserCommand);
+    expect(command).toMatchObject({ input: { AccessToken: 'the-access-token' } });
+  });
+
+  it('treats a rejected token as signed out', async () => {
+    const client = {
+      send: vi.fn<Send>(() =>
+        Promise.reject(
+          new NotAuthorizedException({ message: 'Access Token has been revoked', $metadata: {} }),
+        ),
+      ),
+    };
+    await expect(createCognitoAccountRemover(client).deleteIdentity('old-token')).rejects.toThrow(
+      'Sign in to continue',
     );
   });
 });

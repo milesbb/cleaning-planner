@@ -3,7 +3,9 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   completionSchema,
   createCompletionRequestSchema,
+  jobProgressSchema,
   snoozeJobRequestSchema,
+  undoCompletionRequestSchema,
 } from './completion';
 import { createJobRequestSchema, jobSchema, updateJobRequestSchema } from './job';
 import { describeContract, fieldErrorsFor } from './test-support';
@@ -70,9 +72,44 @@ describeContract('snoozeJobRequestSchema', snoozeJobRequestSchema, {
   wrongType: { field: 'until', value: 'Friday' },
 });
 
+describeContract('undoCompletionRequestSchema', undoCompletionRequestSchema, {
+  valid: { idempotencyKey: IDEMPOTENCY_KEY },
+  requiredField: 'idempotencyKey',
+  wrongType: { field: 'idempotencyKey', value: 'short' },
+});
+
+describeContract('jobProgressSchema', jobProgressSchema, {
+  valid: {
+    jobId: 'job-1',
+    nextDueDate: '2026-11-30',
+    snooze: null,
+    latestCompletion: {
+      jobId: 'job-1',
+      outcome: 'done',
+      completedOn: '2026-11-23',
+      completedBy: 'user-1',
+      doneAt: '2026-11-23T08:40:00Z',
+    },
+  },
+  requiredField: 'nextDueDate',
+  wrongType: { field: 'snooze', value: '2026-11-25' },
+});
+
 describe('job contracts', () => {
   it('give the schedule engine what it needs to work out due dates', () => {
     expectTypeOf<z.infer<typeof completionSchema>>().toExtend<Completion>();
+  });
+
+  it('only accept jobs that exist in the library', () => {
+    expect(
+      createJobRequestSchema.safeParse({ ...NEW_JOB, libraryId: 'kitchen.dishwasher-filter' })
+        .success,
+    ).toBe(true);
+    expect(
+      fieldErrorsFor(createJobRequestSchema, { ...NEW_JOB, libraryId: 'kitchen.unicorn' }),
+    ).toEqual({
+      libraryId: 'Pick a job from the library',
+    });
   });
 
   it('cap how long a job takes', () => {

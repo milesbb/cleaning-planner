@@ -2,10 +2,9 @@ import { apiErrorSchema } from '@cleaning-planner/contracts/api-error';
 import type { Profile } from '@cleaning-planner/contracts/profile';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
-import { createApp } from '../app';
 import type { ProfileService } from '../services/profile-service';
+import { CLAIMS_HEADER, signedInAs, testApp } from '../test-support/test-app';
 
-const CLAIMS_HEADER = 'x-test-claims';
 const SAM: Profile = { id: 'user-sam', name: 'Sam', email: 'sam@example.com', colour: 'blue' };
 
 function profileService(): ProfileService {
@@ -17,20 +16,11 @@ function profileService(): ProfileService {
   };
 }
 
-function appWith(profiles: ProfileService): ReturnType<typeof createApp> {
-  return createApp({
-    version: 'test',
-    readClaims: (incoming) => {
-      const header = incoming.header(CLAIMS_HEADER);
-      if (header === undefined) return undefined;
-      const claims: unknown = JSON.parse(header);
-      return claims;
-    },
-    services: { profiles },
-  });
+function appWith(profiles: ProfileService): ReturnType<typeof testApp> {
+  return testApp({ profiles });
 }
 
-const SIGNED_IN_AS_SAM = JSON.stringify({ sub: 'user-sam', token_use: 'access' });
+const SIGNED_IN_AS_SAM = signedInAs('user-sam');
 
 describe('GET /v1/me', () => {
   it('needs a signed-in user', async () => {

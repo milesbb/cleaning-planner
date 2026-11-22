@@ -234,17 +234,18 @@ apps/api/src/
 
 ### 9.4 Data design (single table)
 
-| Item                    | pk               | sk                        | Holds                                                                      |
-| ----------------------- | ---------------- | ------------------------- | -------------------------------------------------------------------------- |
-| Profile                 | `USER#<userId>`  | `PROFILE`                 | name, email, person colour, reminder settings                              |
-| My homes                | `USER#<userId>`  | `HOUSEHOLD#<householdId>` | home name and my role (for the switcher, one query)                        |
-| Push device             | `USER#<userId>`  | `PUSH#<deviceHash>`       | kind (`webPush` or `fcm`), endpoint and keys or FCM token, platform, label |
-| Home                    | `HOUSEHOLD#<id>` | `META`                    | name, timezone, week start, owner                                          |
-| Member                  | `HOUSEHOLD#<id>` | `MEMBER#<userId>`         | display name, colour, role                                                 |
-| Room                    | `HOUSEHOLD#<id>` | `ROOM#<roomId>`           | type, name, order, appliances                                              |
-| Job                     | `HOUSEHOLD#<id>` | `JOB#<jobId>`             | room, library id, name, icon, schedule, assignment, snooze                 |
-| Completion              | `HOUSEHOLD#<id>` | `DONE#<jobId>#<doneAt>`   | done by, skipped                                                           |
-| Invite (lookup by code) | `INVITE#<code>`  | `META`                    | home id, invited by, `expiresAt` (TTL, 7 days)                             |
+| Item                    | pk               | sk                        | Holds                                                                                 |
+| ----------------------- | ---------------- | ------------------------- | ------------------------------------------------------------------------------------- |
+| Profile                 | `USER#<userId>`  | `PROFILE`                 | name, email, person colour, reminder settings                                         |
+| My homes                | `USER#<userId>`  | `HOUSEHOLD#<householdId>` | home name and my role (for the switcher, one query)                                   |
+| Push device             | `USER#<userId>`  | `PUSH#<deviceHash>`       | kind (`webPush` or `fcm`), endpoint and keys or FCM token, platform, label            |
+| Home                    | `HOUSEHOLD#<id>` | `META`                    | name, timezone, week start, owner                                                     |
+| Member                  | `HOUSEHOLD#<id>` | `MEMBER#<userId>`         | display name, colour, role                                                            |
+| Room                    | `HOUSEHOLD#<id>` | `ROOM#<roomId>`           | type, name, order, appliances                                                         |
+| Job                     | `HOUSEHOLD#<id>` | `JOB#<jobId>`             | room, library id, name, icon, schedule, assignment, snooze                            |
+| Completion              | `HOUSEHOLD#<id>` | `DONE#<jobId>#<doneAt>`   | done by, skipped                                                                      |
+| Request already handled | `HOUSEHOLD#<id>` | `REQUEST#<userId>#<key>`  | the first answer to a done, skip, undo or snooze request, `expiresAt` (TTL, 24 hours) |
+| Invite (lookup by code) | `INVITE#<code>`  | `META`                    | home id, invited by, `expiresAt` (TTL, 7 days)                                        |
 
 ### 9.5 Endpoints
 

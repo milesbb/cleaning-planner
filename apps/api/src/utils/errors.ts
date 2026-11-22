@@ -26,4 +26,7 @@ export const Errors = {
   notFound: (message = 'Not found'): AppError =>
     new AppError(HttpStatus.notFound, 'notFound', message),
   conflict: (message: string): AppError => new AppError(HttpStatus.conflict, 'conflict', message),
+  gone: (message: string): AppError => new AppError(HttpStatus.gone, 'gone', message),
+  tooManyRequests: (message: string): AppError =>
+    new AppError(HttpStatus.tooManyRequests, 'tooManyRequests', message),
 } as const;

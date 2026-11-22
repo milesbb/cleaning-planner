@@ -1,27 +1,9 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-import { createApp } from './app';
-import type { ProfileService } from './services/profile-service';
+import { CLAIMS_HEADER, signedInAs, testApp } from './test-support/test-app';
 
-const unusedProfiles: ProfileService = {
-  getMyProfile: () => Promise.reject(new Error('not used')),
-  updateMyProfile: () => Promise.reject(new Error('not used')),
-};
-
-const CLAIMS_HEADER = 'x-test-claims';
-
-const app = createApp({
-  version: 'test-sha',
-  services: { profiles: unusedProfiles },
-  readClaims: (incoming) => {
-    const header = incoming.header(CLAIMS_HEADER);
-    if (header === undefined) return undefined;
-    const claims: unknown = JSON.parse(header);
-    return claims;
-  },
-});
-
-const SIGNED_IN = JSON.stringify({ sub: 'user-sam', token_use: 'access' });
+const app = testApp();
+const SIGNED_IN = signedInAs('user-sam');
 
 describe('API app', () => {
   it('reports health with the deployed version, without signing in', async () => {
