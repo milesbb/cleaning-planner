@@ -55,7 +55,9 @@ describe('logger redaction', () => {
   });
 
   it('never writes tokens or authorisation headers', () => {
-    const jwt = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEifQ.c2lnbmF0dXJl';
+    const jwt = [{ alg: 'RS256' }, { sub: 'user-1' }, 'not-a-real-signature']
+      .map((part) => Buffer.from(JSON.stringify(part)).toString('base64url'))
+      .join('.');
     expect(
       loggedContext({ authorization: `Bearer ${jwt}`, idToken: jwt, detail: `token ${jwt}` }),
     ).toMatchObject({
