@@ -103,7 +103,7 @@ Details: `docs/IMPLEMENTATION.md` §4.2.
 
 ## Speed and smoothness — non-negotiable rules
 
-Budgets: `docs/IMPLEMENTATION.md` §4.3 (LCP < 1.5 s on a mid-range phone, INP < 100 ms, CLS < 0.05, < 150 KB JS per route, tap feedback < 100 ms).
+Budgets: `docs/IMPLEMENTATION.md` §4.3 (LCP < 1.5 s on a mid-range phone, INP < 100 ms, CLS < 0.05, first load ≤ 220 KB gzipped JS with ≤ 60 KB specific to the route, tap feedback < 100 ms).
 
 - Show cached data instantly and refresh in the background; update the UI before the server answers.
 - Animate only transform and opacity; respect "reduce motion"; reserve space so nothing jumps.

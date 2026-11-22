@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "typegen": "next typegen",
-    "test:lighthouse": "lhci autorun"
+    "test:lighthouse": "lhci autorun",
+    "check:bundle-size": "node scripts/check-bundle-size.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
