@@ -14,8 +14,10 @@ import { connectToTable } from './data/table';
 import type { Table } from './data/table';
 import { createCognitoIdentityReader } from './identity/cognito-identity';
 import type { MembershipReader } from './middlewares/membership';
+import { createAgendaService } from './services/agenda-service';
 import { createHouseholdService } from './services/household-service';
 import type { HouseholdStore } from './services/household-service';
+import type { MemberStore } from './services/member-service';
 import { generateInviteCode } from './services/invite-code';
 import { createInviteService } from './services/invite-service';
 import { createJobProgressService } from './services/job-progress-service';
@@ -27,6 +29,7 @@ import { createRoomService } from './services/room-service';
 interface PlanningStores {
   table: Table;
   householdStore: HouseholdStore;
+  memberStore: MemberStore;
   memberships: MembershipReader;
   now: () => string;
 }
@@ -34,11 +37,13 @@ interface PlanningStores {
 function createPlanningServices({
   table,
   householdStore,
+  memberStore,
   memberships,
   now,
-}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs' | 'progress'> {
+}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs' | 'progress' | 'agenda'> {
   const roomStore = createRoomRepository(table);
   const jobStore = createJobRepository(table);
+  const progressStore = createProgressRepository(table);
   return {
     rooms: createRoomService({
       store: roomStore,
@@ -55,9 +60,16 @@ function createPlanningServices({
       newId: randomUUID,
     }),
     progress: createJobProgressService({
-      store: createProgressRepository(table),
+      store: progressStore,
       jobs: jobStore,
       households: householdStore,
+      now,
+    }),
+    agenda: createAgendaService({
+      households: householdStore,
+      jobs: jobStore,
+      members: memberStore,
+      completions: progressStore,
       now,
     }),
   };
@@ -91,7 +103,7 @@ export function createServices(environment: NodeJS.ProcessEnv): AppServices {
       now,
       newCode: () => generateInviteCode(),
     }),
-    ...createPlanningServices({ table, householdStore, memberships, now }),
+    ...createPlanningServices({ table, householdStore, memberStore, memberships, now }),
     memberships,
   };
 }

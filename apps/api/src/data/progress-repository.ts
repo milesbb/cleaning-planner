@@ -3,6 +3,7 @@ import type { CompletionRecord, JobProgress } from '@cleaning-planner/contracts/
 import type { Job } from '@cleaning-planner/contracts/job';
 import { z } from '@cleaning-planner/contracts/zod';
 import type { Snooze } from '@cleaning-planner/schedule/types';
+import type { HomeCompletionStore } from '../services/agenda-service';
 import type { ProgressStore, RequestRecord, RequestRef } from '../services/job-progress-service';
 import { findHomeItem, homeItemKey, homeItems } from './home-items';
 import { Keys } from './table';
@@ -29,12 +30,12 @@ function completionKey(householdId: string, completion: CompletionRecord): Recor
   return homeItemKey(householdId, Keys.done(completion.jobId, completion.doneAt));
 }
 
-async function listCompletions(
+async function completionsWith(
   table: Table,
   householdId: string,
-  jobId: string,
+  prefix: string,
 ): Promise<CompletionRecord[]> {
-  const items = await homeItems(table, householdId, { prefix: Keys.donePrefix(jobId) });
+  const items = await homeItems(table, householdId, { prefix });
   return items.map((item) => storedCompletionSchema.parse(item));
 }
 
@@ -46,9 +47,11 @@ async function findResult(
   return item === undefined ? null : storedRequestSchema.parse(item).result;
 }
 
-export function createProgressRepository(table: Table): ProgressStore {
+export function createProgressRepository(table: Table): ProgressStore & HomeCompletionStore {
   return {
-    listCompletions: (householdId, jobId) => listCompletions(table, householdId, jobId),
+    listCompletions: (householdId, jobId) =>
+      completionsWith(table, householdId, Keys.donePrefix(jobId)),
+    listHomeCompletions: (householdId) => completionsWith(table, householdId, Keys.allDonePrefix),
     addCompletion: (householdId, completion, request) =>
       transact(
         table,

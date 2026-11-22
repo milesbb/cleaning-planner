@@ -118,4 +118,12 @@ describe('progress repository (DynamoDB Local)', () => {
       progress.snoozeJob('home-1', VACUUM, snooze, requestRecord('request-key-000000004')),
     ).rejects.toThrow('Someone else changed this job');
   });
+
+  it('lists every job’s completions for the agenda, and only this home’s', async () => {
+    const bins = { ...DONE_MONDAY, jobId: 'job-bins', doneAt: '2026-11-23T09:00:00.000Z' };
+    await progress.addCompletion('home-1', DONE_MONDAY, requestRecord('request-key-000000005'));
+    await progress.addCompletion('home-1', bins, requestRecord('request-key-000000006'));
+    await progress.addCompletion('home-2', bins, requestRecord('request-key-000000007'));
+    await expect(progress.listHomeCompletions('home-1')).resolves.toEqual([bins, DONE_MONDAY]);
+  });
 });

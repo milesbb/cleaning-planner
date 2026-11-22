@@ -1,4 +1,5 @@
-import express, { type Express } from 'express';
+import express, { type Express, type Router } from 'express';
+import { agendaRouter } from './controllers/agenda';
 import { healthRouter } from './controllers/health';
 import { householdsRouter } from './controllers/households';
 import { householdInvitesRouter, invitesRouter } from './controllers/invites';
@@ -12,6 +13,7 @@ import type { MembershipReader } from './middlewares/membership';
 import { signedInUser } from './middlewares/signed-in-user';
 import type { ClaimsReader } from './middlewares/signed-in-user';
 import type { SourceIpReader } from './middlewares/source-ip';
+import type { AgendaService } from './services/agenda-service';
 import type { HouseholdService } from './services/household-service';
 import type { InviteService } from './services/invite-service';
 import type { JobProgressService } from './services/job-progress-service';
@@ -31,6 +33,7 @@ export interface AppServices {
   rooms: RoomService;
   jobs: JobService;
   progress: JobProgressService;
+  agenda: AgendaService;
   memberships: MembershipReader;
 }
 
@@ -41,6 +44,20 @@ export interface AppConfig {
   services: AppServices;
 }
 
+const ONE_HOME = '/v1/households/:householdId';
+
+function householdRouters(services: AppServices): [string, Router][] {
+  const { memberships } = services;
+  return [
+    ['/invites', householdInvitesRouter(services.invites, memberships)],
+    ['/rooms', roomsRouter(services.rooms, memberships)],
+    ['/jobs/:jobId', jobProgressRouter(services.progress, memberships)],
+    ['/jobs', jobsRouter(services.jobs, memberships)],
+    ['/agenda', agendaRouter(services.agenda, memberships)],
+    ['/members', membersRouter(services.members, memberships)],
+  ];
+}
+
 export function createApp(config: AppConfig): Express {
   const app = express();
   app.disable('x-powered-by');
@@ -48,27 +65,10 @@ export function createApp(config: AppConfig): Express {
   app.use('/v1/health', healthRouter(config.version));
   app.use('/v1', signedInUser(config.readClaims));
   app.use('/v1/me', meRouter(config.services.profiles));
-  app.use(
-    '/v1/households/:householdId/invites',
-    householdInvitesRouter(config.services.invites, config.services.memberships),
-  );
-  app.use(
-    '/v1/households/:householdId/rooms',
-    roomsRouter(config.services.rooms, config.services.memberships),
-  );
-  app.use(
-    '/v1/households/:householdId/jobs/:jobId',
-    jobProgressRouter(config.services.progress, config.services.memberships),
-  );
-  app.use(
-    '/v1/households/:householdId/jobs',
-    jobsRouter(config.services.jobs, config.services.memberships),
-  );
   app.use('/v1/invites', invitesRouter(config.services.invites, config.readSourceIp));
-  app.use(
-    '/v1/households/:householdId/members',
-    membersRouter(config.services.members, config.services.memberships),
-  );
+  for (const [path, router] of householdRouters(config.services)) {
+    app.use(`${ONE_HOME}${path}`, router);
+  }
   app.use(
     '/v1/households',
     householdsRouter(config.services.households, config.services.memberships),
