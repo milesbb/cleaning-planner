@@ -63,3 +63,33 @@ describe('profile repository (DynamoDB Local)', () => {
     );
   });
 });
+
+describe('profile repository limits and failures', () => {
+  it('refuses to update someone in more homes than one transaction can hold', async () => {
+    await profiles.createProfile({ ...SAM, id: 'user-busy' });
+    for (let homeNumber = 0; homeNumber <= 50; homeNumber += 1) {
+      await memberships.addMember({
+        householdId: `home-${String(homeNumber)}`,
+        householdName: 'A home',
+        userId: 'user-busy',
+        name: 'Busy',
+        colour: 'blue',
+        role: 'member',
+      });
+    }
+    await expect(profiles.updateProfile('user-busy', { name: 'Still busy' })).rejects.toThrow(
+      'You belong to too many homes',
+    );
+  });
+
+  it('passes on errors that are not about a condition, such as a missing table', async () => {
+    const missingTable = { ...table, name: 'no-such-table' };
+    const broken = createProfileRepository(missingTable, createMembershipRepository(missingTable));
+    await expect(broken.createProfile(SAM)).rejects.toThrow(
+      /no-such-table|not found|ResourceNotFound/i,
+    );
+    await expect(broken.updateProfile('user-sam', { name: 'Sam' })).rejects.toThrow(
+      /no-such-table|not found|ResourceNotFound/i,
+    );
+  });
+});
