@@ -10,10 +10,6 @@ Parameters:
   GitHubBranch:
     Type: String
     Default: production
-  AllowedOrigins:
-    Type: CommaDelimitedList
-    Default: https://cleaning-planner-coral.vercel.app,http://localhost:3000,capacitor://localhost,https://localhost
-    Description: Browser origins allowed to call the API (the website, localhost for development, and the iOS and Android apps)
   BudgetAlertEmail:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /cleaning-planner/budget-alert-email
@@ -140,7 +136,12 @@ Resources:
                 - !Ref UserPoolClient
         DefaultAuthorizer: CognitoAuthorizer
       CorsConfiguration:
-        AllowOrigins: !Ref AllowedOrigins
+        # Listed here rather than in a parameter: pipeline updates keep a parameter's old value.
+        AllowOrigins:
+          - https://cleaning-planner-coral.vercel.app
+          - http://localhost:3000
+          - capacitor://localhost
+          - https://localhost
         AllowMethods:
           - GET
           - POST

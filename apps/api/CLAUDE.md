@@ -36,7 +36,7 @@ Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-
 - **Every route that reads or writes household data must verify membership in the service layer** and return 403 otherwise. Add a test for the non-member case.
 - The table name comes from `process.env.TABLE_NAME` (set by the template). Never hard-code resource names or ARNs.
 - Secrets (e.g. VAPID private key) live in SSM Parameter Store under `/cleaning-planner/…`; env vars hold the parameter **name**, and the value is fetched at runtime and cached. Grant `ssm:GetParameter` for that exact parameter in the template.
-- CORS is handled by API Gateway (`AllowedOrigins` in the template), not by Express.
+- CORS is handled by API Gateway (the `HttpApi` `AllowOrigins` list in the template; never a parameter, because pipeline updates keep old parameter values), not by Express.
 - Keep the bundle small: import AWS SDK v3 clients individually; no heavy dependencies without a reason.
 
 ## Test-driven development — non-negotiable rules
