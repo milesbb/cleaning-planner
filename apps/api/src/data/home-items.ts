@@ -1,4 +1,5 @@
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { z } from '@cleaning-planner/contracts/zod';
 import { Keys } from './table';
 import type { Table } from './table';
 
@@ -42,4 +43,36 @@ export async function homeItems(
     startKey = page.LastEvaluatedKey;
   } while (startKey !== undefined);
   return items;
+}
+
+const storedKeySchema = z.object({ pk: z.string(), sk: z.string() });
+
+export type ItemKey = z.infer<typeof storedKeySchema>;
+
+export function homeItemKey(householdId: string, sk: string): ItemKey {
+  return { pk: Keys.household(householdId), sk };
+}
+
+export async function findHomeItem(
+  table: Table,
+  householdId: string,
+  sk: string,
+): Promise<Record<string, unknown> | undefined> {
+  const { Item } = await table.client.send(
+    new GetCommand({
+      TableName: table.name,
+      Key: homeItemKey(householdId, sk),
+      ConsistentRead: true,
+    }),
+  );
+  return Item;
+}
+
+export async function homeItemKeys(
+  table: Table,
+  householdId: string,
+  prefix: string,
+): Promise<ItemKey[]> {
+  const items = await homeItems(table, householdId, { prefix, projection: 'pk, sk' });
+  return items.map((item) => storedKeySchema.parse(item));
 }

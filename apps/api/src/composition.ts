@@ -4,18 +4,55 @@ import { randomUUID } from 'node:crypto';
 import { createAttemptRepository } from './data/attempts-repository';
 import { createHouseholdRepository } from './data/household-repository';
 import { createInviteRepository } from './data/invite-repository';
+import { createJobRepository } from './data/job-repository';
 import { createMemberRepository } from './data/member-repository';
 import { createMembershipRepository } from './data/membership-repository';
 import { createProfileRepository } from './data/profile-repository';
 import { createRoomRepository } from './data/room-repository';
 import { connectToTable } from './data/table';
+import type { Table } from './data/table';
 import { createCognitoIdentityReader } from './identity/cognito-identity';
+import type { MembershipReader } from './middlewares/membership';
 import { createHouseholdService } from './services/household-service';
+import type { HouseholdStore } from './services/household-service';
 import { generateInviteCode } from './services/invite-code';
 import { createInviteService } from './services/invite-service';
+import { createJobService } from './services/job-service';
 import { createMemberService } from './services/member-service';
 import { createProfileService } from './services/profile-service';
 import { createRoomService } from './services/room-service';
+
+interface PlanningStores {
+  table: Table;
+  householdStore: HouseholdStore;
+  memberships: MembershipReader;
+  now: () => string;
+}
+
+function createPlanningServices({
+  table,
+  householdStore,
+  memberships,
+  now,
+}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs'> {
+  const roomStore = createRoomRepository(table);
+  return {
+    rooms: createRoomService({
+      store: roomStore,
+      households: householdStore,
+      now,
+      newId: randomUUID,
+    }),
+    jobs: createJobService({
+      store: createJobRepository(table),
+      rooms: roomStore,
+      households: householdStore,
+      memberships,
+      now,
+      newId: randomUUID,
+    }),
+  };
+}
 
 export function createServices(environment: NodeJS.ProcessEnv): AppServices {
   const table = connectToTable(environment);
@@ -45,12 +82,7 @@ export function createServices(environment: NodeJS.ProcessEnv): AppServices {
       now,
       newCode: () => generateInviteCode(),
     }),
-    rooms: createRoomService({
-      store: createRoomRepository(table),
-      households: householdStore,
-      now,
-      newId: randomUUID,
-    }),
+    ...createPlanningServices({ table, householdStore, memberships, now }),
     memberships,
   };
 }
