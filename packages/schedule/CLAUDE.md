@@ -8,19 +8,21 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 
 ## Key files
 
-| File                    | Purpose                                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `src/types.ts`          | Schedule rule types: `Schedule` = `FloatingSchedule` \| `FixedSchedule`, `Interval`, `Weekday`. |
-| `src/calendar-date.ts`  | `CalendarDate` branded `YYYY-MM-DD` type, parsing, `addInterval`, month and weekday helpers.    |
-| `src/fixed-schedule.ts` | `firstFixedOccurrence(rule, from)` for weekdays and day-of-month rules.                         |
-| `src/next-due.ts`       | `nextDueDate(schedule, history)` for both schedule types, honouring a snooze.                   |
-| `src/snooze.ts`         | `createSnooze` validates a snooze and records the due date it moves.                            |
-| `src/completions.ts`    | `lastCompletedOn` (done or skipped) and `lastDone` (real completions only).                     |
-| `src/due-status.ts`     | `classifyDue` (late, today, tomorrow, this week, later) and `lastDayOfWeek`.                    |
-| `src/time-zone.ts`      | `calendarDateInTimeZone(instant, timeZone)`: the one place an instant becomes a home's day.     |
-| `src/whose-turn.ts`     | `whoseTurn(assignment, completions, memberIds)`: who a job is for right now.                    |
-| `src/agenda.ts`         | `buildAgenda`: late jobs plus each day's due and done jobs, for Today, Week and reminders.      |
-| `src/spread.ts`         | `spreadFirstDueDates(jobs, startDate)`: staggers new jobs so the first month is evenly loaded.  |
+| File                    | Purpose                                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `src/types.ts`          | Schedule rule types: `Schedule` = `FloatingSchedule` \| `FixedSchedule`, `Interval`, `Weekday`.                          |
+| `src/calendar-date.ts`  | `CalendarDate` branded `YYYY-MM-DD` type, parsing, `addInterval`, month and weekday helpers.                             |
+| `src/fixed-schedule.ts` | `firstFixedOccurrence(rule, from)` for weekdays and day-of-month rules.                                                  |
+| `src/next-due.ts`       | `nextDueDate(schedule, history)` for both schedule types, honouring a snooze.                                            |
+| `src/snooze.ts`         | `createSnooze` validates a snooze and records the due date it moves.                                                     |
+| `src/completions.ts`    | `lastCompletedOn` (done or skipped) and `lastDone` (real completions only).                                              |
+| `src/due-status.ts`     | `classifyDue` (late, today, tomorrow, this week, later) and `lastDayOfWeek`.                                             |
+| `src/time-zone.ts`      | `calendarDateInTimeZone(instant, timeZone)`: the one place an instant becomes a home's day.                              |
+| `src/whose-turn.ts`     | `whoseTurn(assignment, completions, memberIds)`: who a job is for right now.                                             |
+| `src/agenda.ts`         | `buildAgenda`: late jobs plus each day's due and done jobs, for Today, Week and reminders.                               |
+| `src/spread.ts`         | `spreadFirstDueDates(jobs, startDate)`: staggers new jobs so the first month is evenly loaded.                           |
+| `src/interval.ts`       | `approximateDays` and `describeInterval` ("weekly", "every 3 months").                                                   |
+| `src/library/`          | The built-in jobs, one file per room, plus `suggestJobs`, `findLibraryJob` and `recommendationText` in `job-library.ts`. |
 
 ## Rules
 
@@ -35,6 +37,7 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 - Who does a job (`whose-turn.ts`): `anyone` (nobody in particular), one `member` (falls back to anyone if they leave) or `takeTurns` (the next current member after whoever last did it; skips don't move the turn, and people who left are passed over).
 - **Every list of jobs (Today, Week, reminders) comes from `buildAgenda`.** Late jobs are listed in `late` and also on their own day when that day is in the range. "Just me" keeps the person's jobs and jobs for anyone, and only what that person did.
 - At setup, floating jobs start on the quietest day within their first interval (at most 4 weeks), earliest day on ties; fixed jobs keep their own days but count towards the load. The plan is the same whatever order the jobs come in.
+- **Library jobs** come from `docs/PLAN.md` §4. Each needs a name, room, icon key, default schedule inside its recommended range, effort, how-to steps and a why; `job-library.test.ts` checks all of it. A job with `needs` is only suggested to homes with that appliance or floor. Whole-home jobs are suggested to every home.
 - Import from the specific file (`@cleaning-planner/schedule/next-due`). There is no index barrel.
 
 ## Test-driven development — non-negotiable rules

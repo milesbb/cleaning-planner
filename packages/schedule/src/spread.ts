@@ -1,6 +1,7 @@
 import { addInterval, type CalendarDate } from './calendar-date';
 import { firstFixedOccurrence } from './fixed-schedule';
-import type { FloatingSchedule, IntervalUnit, Schedule } from './types';
+import { approximateDays } from './interval';
+import type { FloatingSchedule, Schedule } from './types';
 
 export interface SpreadJob {
   id: string;
@@ -18,11 +19,9 @@ interface FloatingSpreadJob {
 }
 
 const MAX_SPREAD_DAYS = 28;
-const APPROXIMATE_DAYS_PER_UNIT: Record<IntervalUnit, number> = { day: 1, week: 7, month: 30 };
 
 function spreadWindowInDays(schedule: FloatingSchedule): number {
-  const intervalInDays = schedule.every.value * APPROXIMATE_DAYS_PER_UNIT[schedule.every.unit];
-  return Math.min(intervalInDays, MAX_SPREAD_DAYS);
+  return Math.min(approximateDays(schedule.every), MAX_SPREAD_DAYS);
 }
 
 function isFloating(job: SpreadJob): job is FloatingSpreadJob {
