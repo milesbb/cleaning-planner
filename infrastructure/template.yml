@@ -60,9 +60,85 @@ Resources:
         Enabled: true
       DeletionProtectionEnabled: true
 
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: !Sub '${AWS::StackName}-users'
+      UserPoolTier: ESSENTIALS
+      DeletionProtection: ACTIVE
+      UsernameAttributes:
+        - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      AutoVerifiedAttributes:
+        - email
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      Schema:
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: false
+          RequireUppercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          TemporaryPasswordValidityDays: 7
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: Your Cleaning Planner code
+        EmailMessage: 'Your Cleaning Planner code is {####}. It expires in 24 hours.'
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${AWS::StackName}-app'
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 365
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      ReadAttributes:
+        - email
+        - email_verified
+        - name
+      WriteAttributes:
+        - email
+        - name
+
   HttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+              audience:
+                - !Ref UserPoolClient
+        DefaultAuthorizer: CognitoAuthorizer
       CorsConfiguration:
         AllowOrigins: !Ref AllowedOrigins
         AllowMethods:
@@ -79,6 +155,13 @@ Resources:
       DefaultRouteSettings:
         ThrottlingBurstLimit: 50
         ThrottlingRateLimit: 20
+      RouteSettings:
+        'ANY /v1/invites/{proxy+}':
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 2
+        'ANY /v1/me':
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
 
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -93,11 +176,31 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DataTable
       Events:
+        Health:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         Api:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /v1/{proxy+}
+            Method: ANY
+        Me:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/me
+            Method: ANY
+        Invites:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/invites/{proxy+}
             Method: ANY
 
   ApiLogGroup:
@@ -468,6 +571,12 @@ Outputs:
     Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
   DataTableName:
     Value: !Ref DataTable
+  UserPoolId:
+    Description: For the web app's NEXT_PUBLIC_USER_POOL_ID
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: For the web app's NEXT_PUBLIC_USER_POOL_CLIENT_ID
+    Value: !Ref UserPoolClient
   GitHubConnectionArn:
     Description: Approve this connection once in the console (it starts as PENDING)
     Value: !Ref GitHubConnection
