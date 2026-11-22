@@ -1,4 +1,4 @@
-import { GetCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import type { Profile } from '@cleaning-planner/contracts/profile';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createMembershipRepository } from './membership-repository';
@@ -80,6 +80,31 @@ describe('profile repository limits and failures', () => {
     await expect(profiles.updateProfile('user-busy', { name: 'Still busy' })).rejects.toThrow(
       'You belong to too many homes',
     );
+  });
+
+  it('asks for a retry when a home changes while saving', async () => {
+    await profiles.createProfile({ ...SAM, id: 'user-leaving' });
+    await table.client.send(
+      new PutCommand({
+        TableName: table.name,
+        Item: {
+          pk: Keys.user('user-leaving'),
+          sk: Keys.household('home-gone'),
+          id: 'home-gone',
+          name: 'Gone',
+          role: 'member',
+        },
+      }),
+    );
+    await expect(profiles.updateProfile('user-leaving', { name: 'Leaver' })).rejects.toThrow(
+      'Your homes changed while saving. Try again.',
+    );
+  });
+
+  it('passes on other database errors, such as an item that is too large', async () => {
+    const attempt = profiles.updateProfile('user-sam', { name: 'x'.repeat(500_000) });
+    await expect(attempt).rejects.toBeInstanceOf(Error);
+    await expect(attempt).rejects.not.toThrow('Your homes changed while saving');
   });
 
   it('passes on errors that are not about a condition, such as a missing table', async () => {

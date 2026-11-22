@@ -6,6 +6,7 @@ import { z } from '@cleaning-planner/contracts/zod';
 import type { ProfileStore } from '../services/profile-service';
 import { Errors } from '../utils/errors';
 import type { MembershipRepository } from './membership-repository';
+import { isConditionFailure } from './conditions';
 import { Keys } from './table';
 import type { Table } from './table';
 
@@ -38,6 +39,12 @@ async function getProfile(table: Table, userId: string): Promise<Profile | null>
   return Item === undefined ? null : storedProfileSchema.parse(Item);
 }
 
+async function requireProfile(table: Table, userId: string): Promise<Profile> {
+  const profile = await getProfile(table, userId);
+  if (profile === null) throw Errors.notFound('Open the app again to set up your profile');
+  return profile;
+}
+
 async function createProfile(table: Table, profile: Profile): Promise<Profile> {
   try {
     await table.client.send(
@@ -50,9 +57,7 @@ async function createProfile(table: Table, profile: Profile): Promise<Profile> {
     return profile;
   } catch (error) {
     if (!(error instanceof ConditionalCheckFailedException)) throw error;
-    const existing = await getProfile(table, profile.id);
-    if (existing === null) throw error;
-    return existing;
+    return requireProfile(table, profile.id);
   }
 }
 
@@ -62,6 +67,7 @@ async function updateProfile(
   userId: string,
   changes: UpdateProfileRequest,
 ): Promise<Profile> {
+  await requireProfile(table, userId);
   const homes = await memberships.listHomesOf(userId);
   if (homes.length > MAX_HOMES_PER_PERSON) throw Errors.conflict('You belong to too many homes');
   const expression = changeExpression(changes);
@@ -80,14 +86,12 @@ async function updateProfile(
       }),
     );
   } catch (error) {
-    if (error instanceof Error && error.name === 'TransactionCanceledException') {
-      throw Errors.notFound('Open the app again to set up your profile');
+    if (isConditionFailure(error)) {
+      throw Errors.conflict('Your homes changed while saving. Try again.');
     }
     throw error;
   }
-  const updated = await getProfile(table, userId);
-  if (updated === null) throw Errors.notFound();
-  return updated;
+  return requireProfile(table, userId);
 }
 
 export function createProfileRepository(
