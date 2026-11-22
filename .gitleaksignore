@@ -2,3 +2,7 @@
 # The test values were replaced with an all-zero UUID in the next commit.
 e42fef4d25d3bee7edd9d17434cfecc0fb3a5048:packages/contracts/src/primitives.test.ts:generic-api-key:106
 e42fef4d25d3bee7edd9d17434cfecc0fb3a5048:packages/contracts/src/job.test.ts:generic-api-key:13
+
+# False positive: a made-up token in the logger redaction test (not a credential).
+# The test now builds the token from JSON at runtime.
+e39bfd79045511eb251c3c897ed9618f4006b495:apps/api/src/utils/logging.test.ts:jwt:58
