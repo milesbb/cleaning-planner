@@ -2,11 +2,13 @@ import { CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-
 import type { AppServices } from './app';
 import { randomUUID } from 'node:crypto';
 import { createHouseholdRepository } from './data/household-repository';
+import { createMemberRepository } from './data/member-repository';
 import { createMembershipRepository } from './data/membership-repository';
 import { createProfileRepository } from './data/profile-repository';
 import { connectToTable } from './data/table';
 import { createCognitoIdentityReader } from './identity/cognito-identity';
 import { createHouseholdService } from './services/household-service';
+import { createMemberService } from './services/member-service';
 import { createProfileService } from './services/profile-service';
 
 export function createServices(environment: NodeJS.ProcessEnv): AppServices {
@@ -23,6 +25,7 @@ export function createServices(environment: NodeJS.ProcessEnv): AppServices {
       now: () => new Date().toISOString(),
       newId: randomUUID,
     }),
+    members: createMemberService(createMemberRepository(table)),
     memberships,
   };
 }

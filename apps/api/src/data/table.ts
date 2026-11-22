@@ -23,6 +23,7 @@ export const Keys = {
   profile: 'PROFILE',
   meta: 'META',
   memberPrefix: 'MEMBER#',
+  jobPrefix: 'JOB#',
   room: (roomId: string): string => `ROOM#${roomId}`,
   job: (jobId: string): string => `JOB#${jobId}`,
   homesOfUser: 'HOUSEHOLD#',
