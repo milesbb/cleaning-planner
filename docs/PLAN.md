@@ -1,6 +1,6 @@
 # Cleaning Planner: Plan
 
-Status: **Phase 0 in progress** (2026-11-22). Stack approved as recommended below; monorepo, CI and Claude setup scaffolded. Designs agreed (Wall chart, with room for commissioned art); accounts and households are now part of the MVP. The build order is in [`IMPLEMENTATION.md`](IMPLEMENTATION.md).
+Status: **building** (updated 2026-11-22). **Website, iOS app and Android app** from one codebase (decided 2026-11-22), each working at every screen size. Stack approved as recommended below; monorepo, CI and Claude setup scaffolded. Designs agreed (Wall chart, with room for commissioned art); accounts and households are now part of the MVP. The build order is in [`IMPLEMENTATION.md`](IMPLEMENTATION.md).
 
 ---
 
@@ -20,13 +20,14 @@ We want one place that answers three questions without anyone having to remember
 - Each task's schedule is **user-configurable**: every N days/weeks/months, or specific weekdays / day-of-month.
 - **Today / Tomorrow / This week / Later** views. Mark a task done in one tap; snooze or skip.
 - **Reminders**: a daily "today's jobs" notification and a weekly "this week" summary, each with a time we choose.
-- Works on both our phones (iOS + Android) and on desktop.
+- **Three platforms** (decided 2026-11-22): a website, an **iOS app** (App Store) and an **Android app** (Google Play), from one codebase.
+- **Every screen size**: phones (320px and up, portrait and landscape), tablets, laptops and large desktops, each with a layout made for it.
 - **Accounts** (decided 2026-11-22): sign up and log in with email and password, reset a forgotten password, edit your details, delete your account.
 - **Households** (decided 2026-11-22): start a home or join one by invite link or code, see the same jobs, assign them (anyone, a person, or take turns), see who did what, and belong to more than one home.
 
 ### Secondary (built after the MVP)
 
-- More channels (calendar feed, group chat), stats, dark mode, app-store builds.
+- More channels (calendar feed, group chat), stats, dark mode, home-screen widgets.
 
 ### Non-goals for now
 
@@ -37,7 +38,7 @@ We want one place that answers three questions without anyone having to remember
 
 ## 2. Recommendation in one paragraph
 
-Build an **installable web app (PWA)** with **Next.js (App Router) + TypeScript + Tailwind + shadcn/ui** on **Vercel**, backed by a **serverless AWS API** (Express on Lambda behind API Gateway, DynamoDB, Cognito, EventBridge Scheduler, SES) defined in **CloudFormation/SAM** with a **self-updating CodePipeline**, in a **Turborepo + npm workspaces monorepo**. GitHub Actions runs the PR checks (lint, typecheck, unit tests, e2e, template lint). This mirrors **Ride Logger** (web app, rules) and **playlist-transfer-backend** (IaC + pipeline). Expected AWS cost is **about $0–1/month** (§7). Reminders start as **Web Push** (free; works on Android and on iPhone once the app is added to the Home Screen) plus an optional **email digest** via SES. **Accounts and households are in the MVP**: anyone can sign up, start a home and invite the people they live with. If we later want real App Store / Google Play apps, wrap the same web app with **Capacitor** and switch to native push. No rewrite needed.
+Build **one web app** that ships as a **website (installable PWA)** and, wrapped with **Capacitor**, as **iOS and Android store apps**. The web app is **Next.js (App Router) + TypeScript + Tailwind + shadcn/ui** on **Vercel**, backed by a **serverless AWS API** (Express on Lambda behind API Gateway, DynamoDB, Cognito, EventBridge Scheduler, SES) defined in **CloudFormation/SAM** with a **self-updating CodePipeline**, in a **Turborepo + npm workspaces monorepo**. GitHub Actions runs the PR checks (lint, typecheck, unit tests, e2e, template lint). This mirrors **Ride Logger** (web app, rules) and **playlist-transfer-backend** (IaC + pipeline). Expected AWS cost is **about $0–1/month** (§7). Reminders start as **Web Push** (free; works on Android and on iPhone once the app is added to the Home Screen) plus an optional **email digest** via SES. **Accounts and households are in the MVP**: anyone can sign up, start a home and invite the people they live with. The apps use native push through **Firebase Cloud Messaging** alongside Web Push for browsers. Apple charges $99 a year and Google $25 once (§7).
 
 ---
 
@@ -116,7 +117,7 @@ Each entry in code: `id, name, area, defaultInterval, minInterval, maxInterval, 
 | **Calendar feed (ICS)**    | Private URL serving an `.ics` file; subscribe in Apple/Google Calendar; calendar's own alerts remind you.                                                                                                   | Free                                               | Yes                                                                                                                                                                      | Yes                                      | Low        | Phase 4; great "zero-install" option. Calendars refresh slowly (hours), so it's not great for "done" status |
 | **Telegram bot**           | Bot posts daily list to a private group with both of us; inline "✅ Done" buttons call our API.                                                                                                             | Free                                               | Yes                                                                                                                                                                      | Yes                                      | Low–medium | Phase 4; nice for a shared household chat                                                                   |
 | **ntfy**                   | HTTP POST to a topic; the ntfy app on your phone receives it. Public server free, or self-host.                                                                                                             | Free                                               | Yes (via ntfy.sh relay)                                                                                                                                                  | Yes                                      | Very low   | Useful as a quick prototype or fallback, but it's a separate app and topics need access control             |
-| **Native push (APNs/FCM)** | Only once the app is a store app (Capacitor/Expo).                                                                                                                                                          | Apple dev £/$99/yr; Google $25 once                | Yes                                                                                                                                                                      | Yes                                      | Medium     | Only if we go to the stores                                                                                 |
+| **Native push (APNs/FCM)** | The iOS and Android apps register with Firebase Cloud Messaging, which delivers to Android directly and to iOS through Apple's push service (APNs key).                                                     | Free (store accounts cost extra, §7)               | Yes                                                                                                                                                                      | Yes                                      | Medium     | **MVP for the apps** (decided 2026-11-22)                                                                   |
 | **SMS / WhatsApp**         | Twilio etc.                                                                                                                                                                                                 | Paid per message; WhatsApp needs business approval | Yes                                                                                                                                                                      | Yes                                      | Medium     | Not worth it                                                                                                |
 
 ### The scheduler (who decides _when_ to notify)
@@ -132,15 +133,18 @@ Notifications need something running on a clock even when nobody has the app ope
 ## 6. Architecture
 
 ```
-┌──────────────────────────┐  HTTPS + JWT   ┌──────────────────────── AWS (one CloudFormation stack) ───┐
-│ apps/web (PWA, Vercel)   │───────────────►│ API Gateway (HTTP API) ─► Lambda "api" (Express)          │
-│ Next.js + TS + Tailwind  │                │                              │                            │
-│ Service worker (push)    │◄── sign-in ───►│ Cognito user pool            ▼                            │
-└──────────────────────────┘                │                          DynamoDB (single table)          │
-        ▲  Web Push (VAPID)                 │ EventBridge Scheduler ─► Lambda "notify" ──► SES (email)  │
-        └──────── Apple / Google push ◄─────│                              │                            │
-                                            │ CodePipeline ─► CodeBuild ─► CloudFormation change set    │
-                                            └───────────────────────────────────────────────────────────┘
+        ┌────────────── one static build of apps/web ──────────────┐
+        ▼                         ▼                                 ▼
+ Website (Vercel, PWA)     iOS app (Capacitor)            Android app (Capacitor)
+        │                         │                                 │
+        └──────── HTTPS + JWT ────┴─────────────────────────────────┘
+                                  ▼
+┌──────────────────────── AWS (one CloudFormation stack) ─────────────────────────────┐
+│ API Gateway (HTTP API) ─► Lambda "api" (Express) ─► DynamoDB (single table)          │
+│ Cognito user pool (email + password)                                                 │
+│ EventBridge Scheduler ─► Lambda "notify" ─► Web Push · Firebase Cloud Messaging · SES │
+│ CodePipeline ─► CodeBuild ─► CloudFormation change set ─► health check               │
+└──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 Both Lambdas import `packages/schedule`, so the app and the reminders agree on what is due.
@@ -150,10 +154,12 @@ Both Lambdas import `packages/schedule`, so the app and the reminders agree on w
 ```
 cleaning-planner/
 ├─ apps/
-│  ├─ web/                 Next.js PWA + its own CLAUDE.md (later: Capacitor wraps this for iOS/Android)
+│  ├─ web/                 Next.js static export: every screen, for the website and both apps + CLAUDE.md
+│  ├─ mobile/              Capacitor iOS and Android projects wrapping the web build + CLAUDE.md
 │  └─ api/                 Express on Lambda (controllers → service → data), esbuild bundle + CLAUDE.md
 ├─ packages/
-│  └─ schedule/            Pure TS: recurrence engine, due-date maths, task library, load spreading + CLAUDE.md
+│  ├─ schedule/            Pure TS: recurrence engine, due-date maths, task library, load spreading + CLAUDE.md
+│  └─ contracts/           zod request/response schemas shared by the API and the web app
 ├─ infrastructure/
 │  ├─ template.yml         SAM/CloudFormation: API, DynamoDB, budget, pipeline (self-updating)
 │  └─ buildspec.yml        CodeBuild: install → lint/typecheck/test → bundle → cloudformation package
@@ -182,17 +188,19 @@ In DynamoDB these live in **one table** keyed by household, e.g. `pk = HOUSEHOLD
 
 ### Tech choices and why
 
-| Concern    | Choice                                                                                                                                                                                | Why / alternative                                                                                                                                                                |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| UI         | Next.js (App Router) + TypeScript, web manifest + service worker (Serwist)                                                                                                            | Same as Ride Logger, so it's familiar, and Vercel-native. _Alt:_ Vite SPA (lighter); Expo/React Native for web (better if native apps were the priority, weaker web push story). |
-| Styling    | Tailwind + shadcn/ui                                                                                                                                                                  | Same as Ride Logger; accessible, mobile-first.                                                                                                                                   |
-| API        | Express 5 on Lambda via `@codegenie/serverless-express`, behind API Gateway **HTTP API**; esbuild bundle                                                                              | Same Express + controllers/service/data layering as Ride Logger and playlist-transfer-backend. HTTP API is ~70% cheaper than the REST API type.                                  |
-| Data       | DynamoDB on-demand, single table, point-in-time recovery; TanStack Query in the web app                                                                                               | ~$0 at our scale, no connection pooling, no VPC. _Alt:_ Aurora DSQL (Postgres-compatible, also ~$0, no foreign keys).                                                            |
-| Auth       | Cognito user pool (Essentials, email and password), JWT authorizer on API Gateway                                                                                                     | Free under 10,000 monthly users. **Differs from Ride Logger** (hand-rolled JWT), less to secure ourselves.                                                                       |
-| IaC/deploy | SAM/CloudFormation template + CodePipeline V2 (GitHub via CodeConnections) + CodeBuild                                                                                                | Same self-updating pattern as playlist-transfer-backend; pipeline only triggers on API/infra paths.                                                                              |
-| Dates      | `date-fns` + `@date-fns/tz`                                                                                                                                                           | Timezones/DST matter for reminder times.                                                                                                                                         |
-| Tests      | Vitest + React Testing Library + `vitest-axe` (every component), Playwright on desktop Chrome **and** mobile (Pixel 7 + iPhone), supertest for the API, DynamoDB Local for data tests | Same rules as Ride Logger: TDD, tests next to source, e2e for every flow.                                                                                                        |
-| Monorepo   | Turborepo + npm workspaces                                                                                                                                                            | Same as Ride Logger.                                                                                                                                                             |
+| Concern     | Choice                                                                                                                                                                                | Why / alternative                                                                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI          | Next.js (App Router) + TypeScript, web manifest + service worker (Serwist)                                                                                                            | Same as Ride Logger, so it's familiar, and Vercel-native. _Alt:_ Vite SPA (lighter); Expo/React Native for web (better if native apps were the priority, weaker web push story). |
+| Native apps | Capacitor 7 wrapping the static export, with push (FCM), haptics, share, deep links, badge plugins; fastlane uploads to TestFlight and Play                                           | One UI for all three platforms. _Alt:_ React Native/Expo (more native feel, but a second UI to build and keep in step).                                                          |
+| Layout      | Mobile-first Tailwind with designed layouts at 640, 1024 and 1440px; Playwright checks every screen at 320–1920px                                                                     | "Works at every size" is a requirement, so it is tested, not eyeballed.                                                                                                          |
+| Styling     | Tailwind + shadcn/ui                                                                                                                                                                  | Same as Ride Logger; accessible, mobile-first.                                                                                                                                   |
+| API         | Express 5 on Lambda via `@codegenie/serverless-express`, behind API Gateway **HTTP API**; esbuild bundle                                                                              | Same Express + controllers/service/data layering as Ride Logger and playlist-transfer-backend. HTTP API is ~70% cheaper than the REST API type.                                  |
+| Data        | DynamoDB on-demand, single table, point-in-time recovery; TanStack Query in the web app                                                                                               | ~$0 at our scale, no connection pooling, no VPC. _Alt:_ Aurora DSQL (Postgres-compatible, also ~$0, no foreign keys).                                                            |
+| Auth        | Cognito user pool (Essentials, email and password), JWT authorizer on API Gateway                                                                                                     | Free under 10,000 monthly users. **Differs from Ride Logger** (hand-rolled JWT), less to secure ourselves.                                                                       |
+| IaC/deploy  | SAM/CloudFormation template + CodePipeline V2 (GitHub via CodeConnections) + CodeBuild                                                                                                | Same self-updating pattern as playlist-transfer-backend; pipeline only triggers on API/infra paths.                                                                              |
+| Dates       | `date-fns` + `@date-fns/tz`                                                                                                                                                           | Timezones/DST matter for reminder times.                                                                                                                                         |
+| Tests       | Vitest + React Testing Library + `vitest-axe` (every component), Playwright on desktop Chrome **and** mobile (Pixel 7 + iPhone), supertest for the API, DynamoDB Local for data tests | Same rules as Ride Logger: TDD, tests next to source, e2e for every flow.                                                                                                        |
+| Monorepo    | Turborepo + npm workspaces                                                                                                                                                            | Same as Ride Logger.                                                                                                                                                             |
 
 ---
 
@@ -226,10 +234,12 @@ What would make it expensive, and is deliberately avoided: RDS (~$20–25/month 
 
 **Environments:** `production` branch → production; `development` is the integration branch. Every PR → Vercel preview; a separate `staging` stack can be added later by deploying the same template under another stack name.
 
-### App stores, later (optional)
+### App stores (in scope, decided 2026-11-22)
 
-- **Capacitor** wraps `apps/web` into iOS and Android projects, adds native push (APNs/FCM) and a proper icon/splash. Costs: Apple Developer Program $99/yr, Google Play $25 one-off; review processes.
-- Until then, "Add to Home Screen" gives a full-screen app icon on both platforms, with push.
+- **Capacitor** wraps the static export of `apps/web` into iOS and Android projects (`apps/mobile`), adding native push (FCM), haptics, the share sheet, deep links for invites, an app badge and a proper icon and splash screen.
+- **Costs**: Apple Developer Program **$99/year**; Google Play **$25 once**; a domain about **$10–20/year** (needed for invite deep links and the email sender); Firebase Cloud Messaging free; macOS CI runners free for this public repo.
+- **Releases**: every merge into `production` uploads new builds to TestFlight and Play internal testing; promoting them to the public stores happens in each console after review.
+- **Review risk**: Apple rejects apps that are "just a website". The native features above, offline start-up and in-app account deletion are there to meet that bar.
 
 ---
 
@@ -251,7 +261,7 @@ feature/fix/chore branch ──PR──► development ──release PR──►
 
 Two halves:
 
-- **GitHub Actions** for checks on every PR plus the Vercel deploy for the web app.
+- **GitHub Actions** for checks on every PR. **Vercel's GitHub integration** deploys the website from `production` and gives every PR a preview URL.
 - **AWS CodePipeline** for the backend (modelled on playlist-transfer-backend): defined in the same CloudFormation template it deploys, watching the `production` branch, so infrastructure changes ship the same way as code.
 
 ### Backend pipeline (`infrastructure/template.yml`)
@@ -280,9 +290,8 @@ First deploy is a one-off `sam deploy` from a laptop (see README). After that, e
 
 - **`pr-checks.yml`** (PRs into `development`, ~1–2 min): Prettier check, ESLint, `tsc --noEmit`, unit tests with coverage gates (95% schedule, 90% API) and `cfn-lint`, rolled up into **PR checks passed**.
 - **`release-checks.yml`** (PRs into `production`, also runnable manually; ~5–8 min): source-branch check, everything above, production builds plus a smoke test that invokes the Lambda bundle with an API Gateway event, Playwright e2e on desktop/Android/iPhone (report uploaded), `npm audit --omit=dev --audit-level=high`, and free quality gates: **Knip** (unused files/exports/deps), **jscpd** (duplication ≤ 3%), **Stryker** mutation testing of `packages/schedule` (break < 85%), **Lighthouse CI** (accessibility/best practices ≥ 0.95, SEO ≥ 0.9, performance warn < 0.85), **Semgrep CE** SAST, **Gitleaks** secret scan of full history and **actionlint**. All roll up into **Release checks passed**. Dependabot alerts and automated security fixes are on. The repo is public (recreated 2026-11-22 from a clean history), which makes **CodeQL** (`codeql.yml` workflow, security-extended queries, runs on every PR; required by both rulesets) and **secret scanning with push protection** free.
-- **`deploy.yml`** (push to `production`): Vercel deploy with `npx vercel --prod` using `VERCEL_TOKEN` / `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` (same as Ride Logger). PR previews come from the Vercel GitHub integration. The backend is deployed by CodePipeline, not Actions.
+- **Website deploys**: Vercel's GitHub integration, with `production` as its production branch, so no deploy workflow or Vercel secrets are needed. `production` only ever receives merges that passed the release checks. The backend is deployed by CodePipeline.
 - **Hygiene**: Node **24** (current LTS) pinned in `.nvmrc` and read by CI via `node-version-file`. (Ride Logger pins 18 locally and 20 in CI; both are now end-of-life, Node 20 since April 2026.) Dependabot for npm and Actions.
-- **The Vercel deploy job skips with a notice until its secrets are set**, so CI is green before hosting is connected.
 
 ### Claude Code setup (from Ride Logger)
 
@@ -327,18 +336,19 @@ The detailed, PR-by-PR order is in [`IMPLEMENTATION.md`](IMPLEMENTATION.md). In 
 | **2. Scheduling engine and library** | `packages/schedule` answers "what is due, for whom" for every rule         |
 | **3. Accounts and data API**         | Sign up, homes, invites, rooms, jobs and history all work through the API  |
 | **4. Account and household screens** | A new person can sign up, start or join a home and finish setup            |
-| **5. Planning screens**              | We use it daily on both phones from the Home Screen                        |
-| **6. Reminders**                     | Reminders arrive at the chosen time on both phones                         |
-| **7. Polish and art**                | Commissioned art in, Lighthouse green, first real release                  |
-| **Later**                            | ICS calendar feed, Telegram bot, stats, dark mode, Capacitor store builds  |
+| **5. Planning screens**              | We use it daily, at every screen size                                      |
+| **6. Reminders**                     | Reminders arrive in browsers and in both apps at the chosen time           |
+| **7. Polish and art**                | Commissioned art in, accessibility and Lighthouse green, legal pages       |
+| **8. iOS and Android apps**          | Both apps reach testers on every release and are submitted to the stores   |
+| **Later**                            | ICS calendar feed, Telegram bot, stats, dark mode, widgets                 |
 
 ---
 
 ## 11. Open decisions (for us)
 
-1. **Name** of the app/repo (working title: _Cleaning Planner_).
+1. **Name** of the app (working title: _Cleaning Planner_). Needed before the store listings, the app id (e.g. `com.<you>.cleaningplanner`) and the domain are fixed.
 2. ~~Backend~~: **decided** (2026-11-22): AWS instead of Supabase, IaC + pipeline like playlist-transfer-backend.
-3. ~~Database~~: **DynamoDB**, single table; the key design is in `IMPLEMENTATION.md` §6.4.
+3. ~~Database~~: **DynamoDB**, single table; the key design is in `IMPLEMENTATION.md` §9.4.
 4. ~~Email digest~~: **optional weekly email** alongside push, switched on per person in Settings (Milestone 6).
 5. Are we in the **EU/UK**? (Affects nothing technical today. Apple kept Home Screen web apps in the EU after briefly removing them in 2024, but worth re-checking before relying on iOS push.)
 

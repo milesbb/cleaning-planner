@@ -12,19 +12,22 @@ A household cleaning planner for the people who share a home. It covers everyday
 - 🗓️ **Flexible schedules.** "Every 2 weeks after it was last done" or fixed days ("every Saturday", "1st of the month").
 - ✅ **Today / Tomorrow / This week** views. One tap to mark done, snooze or skip.
 - 🔔 **Reminders.** A daily "today's jobs" push notification and a weekly summary, at times you choose (email optional).
-- 🏠 **Households.** Share with a partner or housemates, assign tasks, see who did what _(after the MVP)_.
-- 📱 **Installable web app (PWA)** for iPhone, Android and desktop. App-store builds possible later.
+- 🏠 **Households.** Share with a partner or housemates, assign tasks or take turns, see who did what.
+- 👤 **Accounts.** Email and password, with password reset, account settings and full account deletion.
+- 📱 **Website, iOS app and Android app** from one codebase, each working at every screen size from a small phone to a large desktop.
+- 🔒 **Safe and quick.** Strict security rules, offline-first data, and speed budgets enforced in CI ([docs/IMPLEMENTATION.md §4](docs/IMPLEMENTATION.md)).
 
 ## Stack
 
 | Layer            | Choice                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------ |
 | Monorepo         | Turborepo + npm workspaces                                                                                   |
-| Web app          | Next.js (App Router) + TypeScript + Tailwind v4 + shadcn/ui, installable PWA, on Vercel                      |
+| Web app          | Next.js (App Router, static export) + TypeScript + Tailwind v4 + shadcn/ui, installable PWA, on Vercel       |
+| iOS and Android  | Capacitor wrapping the same web build, with native push (FCM), haptics and deep links; fastlane for releases |
 | API              | Express 5 on AWS Lambda (Node 24, arm64) behind API Gateway HTTP API, bundled with esbuild                   |
 | Data             | DynamoDB (single table, on-demand, point-in-time recovery)                                                   |
 | Scheduling       | `packages/schedule`: pure TypeScript, shared by the web app, API and reminder Lambda                         |
-| Auth / reminders | Cognito _(Phase 1)_; EventBridge Scheduler → Lambda → Web Push + SES _(Phase 2)_                             |
+| Auth / reminders | Cognito (email and password); EventBridge Scheduler → Lambda → Web Push, FCM and SES                         |
 | Infrastructure   | CloudFormation/SAM (`infrastructure/template.yml`), self-updating CodePipeline + CodeBuild                   |
 | Quality          | ESLint (strict type-checked), Prettier, Vitest, React Testing Library + axe, supertest, Playwright, cfn-lint |
 
@@ -102,7 +105,6 @@ feature/… ──PR──► development ──release PR──► production �
 | `core-checks.yml`    | Called by both checks below                                  | Format, lint & typecheck · unit tests with coverage gates · `cfn-lint`                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `pr-checks.yml`      | PRs into `development`                                       | Format, lint & typecheck · unit tests with coverage gates · `cfn-lint` → **PR checks passed**                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `release-checks.yml` | PRs into `production` (or run manually from the Actions tab) | Source branch is `development` · format, lint & typecheck · unit tests · production builds + Lambda smoke test · Playwright e2e on desktop/Android/iPhone · `cfn-lint` · `npm audit` of production deps · **Knip** (dead code/deps) · **jscpd** (duplication ≤ 3%) · **Stryker** mutation testing of the schedule engine (≥ 85%) · **Lighthouse** (accessibility ≥ 95, best practices ≥ 95, SEO ≥ 90) · **Semgrep** SAST · **Gitleaks** secrets scan · **actionlint** → **Release checks passed** |
-| `deploy.yml`         | Push to `production` (a merge)                               | Deploy web app to Vercel (skips until the Vercel secrets exist)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 **Security (GitHub, free because the repo is public)**
 
@@ -163,7 +165,6 @@ The budget alert is **account-wide** and defaults to $5/month. If the account al
 1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new) and set **Root Directory** to `apps/web` (framework: Next.js). In **Settings → Git**, set the **Production Branch** to `production`.
 2. Add the environment variable `NEXT_PUBLIC_API_URL` = the stack's `ApiUrl` output.
 3. Add the Vercel production URL to `AllowedOrigins` in `infrastructure/template.yml` and push (the pipeline updates CORS).
-4. For the GitHub Actions deploy job: create a token at **Account Settings → Tokens**, find the org/project IDs with `npx vercel link`, and add repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
 
 Vercel's GitHub integration also gives every pull request its own preview URL.
 
