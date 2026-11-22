@@ -1,0 +1,32 @@
+# Contracts package — Claude Context
+
+## README
+
+`README.md` at the repo root is the developer setup guide. If your changes affect anything it documents, update it to match.
+
+The one definition of every API request and response, as zod schemas. The API parses every body, query and path parameter with them before any logic runs; the web app parses responses and validates forms with the same schemas. Types are inferred from the schemas (`z.infer`), never written a second time.
+
+## Key files
+
+| File                | Purpose                                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/zod.ts`        | Re-exports `zod/mini` with English messages loaded. **Always import `z` from here**, never from `zod` directly, or error messages become "Invalid input".     |
+| `src/primitives.ts` | Ids, names, email, `CalendarDate`, UTC instants, time zones, weekdays, person colours, versions and idempotency keys.                                         |
+| `src/schedule.ts`   | `scheduleSchema`, `assignmentSchema` and `snoozeSchema`; tests check they produce exactly the `@cleaning-planner/schedule` types.                             |
+| `src/profile.ts`    | `GET`/`PATCH /v1/me`.                                                                                                                                         |
+| `src/household.ts`  | Homes, the home switcher summary, members and roles.                                                                                                          |
+| `src/room.ts`       | Rooms, room types and appliances.                                                                                                                             |
+| `src/invite.ts`     | Invite codes (8 characters from a 32-letter alphabet without I, L, O or U: 40 bits), invite creation and preview.                                             |
+| `src/job.ts`        | Jobs and their create/update requests.                                                                                                                        |
+| `src/completion.ts` | Done/skipped, completion records and snoozes, each write with an idempotency key.                                                                             |
+| `src/agenda.ts`     | The agenda query (at most `MAX_AGENDA_DAYS`) and response, matching `buildAgenda`.                                                                            |
+| `src/api-error.ts`  | The error response body and `fieldErrorsOf`, which turns a zod error into one readable message per field (`rooms.0.name`), with `request` for the whole body. |
+| `src/updates.ts`    | `hasAChange` (an update must change something besides `version`) and `hasNoRepeats`.                                                                          |
+
+## Rules
+
+- **Every object is `z.strictObject`**: unknown fields are rejected, so a client can't sneak in `ownerId` or `isAdmin`.
+- **Cap everything**: string lengths, array lengths and number ranges. Messages are written for people ("Enter a name", "Keep it to 50 characters"), because the web app shows them next to fields.
+- Updates carry the `version` they were based on, so the API can refuse lost updates; writes that could be retried carry an `idempotencyKey`.
+- Use `zod/mini` (tree-shakable) to keep the web app's JavaScript small.
+- Every schema has tests through `describeContract` in `src/test-support.ts`: a valid example passes, a missing required field and a wrong type are reported on that field, and unknown fields are rejected. Add specific tests for every custom rule. Coverage gate: 95%.
