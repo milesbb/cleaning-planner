@@ -4,7 +4,7 @@
 
 `README.md` at the repo root is the developer setup guide. If your changes affect anything it documents — env vars, SSM parameters, CI/CD steps, deploy/bootstrap instructions — update `README.md` to match.
 
-Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-express`, behind an API Gateway **HTTP API**. Infrastructure lives in `infrastructure/template.yml`; the CodePipeline defined there builds, tests and deploys this app on every merge into `production` that touches it, then checks `/v1/health`.
+Express 5 app running on AWS Lambda (Node 24, arm64) via `@codegenie/serverless-express`, behind an API Gateway **HTTP API**. Infrastructure lives in `infrastructure/template.yml`; the CodePipeline defined there bundles and deploys this app on every merge into `production`, then checks `/v1/health`. It doesn't re-run lint, typecheck or tests: the GitHub release checks already passed for that commit. Its build runs on ARM with npm and Node downloads cached in the artifact bucket, so `infrastructure/buildspec.yml` must install every workspace the API imports (today `apps/api`, `packages/contracts`, `packages/schedule`).
 
 ## Key files
 
