@@ -1,5 +1,7 @@
 import type { HouseholdRole } from '@cleaning-planner/contracts/household';
+import { householdRoleSchema } from '@cleaning-planner/contracts/household';
 import { recordIdSchema } from '@cleaning-planner/contracts/primitives';
+import { z } from '@cleaning-planner/contracts/zod';
 import type { Request, RequestHandler, Response } from 'express';
 import { Errors } from '../utils/errors';
 import { signedInUserOf } from './signed-in-user';
@@ -28,6 +30,18 @@ async function loadMembership(
   if (membership === null) throw Errors.forbidden("You're not a member of this home");
   response.locals.membership = membership;
   return membership;
+}
+
+const membershipSchema = z.object({
+  householdId: recordIdSchema,
+  userId: recordIdSchema,
+  role: householdRoleSchema,
+});
+
+export function membershipOf(response: Pick<Response, 'locals'>): Membership {
+  const membership = membershipSchema.safeParse(response.locals.membership);
+  if (!membership.success) throw Errors.forbidden("You're not a member of this home");
+  return membership.data;
 }
 
 export function requireMember(memberships: MembershipReader): RequestHandler {
