@@ -155,13 +155,23 @@ Resources:
       DefaultRouteSettings:
         ThrottlingBurstLimit: 50
         ThrottlingRateLimit: 20
+      # Keys must match the routes below exactly ("METHOD path").
       RouteSettings:
-        'ANY /v1/invites/{proxy+}':
+        'GET /v1/invites/{proxy+}':
           ThrottlingBurstLimit: 10
           ThrottlingRateLimit: 2
-        'ANY /v1/me':
+        'POST /v1/invites/{proxy+}':
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 2
+        'GET /v1/me':
           ThrottlingBurstLimit: 10
           ThrottlingRateLimit: 5
+        'PATCH /v1/me':
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+        'DELETE /v1/me':
+          ThrottlingBurstLimit: 5
+          ThrottlingRateLimit: 1
 
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -184,24 +194,62 @@ Resources:
             Method: GET
             Auth:
               Authorizer: NONE
-        Api:
+        # Each route names its method, never ANY: API Gateway answers browser
+        # preflights (OPTIONS) from CorsConfiguration only when no route matches them.
+        ApiGet:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /v1/{proxy+}
-            Method: ANY
-        Me:
+            Method: GET
+        ApiPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/{proxy+}
+            Method: POST
+        ApiPatch:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/{proxy+}
+            Method: PATCH
+        ApiDelete:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/{proxy+}
+            Method: DELETE
+        MeGet:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /v1/me
-            Method: ANY
-        Invites:
+            Method: GET
+        MePatch:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/me
+            Method: PATCH
+        MeDelete:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/me
+            Method: DELETE
+        InviteGet:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /v1/invites/{proxy+}
-            Method: ANY
+            Method: GET
+        InvitePost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/invites/{proxy+}
+            Method: POST
 
   ApiLogGroup:
     Type: AWS::Logs::LogGroup

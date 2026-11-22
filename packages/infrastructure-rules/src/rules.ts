@@ -5,6 +5,7 @@ import {
   functionsCannotManageSignIns,
   functionsHaveTimeouts,
   passwordsAreAtLeastTwelveCharacters,
+  routesLeavePreflightsToCors,
 } from './api-rules';
 import { isRecord } from './cloudformation-template';
 import type {
@@ -151,6 +152,8 @@ export const INFRASTRUCTURE_RULES: Record<string, Rule> = {
   'the API allows the Android app origin, and only http(s) origins': apiAllowsTheAppOrigins,
   'data tables remove expired items': dataTablesExpireItems,
   'every /v1 route except health needs sign-in': everyApiRouteNeedsSignIn,
+  'routes name their methods so API Gateway answers browser preflights':
+    routesLeavePreflightsToCors,
   'app clients have no secret and never send the plain password': appClientsUseSrpOnly,
   'passwords are at least 12 characters': passwordsAreAtLeastTwelveCharacters,
   'API routes are throttled, tighter on invites and accounts': apiRoutesAreThrottled,
