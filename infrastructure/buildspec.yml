@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     commands:
-      - npm install --global n
+      - command -v n >/dev/null || npm install --global n
       - n "$(cat .nvmrc)"
       - hash -r
       - node --version
