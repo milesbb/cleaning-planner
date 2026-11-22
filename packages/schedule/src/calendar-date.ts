@@ -1,4 +1,4 @@
-import type { Interval } from './types';
+import type { Interval, Weekday } from './types';
 
 declare const calendarDateBrand: unique symbol;
 
@@ -10,7 +10,7 @@ interface DateParts {
   day: number;
 }
 
-const DAYS_PER_WEEK = 7;
+export const DAYS_PER_WEEK = 7;
 const CALENDAR_DATE_LENGTH = 'YYYY-MM-DD'.length;
 const LAST_DAY_OF_PREVIOUS_MONTH = 0;
 
@@ -64,6 +64,21 @@ export function addInterval(date: CalendarDate, interval: Interval): CalendarDat
       ? addMonths(dateParts, interval.value)
       : addDays(dateParts, intervalInDays(interval));
   return parseCalendarDate(timestampToCalendarText(timestamp));
+}
+
+export const WEEKDAYS_FROM_SUNDAY: readonly Weekday[] = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+];
+
+export function daysUntilWeekday(fromWeekdayNumber: number, weekday: Weekday): number {
+  const targetWeekdayNumber = WEEKDAYS_FROM_SUNDAY.indexOf(weekday);
+  return (targetWeekdayNumber - fromWeekdayNumber + DAYS_PER_WEEK) % DAYS_PER_WEEK;
 }
 
 export function weekdayNumberOf(date: CalendarDate): number {

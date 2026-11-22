@@ -1,30 +1,16 @@
 import {
   addInterval,
   type CalendarDate,
+  daysUntilWeekday,
   lastDayOfMonth,
   weekdayNumberOf,
   withDayOfMonth,
 } from './calendar-date';
-import type { FixedRule, Interval, MonthDayRule, Weekday, WeekdaysRule } from './types';
+import type { FixedRule, Interval, MonthDayRule, WeekdaysRule } from './types';
 
-const WEEKDAYS_FROM_SUNDAY: readonly Weekday[] = [
-  'sunday',
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-];
-const DAYS_PER_WEEK = 7;
 const FIRST_DAY_OF_MONTH = 1;
 const LAST_POSSIBLE_DAY_OF_MONTH = 31;
 const ONE_MONTH: Interval = { value: 1, unit: 'month' };
-
-function daysUntilWeekday(fromWeekdayNumber: number, weekday: Weekday): number {
-  const targetWeekdayNumber = WEEKDAYS_FROM_SUNDAY.indexOf(weekday);
-  return (targetWeekdayNumber - fromWeekdayNumber + DAYS_PER_WEEK) % DAYS_PER_WEEK;
-}
 
 function firstMatchingWeekday(rule: WeekdaysRule, from: CalendarDate): CalendarDate {
   if (rule.weekdays.length === 0) throw new Error('A weekly rule needs at least one weekday');
