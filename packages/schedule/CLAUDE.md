@@ -18,6 +18,7 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 | `src/completions.ts`    | `lastCompletedOn` (done or skipped) and `lastDone` (real completions only).                     |
 | `src/due-status.ts`     | `classifyDue` (late, today, tomorrow, this week, later) and `lastDayOfWeek`.                    |
 | `src/time-zone.ts`      | `calendarDateInTimeZone(instant, timeZone)`: the one place an instant becomes a home's day.     |
+| `src/whose-turn.ts`     | `whoseTurn(assignment, completions, memberIds)`: who a job is for right now.                    |
 
 ## Rules
 
@@ -29,6 +30,7 @@ Pure TypeScript scheduling engine shared by the web app and the `notify` Lambda.
 - Fixed schedules are due on the first matching day (weekday, day of month or last day) **after** the last completion, or on or after the start date if never done. A day of the month past a month's end falls on that month's last day.
 - A skip is a completion with outcome `skipped`: it moves the schedule on (`lastCompletedOn`) but never counts as "done by" anyone (`lastDone`).
 - A snooze remembers the due date it moved (`from`). It only applies while the schedule still says that date, so doing or skipping the job ends it with no clean-up.
+- Who does a job (`whose-turn.ts`): `anyone` (nobody in particular), one `member` (falls back to anyone if they leave) or `takeTurns` (the next current member after whoever last did it; skips don't move the turn, and people who left are passed over).
 - Import from the specific file (`@cleaning-planner/schedule/next-due`). There is no index barrel.
 
 ## Test-driven development — non-negotiable rules

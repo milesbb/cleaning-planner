@@ -42,6 +42,9 @@ export interface Completion {
   outcome: CompletionOutcome;
 }
 
+export type Assignment =
+  { kind: 'anyone' } | { kind: 'member'; memberId: string } | { kind: 'takeTurns' };
+
 export interface Snooze {
   from: CalendarDate;
   until: CalendarDate;
