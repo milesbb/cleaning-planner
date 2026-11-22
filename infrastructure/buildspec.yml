@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - npm install --global n
+      - n "$(cat .nvmrc)"
+      - hash -r
+      - node --version
+      - npm ci --workspace=apps/api --workspace=packages/schedule --include-workspace-root
+  pre_build:
+    commands:
+      - npx turbo run lint typecheck test --filter=@cleaning-planner/api --filter=@cleaning-planner/schedule
+  build:
+    commands:
+      - npm run build --workspace=apps/api
+      - >-
+        aws cloudformation package
+        --template-file infrastructure/template.yml
+        --s3-bucket "$ARTIFACT_BUCKET"
+        --s3-prefix lambda
+        --output-template-file packaged.yml
+
+artifacts:
+  files:
+    - packaged.yml
+    - apps/api/dist/health-check.mjs

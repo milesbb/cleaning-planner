@@ -1,0 +1,51 @@
+import type { CalendarDate } from './calendar-date';
+
+export type IntervalUnit = 'day' | 'week' | 'month';
+
+export interface Interval {
+  value: number;
+  unit: IntervalUnit;
+}
+
+export interface FloatingSchedule {
+  type: 'floating';
+  every: Interval;
+}
+
+export type Weekday =
+  'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+
+export interface WeekdaysRule {
+  kind: 'weekdays';
+  weekdays: readonly Weekday[];
+}
+
+export interface MonthDayRule {
+  kind: 'monthDay';
+  day: number | 'last';
+}
+
+export type FixedRule = WeekdaysRule | MonthDayRule;
+
+export interface FixedSchedule {
+  type: 'fixed';
+  on: FixedRule;
+}
+
+export type Schedule = FloatingSchedule | FixedSchedule;
+
+export type CompletionOutcome = 'done' | 'skipped';
+
+export interface Completion {
+  completedOn: CalendarDate;
+  completedBy: string;
+  outcome: CompletionOutcome;
+}
+
+export type Assignment =
+  { kind: 'anyone' } | { kind: 'member'; memberId: string } | { kind: 'takeTurns' };
+
+export interface Snooze {
+  from: CalendarDate;
+  until: CalendarDate;
+}

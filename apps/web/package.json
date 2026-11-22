@@ -1,0 +1,44 @@
+{
+  "name": "@cleaning-planner/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next typegen && eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typegen": "next typegen",
+    "test:lighthouse": "lhci autorun"
+  },
+  "devDependencies": {
+    "@cleaning-planner/schedule": "^0.0.0",
+    "@lhci/cli": "^0.16.1",
+    "@playwright/test": "^1.65.1",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^8.0.0",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "axe-core": "^4.14.1",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.6",
+    "jsdom": "^31.0.1",
+    "tailwindcss": "^4.3.5",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.1",
+    "vitest-axe": "^0.1.0"
+  },
+  "dependencies": {
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}

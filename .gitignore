@@ -39,9 +39,13 @@ test-results/
 # Vercel
 .vercel/
 
-# Supabase local
-supabase/.branches/
-supabase/.temp/
-
 # Claude Code (personal overrides — don't commit)
 .claude/settings.local.json
+
+# Next.js generated types
+next-env.d.ts
+
+# Quality tooling output
+.stryker-tmp/
+reports/
+.lighthouseci/
