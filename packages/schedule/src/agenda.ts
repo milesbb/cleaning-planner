@@ -52,7 +52,7 @@ export interface Agenda {
   days: AgendaDay[];
 }
 
-const MAX_AGENDA_DAYS = 62;
+export const MAX_AGENDA_DAYS = 62;
 
 function datesInRange({ from, to }: AgendaRange): CalendarDate[] {
   if (to < from) throw new Error('An agenda range must end on or after its start');
