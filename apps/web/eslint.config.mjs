@@ -24,7 +24,11 @@ export default tseslint.config(
     files: ['**/*.{ts,tsx}'],
     extends: [...tseslint.configs.strictTypeChecked],
     languageOptions: typeCheckedLanguageOptions(import.meta.dirname),
-    rules: strictRules,
+    rules: {
+      ...strictRules,
+      'react/no-danger': 'error',
+      'no-eval': 'error',
+    },
   },
   testFileOverrides,
 );
