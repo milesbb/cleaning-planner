@@ -8,7 +8,14 @@ import type {
 const PUBLIC_ROUTES = ['/v1/health'];
 const SAFE_SIGN_IN_FLOWS = ['ALLOW_USER_SRP_AUTH', 'ALLOW_REFRESH_TOKEN_AUTH'];
 const MINIMUM_PASSWORD_LENGTH = 12;
-const TIGHTLY_THROTTLED_ROUTES = ['ANY /v1/invites/{proxy+}', 'ANY /v1/me'];
+const TIGHTLY_THROTTLED_ROUTES = [
+  'GET /v1/invites/{proxy+}',
+  'POST /v1/invites/{proxy+}',
+  'GET /v1/me',
+  'PATCH /v1/me',
+  'DELETE /v1/me',
+];
+const METHODS_THAT_CATCH_PREFLIGHTS = ['ANY', 'OPTIONS'];
 const MAXIMUM_TIMEOUT_SECONDS = 30;
 
 function resourcesOfType(
@@ -27,9 +34,7 @@ function recordAt(properties: Properties, ...path: string[]): Properties {
 }
 
 function publicRouteProblems(functionId: string, resource: TemplateResource): string[] {
-  return Object.values(recordAt(resource.properties, 'Events'))
-    .filter((event) => isRecord(event) && event.Type === 'HttpApi')
-    .map((event) => recordAt({ event }, 'event', 'Properties'))
+  return apiRoutesOf(resource)
     .filter((route) => recordAt(route, 'Auth').Authorizer === 'NONE')
     .map((route) => String(route.Path))
     .filter((path) => !PUBLIC_ROUTES.includes(path))
@@ -44,6 +49,30 @@ export function everyApiRouteNeedsSignIn(template: CloudFormationTemplate): stri
     ([functionId, resource]) => publicRouteProblems(functionId, resource),
   );
   return [...apisWithoutSignIn, ...publicRoutes];
+}
+
+function apiRoutesOf(resource: TemplateResource): Properties[] {
+  return Object.values(recordAt(resource.properties, 'Events'))
+    .filter((event) => isRecord(event) && event.Type === 'HttpApi')
+    .map((event) => recordAt({ event }, 'event', 'Properties'));
+}
+
+function methodOf(route: Properties): string {
+  return typeof route.Method === 'string' ? route.Method.toUpperCase() : 'ANY';
+}
+
+// API Gateway answers CORS preflights itself only when no route matches OPTIONS.
+// An ANY or OPTIONS route sends them to the sign-in check instead, which rejects them.
+export function routesLeavePreflightsToCors(template: CloudFormationTemplate): string[] {
+  return resourcesOfType(template, 'AWS::Serverless::Function').flatMap(([functionId, resource]) =>
+    apiRoutesOf(resource)
+      .map((route) => ({ method: methodOf(route), path: route.Path }))
+      .filter(({ method }) => METHODS_THAT_CATCH_PREFLIGHTS.includes(method))
+      .map(
+        ({ method, path }) =>
+          `${functionId} route ${method} ${String(path)} catches browser preflights`,
+      ),
+  );
 }
 
 function clientProblems(clientId: string, client: Properties): string[] {
