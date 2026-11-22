@@ -104,15 +104,28 @@ async function getHousehold(table: Table, householdId: string): Promise<Househol
   return Item === undefined ? null : storedHouseholdSchema.parse(Item);
 }
 
-async function homeKeys(table: Table, householdId: string, prefix = ''): Promise<StoredKey[]> {
+function keyCondition(
+  householdId: string,
+  prefix: string | undefined,
+): { KeyConditionExpression: string; ExpressionAttributeValues: Record<string, string> } {
+  const home = Keys.household(householdId);
+  if (prefix === undefined) {
+    return { KeyConditionExpression: 'pk = :home', ExpressionAttributeValues: { ':home': home } };
+  }
+  return {
+    KeyConditionExpression: 'pk = :home AND begins_with(sk, :prefix)',
+    ExpressionAttributeValues: { ':home': home, ':prefix': prefix },
+  };
+}
+
+async function homeKeys(table: Table, householdId: string, prefix?: string): Promise<StoredKey[]> {
   const keys: StoredKey[] = [];
   let startKey: Record<string, unknown> | undefined;
   do {
     const page = await table.client.send(
       new QueryCommand({
         TableName: table.name,
-        KeyConditionExpression: 'pk = :home AND begins_with(sk, :prefix)',
-        ExpressionAttributeValues: { ':home': Keys.household(householdId), ':prefix': prefix },
+        ...keyCondition(householdId, prefix),
         ProjectionExpression: 'pk, sk, userId',
         ConsistentRead: true,
         ExclusiveStartKey: startKey,
