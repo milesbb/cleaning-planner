@@ -4,6 +4,7 @@ import type { MembershipRepository } from '../data/membership-repository';
 import { Errors } from '../utils/errors';
 import type { HouseholdStore } from './household-service';
 import type { MemberStore } from './member-service';
+import type { ReminderService } from './reminder-service';
 
 export interface AccountRemover {
   deleteIdentity: (accessToken: string) => Promise<void>;
@@ -25,6 +26,7 @@ export interface AccountDependencies {
   homes: Pick<MembershipRepository, 'listHomesOf'>;
   members: Pick<MemberStore, 'listMembers' | 'handOver'>;
   households: Pick<HouseholdStore, 'deleteHousehold' | 'removeMember'>;
+  reminders: Pick<ReminderService, 'removeSchedules'>;
   profiles: ProfileRemover;
   identity: AccountRemover;
 }
@@ -98,6 +100,7 @@ async function deleteAccount(
     ),
   );
   for (const step of steps) await takeStep(dependencies, userId, step);
+  await dependencies.reminders.removeSchedules(userId);
   await dependencies.profiles.deleteProfile(userId);
   await dependencies.identity.deleteIdentity(accessToken);
 }

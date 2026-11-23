@@ -44,6 +44,13 @@ const UNUSED_SERVICES: AppServices = {
   history: { listHistory: notUsed },
   agenda: { getAgenda: notUsed, listProgress: notUsed },
   accounts: { deleteAccount: notUsed },
+  reminders: {
+    getReminders: notUsed,
+    saveReminders: notUsed,
+    sendTestReminder: notUsed,
+    removeSchedules: notUsed,
+  },
+  pushDevices: { addDevice: notUsed, removeDevice: notUsed },
   memberships: { findMembership: notUsed },
 };
 

@@ -8,6 +8,8 @@ import { jobProgressRouter } from './controllers/job-progress';
 import { jobsRouter } from './controllers/jobs';
 import { membersRouter } from './controllers/members';
 import { meRouter } from './controllers/me';
+import { pushDevicesRouter } from './controllers/push-devices';
+import { remindersRouter } from './controllers/reminders';
 import { roomsRouter } from './controllers/rooms';
 import { errorHandler } from './middlewares/error-handler';
 import type { MembershipReader } from './middlewares/membership';
@@ -23,6 +25,8 @@ import type { JobProgressService } from './services/job-progress-service';
 import type { JobService } from './services/job-service';
 import type { MemberService } from './services/member-service';
 import type { ProfileService } from './services/profile-service';
+import type { PushDeviceService } from './services/push-device-service';
+import type { ReminderService } from './services/reminder-service';
 import type { RoomService } from './services/room-service';
 import { Errors } from './utils/errors';
 
@@ -39,6 +43,8 @@ export interface AppServices {
   progress: JobProgressService;
   history: JobHistoryService;
   agenda: AgendaService;
+  reminders: ReminderService;
+  pushDevices: PushDeviceService;
   memberships: MembershipReader;
 }
 
@@ -71,6 +77,8 @@ export function createApp(config: AppConfig): Express {
   app.use(express.json({ limit: MAX_JSON_BODY_SIZE }));
   app.use('/v1/health', healthRouter(config.version));
   app.use('/v1', signedInUser(config.readClaims));
+  app.use('/v1/me/reminders', remindersRouter(config.services.reminders));
+  app.use('/v1/me/push-devices', pushDevicesRouter(config.services.pushDevices));
   app.use('/v1/me', meRouter(config.services.profiles, config.services.accounts));
   app.use('/v1/invites', invitesRouter(config.services.invites, config.readSourceIp));
   for (const [path, router] of householdRouters(config.services)) {

@@ -3,8 +3,13 @@ import process from 'node:process';
 
 const SUCCESS_STATUS_CODE = 200;
 
-// The bundle connects to its table when it loads, as it does in Lambda; health never touches it.
+// The bundle reads its settings when it loads, as it does in Lambda; health never uses them.
 process.env.TABLE_NAME ??= 'smoke-test';
+process.env.REMINDER_SCHEDULE_GROUP ??= 'smoke-test-reminders';
+process.env.REMINDER_SCHEDULE_PREFIX ??= 'smoke-test-';
+process.env.REMINDER_SCHEDULER_ROLE_ARN ??= 'arn:aws:iam::000000000000:role/smoke-test';
+process.env.NOTIFY_FUNCTION_ARN ??=
+  'arn:aws:lambda:ap-southeast-2:000000000000:function:smoke-test';
 
 const healthCheckEvent = {
   version: '2.0',
