@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { AccountAuthError } from '@/lib/auth/account-auth';
+import { AccountAuthError } from '@/lib/auth/account-auth-error';
 
 const UNEXPECTED = 'Something went wrong. Try again.';
 

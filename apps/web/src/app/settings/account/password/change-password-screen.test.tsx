@@ -3,7 +3,7 @@ import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
-import { AccountAuthError } from '@/lib/auth/account-auth';
+import { AccountAuthError } from '@/lib/auth/account-auth-error';
 import type { AccountAuth } from '@/lib/auth/account-auth';
 import { stubAccountAuth } from '@/test/account-auth-stub';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';

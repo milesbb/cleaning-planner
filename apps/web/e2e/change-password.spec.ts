@@ -3,7 +3,7 @@ import { cognitoError, fakeCognito } from './support/fake-backend';
 import { logInToHome } from './support/fake-home';
 
 async function changePassword(page: import('@playwright/test').Page): Promise<void> {
-  await page.goto('/settings');
+  await page.goto('/settings/account');
   await page.getByRole('link', { name: 'Change password' }).click();
   await page.getByLabel('Current password', { exact: true }).fill('lemon kettle sunday');
   await page.getByLabel('New password', { exact: true }).fill('window pepper gate');

@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
-import { AccountAuthError } from '@/lib/auth/account-auth';
+import { AccountAuthError } from '@/lib/auth/account-auth-error';
 import { forgetPendingEmail, pendingEmail } from '@/lib/auth/pending-email';
 import { renderWithAuth, stubAccountAuth } from '@/test/account-auth-stub';
 import { SignUpForm } from './sign-up-form';

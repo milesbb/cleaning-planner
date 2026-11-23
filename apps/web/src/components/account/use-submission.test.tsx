@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { AccountAuthError } from '@/lib/auth/account-auth';
+import { AccountAuthError } from '@/lib/auth/account-auth-error';
 import { useSubmission } from './use-submission';
 
 describe('useSubmission', () => {

@@ -3,7 +3,7 @@ import { fakeApi } from './support/fake-backend';
 import { logInToHome } from './support/fake-home';
 
 test.describe('Settings', () => {
-  test('changes your name and colour, then signs out', async ({ page }) => {
+  test('changes your name and colour in Your account, then signs out', async ({ page }) => {
     await logInToHome(page);
     await page
       .getByRole('navigation', { name: 'Main' })
@@ -12,13 +12,17 @@ test.describe('Settings', () => {
     await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Our flat' })).toContainText('Sam');
 
+    await page.getByRole('link', { name: 'Your account' }).click();
     await page.getByRole('button', { name: 'Change name and colour' }).click();
     const sheet = page.getByRole('dialog', { name: 'Your name and colour' });
     await sheet.getByRole('textbox', { name: 'Name' }).fill('Lex');
     await sheet.getByRole('radio', { name: 'Teal' }).click();
     await sheet.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('region', { name: 'You' })).toContainText('Lex');
+    await expect(page.getByRole('region', { name: 'Your details' })).toContainText('Lex');
+    await page.getByRole('link', { name: 'Back to Settings' }).click();
+    await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'You', exact: true })).toContainText('Lex');
 
     await page.getByRole('button', { name: 'Sign out' }).click();
     await page.waitForURL(/\/welcome\/?$/);
@@ -34,7 +38,7 @@ test.describe('Settings', () => {
       { status: 400, body: { error: { code: 'badRequest', message: 'Keep it to 40 characters' } } },
       { method: 'PATCH' },
     );
-    await page.goto('/settings');
+    await page.goto('/settings/account');
     await page.getByRole('button', { name: 'Change name and colour' }).click();
     const sheet = page.getByRole('dialog', { name: 'Your name and colour' });
     await sheet.getByRole('radio', { name: 'Green' }).click();
