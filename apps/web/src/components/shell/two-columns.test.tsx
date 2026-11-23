@@ -6,6 +6,11 @@ import { BottomSheet } from './bottom-sheet';
 import { ChooseAJobHint } from './choose-a-job-hint';
 import { TwoColumns } from './two-columns';
 import { LAPTOP_MEDIA_QUERY, useIsLaptop } from './use-is-laptop';
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): object => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: (): string => '/today',
+}));
 import { fakeScreenOf, restoreScreen } from '@/test/fake-screen';
 
 afterEach(restoreScreen);
