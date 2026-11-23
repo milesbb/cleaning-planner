@@ -1,5 +1,5 @@
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { GetCommand, PutCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand, TransactWriteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { profileSchema } from '@cleaning-planner/contracts/profile';
 import type { Profile, UpdateProfileRequest } from '@cleaning-planner/contracts/profile';
 import { z } from '@cleaning-planner/contracts/zod';
@@ -15,6 +15,7 @@ import { partitionItemKeys } from './home-items';
 
 const storedProfileSchema = z.object(profileSchema.shape);
 const MAX_HOMES_PER_PERSON = 50;
+const PROFILE_MISSING = 'Open the app again to set up your profile';
 
 function changeExpression(changes: UpdateProfileRequest): {
   UpdateExpression: string;
@@ -44,7 +45,7 @@ async function getProfile(table: Table, userId: string): Promise<Profile | null>
 
 async function requireProfile(table: Table, userId: string): Promise<Profile> {
   const profile = await getProfile(table, userId);
-  if (profile === null) throw Errors.notFound('Open the app again to set up your profile');
+  if (profile === null) throw Errors.notFound(PROFILE_MISSING);
   return profile;
 }
 
@@ -97,6 +98,26 @@ async function updateProfile(
   return requireProfile(table, userId);
 }
 
+async function updateEmail(table: Table, userId: string, email: string): Promise<Profile> {
+  try {
+    const { Attributes } = await table.client.send(
+      new UpdateCommand({
+        TableName: table.name,
+        Key: { pk: Keys.user(userId), sk: Keys.profile },
+        UpdateExpression: 'SET #email = :email',
+        ConditionExpression: 'attribute_exists(pk)',
+        ExpressionAttributeNames: { '#email': 'email' },
+        ExpressionAttributeValues: { ':email': email },
+        ReturnValues: 'ALL_NEW',
+      }),
+    );
+    return storedProfileSchema.parse(Attributes);
+  } catch (error) {
+    if (!(error instanceof ConditionalCheckFailedException)) throw error;
+    throw Errors.notFound(PROFILE_MISSING);
+  }
+}
+
 async function deleteProfile(table: Table, userId: string): Promise<void> {
   await deleteInBatches(table, await partitionItemKeys(table, Keys.user(userId)));
 }
@@ -110,5 +131,6 @@ export function createProfileRepository(
     getProfile: (userId) => getProfile(table, userId),
     createProfile: (profile) => createProfile(table, profile),
     updateProfile: (userId, changes) => updateProfile(table, memberships, userId, changes),
+    updateEmail: (userId, email) => updateEmail(table, userId, email),
   };
 }

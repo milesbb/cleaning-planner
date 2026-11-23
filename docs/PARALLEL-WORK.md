@@ -92,6 +92,7 @@ The owner can also open a session themselves and say "pick up the next issue": t
 3. **Build** it the usual way (root `CLAUDE.md`: TDD, readability, security). Stay inside your lanes and the shared-file rules.
    - Need another lane? If the board shows it free, add it (`gh issue edit <issue> --add-label "lane: <name>"`) and run the board again to check nothing clashes. If it's held, don't touch those files: comment on your issue what you need and stop, so the coordinator can decide.
 4. **Check** before pushing: `npm run format:check && npm run lint && npm run typecheck && npm test`, plus your e2e specs.
+   - Run e2e on a port of your own, so sessions don't share a server: `E2E_PORT` set to 3100 plus your issue number (`E2E_PORT=3280` for #180), with `CI=1` so Playwright starts its own server instead of reusing whatever answers on that port.
 5. **PR** into `development` with `Closes #<issue>` in the body, then `npm run work:board -- review <issue>`.
 6. **Merge** when PR checks pass: rebase onto `development` first if it moved, squash-merge, author email `10620446+milesbb@users.noreply.github.com`.
 7. **Hand back.** `npm run work:board -- --sync-labels`, then reply with the PR link.

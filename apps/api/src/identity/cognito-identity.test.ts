@@ -17,6 +17,7 @@ describe('Cognito identity reader', () => {
   it("reads the person's verified email and name with their own access token", async () => {
     const client = clientReturning([
       { Name: 'email', Value: 'Sam@Example.com' },
+      { Name: 'email_verified', Value: 'true' },
       { Name: 'name', Value: 'Sam' },
       { Name: 'sub', Value: 'user-sam' },
     ]);
@@ -24,10 +25,25 @@ describe('Cognito identity reader', () => {
     await expect(reader.readIdentity('the-access-token')).resolves.toEqual({
       email: 'sam@example.com',
       name: 'Sam',
+      isEmailVerified: true,
     });
     const [command] = client.send.mock.calls[0] ?? [];
     expect(command).toBeInstanceOf(GetUserCommand);
     expect(command).toMatchObject({ input: { AccessToken: 'the-access-token' } });
+  });
+
+  it.each([
+    { case: 'Cognito says it is not', attributes: [{ Name: 'email_verified', Value: 'false' }] },
+    { case: 'Cognito does not say', attributes: [] },
+  ])('treats the email as unverified when $case', async ({ attributes }) => {
+    const client = clientReturning([
+      { Name: 'email', Value: 'sam@new.example.com' },
+      { Name: 'name', Value: 'Sam' },
+      ...attributes,
+    ]);
+    await expect(createCognitoIdentityReader(client).readIdentity('token')).resolves.toMatchObject({
+      isEmailVerified: false,
+    });
   });
 
   it('treats a rejected token as signed out', async () => {

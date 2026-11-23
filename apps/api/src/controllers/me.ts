@@ -1,5 +1,6 @@
 import {
   deleteAccountRequestSchema,
+  refreshEmailRequestSchema,
   updateProfileRequestSchema,
 } from '@cleaning-planner/contracts/profile';
 import { Router } from 'express';
@@ -29,6 +30,11 @@ export function meRouter(profiles: ProfileService, accounts: AccountService): Ro
     const { userId } = signedInUserOf(response);
     const changes = parseOrThrow(updateProfileRequestSchema, request.body);
     response.json(await profiles.updateMyProfile(userId, changes));
+  });
+  router.post('/email', async (request, response) => {
+    const { userId } = signedInUserOf(response);
+    parseOrThrow(refreshEmailRequestSchema, request.body);
+    response.json(await profiles.refreshMyEmail(userId, accessTokenOf(request)));
   });
   router.delete('/', async (request, response) => {
     const { userId } = signedInUserOf(response);

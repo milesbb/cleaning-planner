@@ -76,7 +76,7 @@ Check the API: `curl http://localhost:4000/v1/health`.
 | `npm run test:mutation`                                      | Mutation-test the schedule engine with Stryker (fails below 85%)                                                                                                                                 |
 | `npm run test:lighthouse`                                    | Lighthouse scores for the built web app (run `npm run build` first; needs Chrome)                                                                                                                |
 
-First run of e2e tests: `npx playwright install chromium webkit` from `apps/web`.
+First run of e2e tests: `npx playwright install chromium webkit` from `apps/web`. Playwright serves the site on port 3000; set `E2E_PORT` (a whole number from 1024 to 65535) to use another, so e2e runs in two worktrees don't collide.
 
 ## Branches and workflow
 
