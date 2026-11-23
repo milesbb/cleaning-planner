@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons/interface-icons';
-import { DayRow } from '@/components/jobs/day-row';
 import { AppShell } from '@/components/shell/app-shell';
 import { HomeSwitcher } from '@/components/shell/home-switcher';
 import { PageHeader } from '@/components/shell/page-header';
@@ -11,11 +10,11 @@ import {
   ScreenProblem,
   useStartAHomeWhenHomeless,
 } from '@/components/shell/screen-states';
-import { Card } from '@/components/ui/card';
 import { IconButton } from '@/components/ui/icon-button';
 import { formatShortDate } from '@/lib/format-date';
 import { ComingUpSection } from './coming-up-section';
 import { useWeek } from './use-week';
+import { WeekDays } from './week-days';
 import type { WeekState } from './use-week';
 
 type ReadyWeek = Extract<WeekState, { kind: 'ready' }>;
@@ -62,20 +61,12 @@ function WeekContent({ week }: { week: ReadyWeek }): ReactNode {
         }
         action={<WeekNavigation week={week} />}
       />
-      <Card raised={false} className="divide-y-2 divide-ink overflow-hidden p-0">
-        <ol aria-label="Days" className="divide-y-2 divide-ink">
-          {week.view.days.map((day) => (
-            <li key={day.date}>
-              <DayRow
-                weekday={day.weekday}
-                dayOfMonth={day.dayOfMonth}
-                jobs={day.jobs}
-                isToday={day.isToday}
-              />
-            </li>
-          ))}
-        </ol>
-      </Card>
+      <WeekDays
+        householdId={week.currentHomeId}
+        today={week.today}
+        range={week.range}
+        view={week.view}
+      />
       {week.offset === 0 ? (
         <ComingUpSection householdId={week.currentHomeId} week={week.range} />
       ) : null}
