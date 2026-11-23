@@ -16,10 +16,38 @@ jobs:
   core:
     uses: ./.github/workflows/core-checks.yml
 
+  # Release checks hold the same budget; checking each PR stops two PRs that each
+  # fit from adding up to a release that doesn't. The job always runs (a skipped
+  # job fails "PR checks passed") and only builds when the website's code changed.
+  bundle-budget:
+    name: JavaScript budget (website)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Does this PR change the website's JavaScript?
+        id: scope
+        run: |
+          changed_files="$(git diff --name-only HEAD^1 HEAD)"
+          echo "$changed_files"
+          if grep -Eq '^(apps/web/|packages/(schedule|contracts)/|package(-lock)?\.json$)' <<<"$changed_files"; then
+            echo "affected=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "affected=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No website code changed, so the JavaScript budget is not rechecked."
+          fi
+      - if: steps.scope.outputs.affected == 'true'
+        uses: ./.github/actions/setup
+      - if: steps.scope.outputs.affected == 'true'
+        run: npx turbo run build --filter=@cleaning-planner/web
+      - if: steps.scope.outputs.affected == 'true'
+        run: npm run check:bundle-size --workspace=apps/web
+
   passed:
     name: PR checks passed
     runs-on: ubuntu-latest
-    needs: [core]
+    needs: [core, bundle-budget]
     if: always()
     steps:
       - name: Fail unless every check succeeded
