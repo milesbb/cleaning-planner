@@ -119,3 +119,18 @@ export function parseTemplate(text: string): CloudFormationTemplate {
     resources: Object.fromEntries(resources),
   };
 }
+
+export function resourcesOfType(
+  template: CloudFormationTemplate,
+  resourceType: string,
+): [string, TemplateResource][] {
+  return Object.entries(template.resources).filter(
+    ([, resource]) => resource.type === resourceType,
+  );
+}
+
+export function recordAt(properties: Properties, ...path: string[]): Properties {
+  let current: unknown = properties;
+  for (const key of path) current = isRecord(current) ? current[key] : undefined;
+  return isRecord(current) ? current : {};
+}
