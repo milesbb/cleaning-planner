@@ -4,23 +4,20 @@ import type { Job } from '@cleaning-planner/contracts/job';
 import { addInterval, compareDates } from '@cleaning-planner/schedule/calendar-date';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { describeSchedule } from '@cleaning-planner/schedule/describe-schedule';
-import { findLibraryJob, recommendationText } from '@cleaning-planner/schedule/library/job-library';
-import type {
-  JobIconKey,
-  RecommendedRange,
-  RoomType,
-} from '@cleaning-planner/schedule/library/types';
+import type { JobIconKey, RoomType } from '@cleaning-planner/schedule/library/types';
 import type { Assignment, Schedule } from '@cleaning-planner/schedule/types';
 import { formatShortDate } from '../format-date';
 import { assigneeChoices } from './assignee-choices';
+import type { JobAdvice } from './job-advice';
 import type { AssigneeChoice } from './assignee-choices';
 import { lateByText, personLabel } from './job-wording';
 import { nextDueOf, whoFor } from './room-jobs';
 import type { RoomSources } from './room-jobs';
 
-// Everything the Job detail screen says about one job.
+// Everything the Job detail screen says about one job: what the home's data
+// says (JobBasics), and the library's advice once it has loaded.
 
-export interface JobDetails {
+export interface JobBasics {
   jobId: string;
   name: string;
   icon: JobIconKey;
@@ -32,17 +29,15 @@ export interface JobDetails {
   lateBy?: string;
   howOften: string;
   schedule: Schedule;
-  recommendation: string | null;
-  recommendedRange: RecommendedRange | null;
-  recommendedSchedule: Schedule | null;
+  libraryId: string | null;
   whoFor: string;
   assignment: Assignment;
   assigneeChoices: AssigneeChoice[];
-  why: string | null;
-  howTo: readonly string[];
   lastDone: string;
   version: number;
 }
+
+export type JobDetails = JobBasics & JobAdvice;
 
 export interface SnoozeChoice {
   label: string;
@@ -84,38 +79,13 @@ function lastDoneText(sources: RoomSources, completion: CompletionRecord | null)
   return completionText(sources.members, sources.myUserId, completion);
 }
 
-type Advice = Pick<
-  JobDetails,
-  'recommendation' | 'recommendedRange' | 'recommendedSchedule' | 'why' | 'howTo'
->;
-
-const NO_ADVICE: Advice = {
-  recommendation: null,
-  recommendedRange: null,
-  recommendedSchedule: null,
-  why: null,
-  howTo: [],
-};
-
-function adviceFor(job: Job): Advice {
-  const libraryJob = job.libraryId === null ? undefined : findLibraryJob(job.libraryId);
-  if (libraryJob === undefined) return NO_ADVICE;
-  return {
-    recommendation: recommendationText(libraryJob.recommendedRange),
-    recommendedRange: libraryJob.recommendedRange,
-    recommendedSchedule: libraryJob.defaultSchedule,
-    why: libraryJob.why,
-    howTo: libraryJob.howTo,
-  };
-}
-
 function lateness(nextDue: CalendarDate | null, today: CalendarDate): { lateBy?: string } {
   return nextDue !== null && compareDates(nextDue, today) < 0
     ? { lateBy: lateByText(nextDue, today) }
     : {};
 }
 
-export function jobDetailsOf(sources: RoomSources, jobId: string): JobDetails | null {
+export function jobDetailsOf(sources: RoomSources, jobId: string): JobBasics | null {
   const job = sources.jobs.find((candidate) => candidate.id === jobId);
   const room = sources.rooms.find((candidate) => candidate.id === job?.roomId);
   if (job === undefined || room === undefined) return null;
@@ -133,7 +103,7 @@ export function jobDetailsOf(sources: RoomSources, jobId: string): JobDetails | 
     ...lateness(nextDue, sources.today),
     howOften: describeSchedule(job.schedule),
     schedule: job.schedule,
-    ...adviceFor(job),
+    libraryId: job.libraryId,
     whoFor: whoFor(sources, job),
     assignment: job.assignment,
     assigneeChoices: assigneeChoices(sources.members, sources.myUserId),

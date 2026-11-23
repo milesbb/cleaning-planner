@@ -10,6 +10,7 @@ import {
 } from '@/components/shell/screen-states';
 import { ButtonLink } from '@/components/ui/button';
 import { completionText, jobDetailsOf } from '@/lib/home/job-details';
+import { useLibraryAdvice } from '@/lib/home/use-library-advice';
 import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { useRecordId } from '@/lib/use-record-id';
@@ -30,8 +31,10 @@ function JobNotFound(): ReactNode {
 }
 
 function JobContent({ home, jobId }: { home: ReadyHome; jobId: string }): ReactNode {
-  const details = jobDetailsOf(home.sources, jobId);
-  if (details === null) return <JobNotFound />;
+  const basics = jobDetailsOf(home.sources, jobId);
+  const advice = useLibraryAdvice(basics?.libraryId ?? null);
+  if (basics === null) return <JobNotFound />;
+  const details = { ...basics, ...advice };
   const address = { householdId: home.householdId, jobId };
   return (
     <>

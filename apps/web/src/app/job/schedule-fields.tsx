@@ -3,7 +3,7 @@
 import { WEEKDAYS_FROM_SUNDAY } from '@cleaning-planner/schedule/calendar-date';
 import { describeInterval } from '@cleaning-planner/schedule/interval';
 import { describeSchedule } from '@cleaning-planner/schedule/describe-schedule';
-import { isRecommendedInterval } from '@cleaning-planner/schedule/library/job-library';
+import { isRecommendedInterval } from '@cleaning-planner/schedule/library/recommended-range';
 import type { RecommendedRange } from '@cleaning-planner/schedule/library/types';
 import type { IntervalUnit, Schedule, Weekday } from '@cleaning-planner/schedule/types';
 import type { ReactNode } from 'react';
