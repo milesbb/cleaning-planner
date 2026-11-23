@@ -6,3 +6,10 @@ e42fef4d25d3bee7edd9d17434cfecc0fb3a5048:packages/contracts/src/job.test.ts:gene
 # False positive: a made-up token in the logger redaction test (not a credential).
 # The test now builds the token from JSON at runtime.
 e39bfd79045511eb251c3c897ed9618f4006b495:apps/api/src/utils/logging.test.ts:jwt:58
+
+# False positives: a made-up Web Push subscription `auth` secret in test fixtures (not a credential).
+# The fixtures now use `test-auth-secret` instead.
+e81cc9c1e4b6f13136114e324e6d707cf9cb181a:apps/api/src/controllers/push-devices.test.ts:generic-api-key:11
+e81cc9c1e4b6f13136114e324e6d707cf9cb181a:apps/api/src/data/push-device-repository.integration.test.ts:generic-api-key:24
+e81cc9c1e4b6f13136114e324e6d707cf9cb181a:apps/api/src/services/push-device-service.test.ts:generic-api-key:12
+e81cc9c1e4b6f13136114e324e6d707cf9cb181a:packages/contracts/src/push-device.test.ts:generic-api-key:7
