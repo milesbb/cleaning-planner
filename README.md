@@ -118,7 +118,7 @@ feature/… ──PR──► development ──release PR──► production �
 
 **Backend deploys: AWS CodePipeline** (defined in `infrastructure/template.yml`, same pattern as playlist-transfer-backend)
 
-1. A push to `production` (i.e. a merged release PR) that touches `apps/api/**`, `packages/schedule/**`, `infrastructure/**` or the lockfile triggers the pipeline.
+1. A push to `production` (i.e. a merged release PR) that touches `apps/api/**`, `packages/contracts/**`, `packages/schedule/**`, `infrastructure/**` or the lockfile triggers the pipeline (`packages/infrastructure-rules` fails if a workspace the API bundles is missing from that list).
 2. **CodeBuild** (`infrastructure/buildspec.yml`) installs, lints, typechecks, tests, bundles the Lambda, and runs `aws cloudformation package`.
 3. **CloudFormation** creates a change set for the stack and executes it. That covers code _and_ infrastructure changes, including changes to the pipeline itself.
 4. **Verify**: a small CodeBuild project (`cleaning-planner-health-check`) calls the deployed `/v1/health` and fails the pipeline if it doesn't answer `{ "status": "ok" }` within 10 seconds. It then sends the CORS preflight a browser sends before a signed-in request and fails unless API Gateway answers it with a 2xx, so a broken deploy, or one browsers can't call, shows up red straight away.
