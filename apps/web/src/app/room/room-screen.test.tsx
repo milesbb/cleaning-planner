@@ -71,6 +71,20 @@ describe('RoomScreen', () => {
     );
   });
 
+  it('shows how fresh each repeat-after-done job is, calmly once it is due', async () => {
+    openRoom('/room?id=room-kitchen');
+    const jobs = within(await screen.findByRole('list', { name: 'Jobs in Kitchen' })).getAllByRole(
+      'listitem',
+    );
+    const freshnessOf = (index: number): string | null =>
+      within(jobs[index] ?? document.body)
+        .getByRole('meter', { name: 'Freshness' })
+        .getAttribute('aria-valuetext');
+    expect(freshnessOf(0)).toBe('Ready for a clean');
+    expect(freshnessOf(1)).toBe('Ready for a clean');
+    expect(freshnessOf(2)).toBe('Fresh for about 3 more days');
+  });
+
   it('says when a room has no jobs yet', async () => {
     openRoom('/room?id=room-bed', {
       ...homeAnswers(),
