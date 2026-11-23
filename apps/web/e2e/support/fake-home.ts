@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { fakeApi, fakeCognito, openPage } from './fake-backend';
+import { asObject, fakeHousehold } from './fake-household';
 
 // A signed-in Alex with one home, "Our flat", whose agenda remembers what was
 // ticked off. Dates follow the real clock in UTC, the home's time zone.
@@ -10,11 +11,6 @@ const DAY_MS = 86_400_000;
 function calendarDay(offsetDays: number): string {
   return new Date(Date.now() + offsetDays * DAY_MS).toISOString().slice(0, 10);
 }
-
-const MEMBERS = [
-  { userId: 'user-alex', name: 'Alex', colour: 'pink', role: 'member' },
-  { userId: 'user-sam', name: 'Sam', colour: 'blue', role: 'owner' },
-];
 
 const ROOMS = [
   { id: 'room-kitchen', type: 'kitchen', name: 'Kitchen', order: 0, appliances: [], version: 1 },
@@ -77,10 +73,6 @@ function dueItemsFor(doneJobIds: ReadonlySet<string>): DueItem[] {
   ].filter((item) => !doneJobIds.has(item.jobId));
 }
 
-function asObject(value: unknown): object {
-  return typeof value === 'object' && value !== null ? value : {};
-}
-
 // The agenda for the days asked for: the oven is late (due two days ago), the
 // vacuum and hob are due today, and anything ticked off is done today.
 function agendaFor(url: string, doneJobIds: ReadonlySet<string>): object {
@@ -103,51 +95,6 @@ function agendaFor(url: string, doneJobIds: ReadonlySet<string>): object {
       }),
     ),
   };
-}
-
-async function fakeHomeReads(page: Page): Promise<void> {
-  const homes = [{ id: 'home-1', name: 'Our flat', role: 'member' }];
-  await fakeApi(page, '/v1/households', () => ({ body: homes }));
-  await fakeApi(
-    page,
-    `${HOME}/leave`,
-    () => {
-      homes.length = 0;
-      return { status: 204, body: undefined };
-    },
-    { method: 'POST' },
-  );
-  await fakeApi(
-    page,
-    `${HOME}/invites`,
-    () => ({
-      status: 201,
-      body: { code: '7K3M9QZA', expiresAt: new Date(Date.now() + 7 * DAY_MS).toISOString() },
-    }),
-    { method: 'POST' },
-  );
-  const me = { id: 'user-alex', name: 'Alex', email: 'alex@example.com', colour: 'pink' };
-  await fakeApi(page, '/v1/me', () => ({ body: me }), { method: 'GET' });
-  await fakeApi(
-    page,
-    '/v1/me',
-    (request) => {
-      Object.assign(me, asObject(request.postDataJSON()));
-      return { body: me };
-    },
-    { method: 'PATCH' },
-  );
-  await fakeApi(page, HOME, {
-    body: {
-      id: 'home-1',
-      name: 'Our flat',
-      timeZone: 'UTC',
-      weekStartsOn: 'monday',
-      ownerId: 'user-sam',
-      version: 1,
-    },
-  });
-  await fakeApi(page, `${HOME}/members`, { body: MEMBERS });
 }
 
 function jobIdIn(url: string): string {
@@ -191,10 +138,19 @@ async function fakeJobs(page: Page): Promise<void> {
   }));
 }
 
-// `failTicks` makes every tick fail with a server error.
-async function fakeHome(page: Page, { failTicks = false } = {}): Promise<void> {
+interface FakeHomeOptions {
+  failTicks?: boolean;
+  isOwner?: boolean;
+}
+
+// `failTicks` makes every tick fail with a server error; `isOwner` makes Alex
+// the home's owner.
+async function fakeHome(
+  page: Page,
+  { failTicks = false, isOwner = false }: FakeHomeOptions,
+): Promise<void> {
   const doneJobIds = new Set<string>();
-  await fakeHomeReads(page);
+  await fakeHousehold(page, { isOwner });
   await fakeJobs(page);
   await fakeApi(page, `${HOME}/agenda*`, (request) => ({
     body: agendaFor(request.url(), doneJobIds),
@@ -259,10 +215,7 @@ async function fakeHome(page: Page, { failTicks = false } = {}): Promise<void> {
   );
 }
 
-export async function logInToHome(
-  page: Page,
-  options: { failTicks?: boolean } = {},
-): Promise<void> {
+export async function logInToHome(page: Page, options: FakeHomeOptions = {}): Promise<void> {
   await fakeCognito(page);
   await fakeHome(page, options);
   await openPage(page, '/sign-in');

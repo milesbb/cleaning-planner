@@ -14,8 +14,11 @@ import { useHousehold, useMe, useMembers } from '@/lib/home/home-queries';
 import { useCurrentHome } from '@/lib/home/use-current-home';
 import { countOf } from '@/lib/rooms';
 import { PeopleList } from '../people-list';
+import { DeleteHomeSheet } from './delete-home-sheet';
+import { HomeDetailsSection } from './home-details-section';
 import { InviteCard } from './invite-card';
 import { LeaveHomeSheet } from './leave-home-sheet';
+import { ManageMemberSheet } from './manage-member-sheet';
 
 interface ReadyHome {
   kind: 'ready';
@@ -52,8 +55,26 @@ function useHomeSettings(): HomeSettingsState {
   };
 }
 
-function HomeSettingsContent({ home }: { home: ReadyHome }): ReactNode {
+function OwnerOrLeave({ home }: { home: ReadyHome }): ReactNode {
   const { household } = home;
+  if (household.ownerId !== home.myUserId) {
+    return <LeaveHomeSheet householdId={household.id} homeName={household.name} />;
+  }
+  return (
+    <>
+      <p>You own this home. To leave, make someone else the owner first.</p>
+      <DeleteHomeSheet householdId={household.id} homeName={household.name} />
+    </>
+  );
+}
+
+function HomeSettingsContent({ home }: { home: ReadyHome }): ReactNode {
+  const { household, myUserId } = home;
+  const isOwner = household.ownerId === myUserId;
+  const manage = (member: Member): ReactNode =>
+    member.userId === myUserId ? null : (
+      <ManageMemberSheet householdId={household.id} member={member} />
+    );
   return (
     <>
       <PageHeader
@@ -63,19 +84,20 @@ function HomeSettingsContent({ home }: { home: ReadyHome }): ReactNode {
       />
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
         <Card raised={false}>
-          <PeopleList members={home.members} myUserId={home.myUserId} />
+          <PeopleList
+            members={home.members}
+            myUserId={myUserId}
+            {...(isOwner ? { actionFor: manage } : {})}
+          />
         </Card>
         <InviteCard
           householdId={household.id}
           homeName={household.name}
           timeZone={household.timeZone}
         />
+        <HomeDetailsSection household={household} isOwner={isOwner} />
       </div>
-      {household.ownerId === home.myUserId ? (
-        <p>You own this home. To leave, make someone else the owner first.</p>
-      ) : (
-        <LeaveHomeSheet householdId={household.id} homeName={household.name} />
-      )}
+      <OwnerOrLeave home={home} />
     </>
   );
 }
