@@ -16,6 +16,8 @@ export const updateProfileRequestSchema = z
   })
   .check(z.refine(hasAChange, NOTHING_TO_CHANGE));
 
+export const refreshEmailRequestSchema = z.optional(z.strictObject({}));
+
 const MAX_OWNED_HOMES = 50;
 
 const ownedHomeChoiceSchema = z.discriminatedUnion('action', [

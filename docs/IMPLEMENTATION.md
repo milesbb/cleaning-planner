@@ -251,7 +251,7 @@ apps/api/src/
 
 | Resource   | Endpoints                                                                                                                                                              |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Me         | `GET /v1/me`, `PATCH /v1/me`, `DELETE /v1/me`                                                                                                                          |
+| Me         | `GET /v1/me`, `PATCH /v1/me`, `DELETE /v1/me`, `POST /v1/me/email` (picks up a changed email once Cognito has verified it)                                             |
 | Homes      | `GET /v1/households`, `POST /v1/households` (with rooms and appliances, creates jobs from the library), `GET/PATCH/DELETE /v1/households/:householdId`, `POST …/leave` |
 | Members    | `GET …/members`, `PATCH/DELETE …/members/:userId` (owner only)                                                                                                         |
 | Invites    | `POST …/invites`, `GET /v1/invites/:code` (preview), `POST /v1/invites/:code/accept`                                                                                   |
