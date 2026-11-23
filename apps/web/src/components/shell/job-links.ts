@@ -6,7 +6,7 @@ const MAIN_BUTTON = 0;
 
 // The job a link opens (`/job?id=…`, with or without the export's closing
 // slash), or null for any other link.
-export function jobIdOfLink(link: HTMLAnchorElement): string | null {
+function jobIdOfLink(link: HTMLAnchorElement): string | null {
   const address = new URL(link.href, window.location.href);
   const path = address.pathname.replace(/\/$/, '');
   if (address.origin !== window.location.origin || path !== JOB_PATH) return null;
