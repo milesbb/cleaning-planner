@@ -12,7 +12,7 @@ import type { WeekRange } from './week-view';
 const COMING_UP_WEEKS = 4;
 const DAYS_PER_WEEK = 7;
 
-export interface ComingUpJob {
+interface ComingUpJob {
   jobId: string;
   name: string;
   icon: JobIconKey;
