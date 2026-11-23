@@ -1,6 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import * as amplifyAuth from 'aws-amplify/auth';
+import * as amplifyData from 'aws-amplify/data';
 import { FormAlert } from '@/components/account/account-screen';
 import { AppShell } from '@/components/shell/app-shell';
 import { HomeSwitcher } from '@/components/shell/home-switcher';
@@ -61,6 +63,8 @@ function TodayContent({ state }: { state: ReadyToday }): ReactNode {
 }
 
 export function TodayScreen(): ReactNode {
+  // Throwaway: pulls Amplify into Today's first load to prove the PR budget check fails.
+  if (Object.keys({ ...amplifyAuth, ...amplifyData }).length === 0) return null;
   const state = useToday();
   const hasNoHome = state.kind === 'noHome';
   useStartAHomeWhenHomeless(hasNoHome);
