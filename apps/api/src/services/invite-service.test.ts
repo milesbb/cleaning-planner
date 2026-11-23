@@ -92,8 +92,16 @@ describe('invite service', () => {
       invitedByName: 'Sam',
       memberCount: 0,
       expiresAt: LIVE_INVITE.expiresAt,
+      isMember: false,
     });
     expect(fakes.addMember).not.toHaveBeenCalled();
+  });
+
+  it('tells someone who already lives in the home, so the app can take them straight there', async () => {
+    const { service } = serviceWith(LIVE_INVITE, { alreadyMember: true });
+    await expect(service.previewInvite('7K3M9QZA', ALEX)).resolves.toMatchObject({
+      isMember: true,
+    });
   });
 
   it('joins the home as a member with the person’s name and colour', async () => {

@@ -1,9 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '../../lib/api/api-client';
 import type { ApiClient } from '../../lib/api/api-client';
 import { ApiProvider } from '../../lib/api/api-provider';
+import { forgetPendingInvite, rememberPendingInvite } from '../../lib/invites/pending-invite';
 import { StartRedirect } from './start-redirect';
 
 const HOMES = [{ id: 'home-1', name: 'Our flat', role: 'owner' }];
@@ -27,6 +28,10 @@ function renderStart({
   );
   return { goTo };
 }
+
+afterEach(() => {
+  forgetPendingInvite();
+});
 
 describe('StartRedirect', () => {
   it('has no accessibility violations while it decides', async () => {
@@ -56,6 +61,16 @@ describe('StartRedirect', () => {
     await waitFor(() => {
       expect(goTo).toHaveBeenCalledWith('/today');
     });
+  });
+
+  it('brings someone back to the invite they opened before signing up', async () => {
+    rememberPendingInvite('7K3M9QZA');
+    const answer = vi.fn(() => Promise.resolve([]));
+    const { goTo } = renderStart({ isSignedIn: true, answer });
+    await waitFor(() => {
+      expect(goTo).toHaveBeenCalledWith('/join?code=7K3M9QZA');
+    });
+    expect(answer).not.toHaveBeenCalled();
   });
 
   it('explains when the homes cannot be loaded', async () => {

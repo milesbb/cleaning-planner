@@ -128,12 +128,16 @@ export function createInviteService(dependencies: InviteServiceDependencies): In
     createInvite: (membership) => createInvite(dependencies, membership),
     previewInvite: async (code, caller): Promise<InvitePreview> => {
       const { invite, householdName } = await validInvite(dependencies, code, caller);
-      const members = await dependencies.members.listMembers(invite.householdId);
+      const [members, membership] = await Promise.all([
+        dependencies.members.listMembers(invite.householdId),
+        dependencies.memberships.findMembership(invite.householdId, caller.userId),
+      ]);
       return {
         householdName,
         invitedByName: invite.invitedByName,
         memberCount: members.length,
         expiresAt: invite.expiresAt,
+        isMember: membership !== null,
       };
     },
     acceptInvite: (code, caller) => acceptInvite(dependencies, code, caller),

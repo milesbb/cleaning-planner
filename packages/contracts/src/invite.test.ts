@@ -50,7 +50,8 @@ describeContract('invitePreviewSchema', invitePreviewSchema, {
     invitedByName: 'Sam',
     memberCount: 2,
     expiresAt: '2026-11-30T09:00:00Z',
+    isMember: false,
   },
-  requiredField: 'householdName',
+  requiredField: 'isMember',
   wrongType: { field: 'memberCount', value: 0 },
 });
