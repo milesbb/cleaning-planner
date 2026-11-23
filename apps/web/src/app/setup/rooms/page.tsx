@@ -12,6 +12,7 @@ export default function SetupRoomsPage(): ReactNode {
       back="/homes/new"
       title="Which rooms do you have?"
       intro="We’ll suggest what each one needs. You can add or remove rooms later."
+      layout="choices"
     >
       <RoomsForm />
     </SetupScreen>
