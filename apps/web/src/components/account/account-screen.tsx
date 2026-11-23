@@ -3,20 +3,36 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject, SubmitEvent } from 'react';
 import { APP_NAME } from '@/lib/app-identity';
+import { cn } from '@/lib/utils';
 import { AppMarkIcon, InfoIcon } from '../icons/interface-icons';
 import { BackLink } from '../shell/page-header';
 
-// The frame shared by Welcome, Create account, Check your email, Log in and the
-// password reset screens: one centred column, the actions at the bottom on phones.
+// The frame shared by Welcome, Create account, Check your email, Log in, the
+// password reset screens and setup: one centred column, the actions at the
+// bottom on phones and following the content from 640px (docs/LAYOUTS.md §4.1).
+
+export type AccountScreenLayout = 'form' | 'choices' | 'welcome';
+
+const LAYOUT_CLASSES: Record<AccountScreenLayout, string> = {
+  form: 'lg:max-w-lg',
+  choices: 'lg:max-w-3xl',
+  welcome: 'lg:max-w-5xl lg:justify-center lg:py-12',
+};
 
 interface AccountScreenProps {
   back?: { href: string; label: string };
+  layout?: AccountScreenLayout;
   children: ReactNode;
 }
 
-export function AccountScreen({ back, children }: AccountScreenProps): ReactNode {
+export function AccountScreen({ back, layout = 'form', children }: AccountScreenProps): ReactNode {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-7 px-4 pt-5 pb-7 sm:px-6 sm:pt-12 lg:max-w-lg">
+    <main
+      className={cn(
+        'mx-auto flex min-h-dvh w-full max-w-md flex-col gap-7 px-4 pt-5 pb-7 sm:gap-8 sm:px-6 sm:pt-12',
+        LAYOUT_CLASSES[layout],
+      )}
+    >
       {back !== undefined && <BackLink href={back.href} label={back.label} />}
       {children}
     </main>
@@ -88,7 +104,7 @@ export function AccountForm({ onSubmit, children, actions }: AccountFormProps): 
       ref={formRef}
       noValidate
       onSubmit={submit}
-      className="flex flex-1 flex-col justify-between gap-7"
+      className="flex flex-1 flex-col justify-between gap-7 sm:flex-none sm:justify-start sm:gap-8"
     >
       <div className="flex flex-col gap-5">{children}</div>
       <div className="flex flex-col gap-4">{actions}</div>
