@@ -14,9 +14,53 @@ const ROOMS = [
   },
 ];
 
-// The kitchen and living room; a room can be added.
+type SavedRoom = Record<string, unknown>;
+
+const ROOM_CHANGED = {
+  status: 409,
+  body: {
+    error: {
+      code: 'conflict',
+      message: 'Someone else changed this room. Reload and try again.',
+    },
+  },
+};
+
+function roomIdIn(url: string): string {
+  return /rooms\/([^/?]+)/.exec(url)?.[1] ?? '';
+}
+
+// A change is refused when it was made from an old version, as the API does.
+async function fakeRoomChanges(page: Page, rooms: SavedRoom[]): Promise<void> {
+  await fakeApi(
+    page,
+    `${HOME_PATH}/rooms/*`,
+    (request) => {
+      const saved = rooms.find((room) => room.id === roomIdIn(request.url()));
+      if (saved === undefined) return { status: 404, body: { error: { code: 'notFound' } } };
+      const { version, ...changes } = { version: undefined, ...asObject(request.postDataJSON()) };
+      if (version !== saved.version) return ROOM_CHANGED;
+      Object.assign(saved, changes, { version: Number(saved.version) + 1 });
+      return { body: saved };
+    },
+    { method: 'PATCH' },
+  );
+  await fakeApi(
+    page,
+    `${HOME_PATH}/rooms/*`,
+    (request) => {
+      const index = rooms.findIndex((room) => room.id === roomIdIn(request.url()));
+      if (index >= 0) rooms.splice(index, 1);
+      return { status: 204, body: undefined };
+    },
+    { method: 'DELETE' },
+  );
+}
+
+// The kitchen and living room; a room can be added, renamed and removed.
 export async function fakeRooms(page: Page): Promise<void> {
-  const rooms: object[] = [...ROOMS];
+  const rooms: SavedRoom[] = ROOMS.map((room) => ({ ...room }));
+  await fakeRoomChanges(page, rooms);
   await fakeApi(page, `${HOME_PATH}/rooms`, () => ({ body: rooms }), { method: 'GET' });
   await fakeApi(
     page,

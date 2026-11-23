@@ -1,5 +1,6 @@
 'use client';
 
+import type { Room } from '@cleaning-planner/contracts/room';
 import type { ReactNode } from 'react';
 import { JobRow } from '@/components/jobs/job-row';
 import { AppShell } from '@/components/shell/app-shell';
@@ -17,6 +18,7 @@ import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { countOf } from '@/lib/rooms';
 import { useRecordId } from '@/lib/use-record-id';
+import { EditRoomSheet } from './edit-room-sheet';
 
 type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
 
@@ -34,39 +36,52 @@ export function RoomNotFound(): ReactNode {
   );
 }
 
+interface RoomJobListProps {
+  room: Room;
+  jobs: ReturnType<typeof jobsInRoom>;
+}
+
+function RoomJobList({ room, jobs }: RoomJobListProps): ReactNode {
+  if (jobs.length === 0) return <p className="text-[1.0625rem]">No jobs in this room yet.</p>;
+  return (
+    <ul aria-label={`Jobs in ${room.name}`} className="flex flex-col gap-2.5">
+      {jobs.map((job) => (
+        <li key={job.jobId}>
+          <JobRow
+            name={job.name}
+            room={room.type}
+            icon={job.icon}
+            meta={job.meta}
+            href={jobHref(job.jobId)}
+            status={
+              job.lateBy === undefined
+                ? { kind: 'scheduled' }
+                : { kind: 'scheduled', lateBy: job.lateBy }
+            }
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): ReactNode {
   const room = home.sources.rooms.find((candidate) => candidate.id === roomId);
   if (room === undefined) return <RoomNotFound />;
   const jobs = jobsInRoom(home.sources, roomId);
   return (
     <>
-      <PageHeader title={room.name} subtitle={countOf(jobs.length, 'job')} leading={BACK_HOME} />
+      <PageHeader
+        title={room.name}
+        subtitle={countOf(jobs.length, 'job')}
+        leading={BACK_HOME}
+        action={<EditRoomSheet householdId={home.householdId} room={room} jobCount={jobs.length} />}
+      />
       <ButtonLink href={`/room/add?id=${encodeURIComponent(room.id)}`} variant="dashed">
         <PlusIcon />
         Add a job
       </ButtonLink>
-      {jobs.length === 0 ? (
-        <p className="text-[1.0625rem]">No jobs in this room yet.</p>
-      ) : (
-        <ul aria-label={`Jobs in ${room.name}`} className="flex flex-col gap-2.5">
-          {jobs.map((job) => (
-            <li key={job.jobId}>
-              <JobRow
-                name={job.name}
-                room={room.type}
-                icon={job.icon}
-                meta={job.meta}
-                href={jobHref(job.jobId)}
-                status={
-                  job.lateBy === undefined
-                    ? { kind: 'scheduled' }
-                    : { kind: 'scheduled', lateBy: job.lateBy }
-                }
-              />
-            </li>
-          ))}
-        </ul>
-      )}
+      <RoomJobList room={room} jobs={jobs} />
     </>
   );
 }
