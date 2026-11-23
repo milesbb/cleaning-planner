@@ -3,14 +3,13 @@
 import type { Room } from '@cleaning-planner/contracts/room';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { PencilIcon } from '@/components/icons/interface-icons';
 import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
-import { IconButton } from '@/components/ui/icon-button';
+import type { SheetOpening } from '@/lib/lazy-sheet';
 import { RemoveRoomChoices } from './remove-room-choices';
 import { RoomDetailsForm } from './room-details-form';
 
-interface EditRoomSheetProps {
+interface EditRoomSheetProps extends SheetOpening {
   householdId: string;
   room: Room;
   jobCount: number;
@@ -36,21 +35,19 @@ function EditView({ householdId, room, onSaved, onRemove }: EditViewProps): Reac
   );
 }
 
-export function EditRoomSheet({ householdId, room, jobCount }: EditRoomSheetProps): ReactNode {
-  const [isOpen, setIsOpen] = useState(false);
+// Loaded on first use (`EditRoomButton`), and fresh each time it opens.
+export function EditRoomSheet(props: EditRoomSheetProps): ReactNode {
+  const { householdId, room, jobCount, onOpenChange } = props;
   const [view, setView] = useState<SheetView>('edit');
   const close = (): void => {
-    setIsOpen(false);
+    onOpenChange(false);
   };
   return (
     <BottomSheet
       title={view === 'edit' ? 'Edit room' : 'Remove this room?'}
-      open={isOpen}
-      onOpenChange={(isOpening) => {
-        setIsOpen(isOpening);
-        setView('edit');
-      }}
-      trigger={<IconButton label="Edit room" icon={<PencilIcon />} />}
+      open={props.open}
+      onOpenChange={onOpenChange}
+      returnFocusTo={props.returnFocusTo}
     >
       {view === 'edit' ? (
         <EditView

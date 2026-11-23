@@ -4,7 +4,7 @@ import type { Room } from '@cleaning-planner/contracts/room';
 import type { ReactNode } from 'react';
 import { JobRow } from '@/components/jobs/job-row';
 import { AppShell } from '@/components/shell/app-shell';
-import { BackLink, PageHeader } from '@/components/shell/page-header';
+import { PageHeader } from '@/components/shell/page-header';
 import {
   ScreenLoading,
   ScreenProblem,
@@ -18,23 +18,10 @@ import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { countOf } from '@/lib/rooms';
 import { useRecordId } from '@/lib/use-record-id';
-import { EditRoomSheet } from './edit-room-sheet';
+import { EditRoomButton } from './edit-room-button';
+import { BACK_HOME, RoomNotFound } from './room-not-found';
 
 type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
-
-const BACK_HOME = <BackLink href="/home" label="Back to Home" />;
-
-export function RoomNotFound(): ReactNode {
-  return (
-    <>
-      <PageHeader title="Room not found" leading={BACK_HOME} />
-      <p role="alert" className="text-[1.0625rem]">
-        That room isn’t in this home any more. It may have been removed.
-      </p>
-      <ButtonLink href="/home">See all rooms</ButtonLink>
-    </>
-  );
-}
 
 interface RoomJobListProps {
   room: Room;
@@ -75,7 +62,9 @@ function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): Re
         title={room.name}
         subtitle={countOf(jobs.length, 'job')}
         leading={BACK_HOME}
-        action={<EditRoomSheet householdId={home.householdId} room={room} jobCount={jobs.length} />}
+        action={
+          <EditRoomButton householdId={home.householdId} room={room} jobCount={jobs.length} />
+        }
       />
       <ButtonLink href={`/room/add?id=${encodeURIComponent(room.id)}`} variant="dashed">
         <PlusIcon />

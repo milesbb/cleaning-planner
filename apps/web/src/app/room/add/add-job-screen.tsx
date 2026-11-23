@@ -19,8 +19,8 @@ import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { searchLibrary } from '@/lib/jobs/library-search';
 import { useJobLibrary } from '@/lib/jobs/use-job-library';
 import { useRecordId } from '@/lib/use-record-id';
-import { RoomNotFound } from '../room-screen';
-import { CustomJobSheet } from './custom-job-sheet';
+import { RoomNotFound } from '../room-not-found';
+import { MakeYourOwnJob } from './make-your-own-job';
 import { LibraryJobList } from './library-job-list';
 import { requestForLibraryJob, useAddJob } from './use-add-job';
 
@@ -115,7 +115,7 @@ function AddJobContent({ home, roomId }: { home: ReadyHome; roomId: string }): R
           />
         }
       />
-      <CustomJobSheet householdId={home.householdId} roomId={room.id} />
+      <MakeYourOwnJob householdId={home.householdId} roomId={room.id} />
       <LibrarySearch home={home} room={room} />
     </>
   );
