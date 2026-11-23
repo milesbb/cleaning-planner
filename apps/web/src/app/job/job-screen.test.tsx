@@ -4,8 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
-import type { FakeAnswers, FakeApiClient } from '@/test/fake-api-client';
 import { HOME_PATH, homeAnswers } from '@/test/fake-home-answers';
+import {
+  OVEN_PATH,
+  answersWithLibraryOven,
+  bodyOf,
+  keyedBodyOf,
+  openJob,
+  openOven,
+} from '@/test/open-job';
 import { TODAY_FIXTURE } from '../today/today-fixture';
 import { JobScreen } from './job-screen';
 
@@ -15,7 +22,6 @@ vi.mock('next/navigation', () => ({
   usePathname: (): string => '/job',
 }));
 
-const OVEN_PATH = `${HOME_PATH}/jobs/job-oven`;
 const SAVED_PROGRESS = (): Promise<unknown> =>
   Promise.resolve({
     jobId: 'job-oven',
@@ -23,45 +29,6 @@ const SAVED_PROGRESS = (): Promise<unknown> =>
     snooze: null,
     latestCompletion: null,
   });
-
-function answersWithLibraryOven(): FakeAnswers {
-  return {
-    ...homeAnswers(),
-    [`GET ${HOME_PATH}/jobs`]: () =>
-      Promise.resolve(
-        TODAY_FIXTURE.jobs.map((job) =>
-          job.id === 'job-oven' ? { ...job, libraryId: 'kitchen.oven' } : job,
-        ),
-      ),
-  };
-}
-
-function openJob(address: string, answers: FakeAnswers = homeAnswers()): FakeApiClient {
-  window.history.replaceState(null, '', address);
-  const client = clientAnswering(answers);
-  renderWithApi(<JobScreen />, client);
-  return client;
-}
-
-async function openOven(extraAnswers: FakeAnswers = {}): Promise<FakeApiClient> {
-  const client = openJob('/job?id=job-oven', { ...homeAnswers(), ...extraAnswers });
-  await screen.findByRole('heading', { name: 'Clean the oven', level: 1 });
-  return client;
-}
-
-const UUID = /^[0-9a-f-]{36}$/;
-
-function bodyOf(client: FakeApiClient, route: string): unknown {
-  return client.bodies[client.calls.indexOf(route)];
-}
-
-// The body without its idempotency key, after checking the key is a UUID.
-function keyedBodyOf(client: FakeApiClient, route: string): Record<string, unknown> {
-  const body = bodyOf(client, route);
-  const fields = typeof body === 'object' && body !== null ? Object.entries(body) : [];
-  expect(fields.find(([name]) => name === 'idempotencyKey')?.[1]).toMatch(UUID);
-  return Object.fromEntries(fields.filter(([name]) => name !== 'idempotencyKey'));
-}
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });

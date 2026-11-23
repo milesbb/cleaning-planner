@@ -42,7 +42,7 @@ function JobContent({ home, jobId }: { home: ReadyHome; jobId: string }): ReactN
       />
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
         <JobDueCard details={details} address={address} today={home.sources.today} />
-        <JobAbout details={details} />
+        <JobAbout details={details} address={address} />
       </div>
       <JobManagement details={details} address={address} />
     </>

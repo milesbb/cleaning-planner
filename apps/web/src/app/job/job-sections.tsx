@@ -12,8 +12,10 @@ import { SectionHeading } from '@/components/ui/section-heading';
 import { formatShortDate } from '@/lib/format-date';
 import type { JobDetails } from '@/lib/home/job-details';
 import { ROOM_APPEARANCE } from '@/lib/rooms';
+import { AssigneeSheet } from './assignee-sheet';
 import { RemoveJobSheet } from './remove-job-sheet';
 import { RenameJobSheet } from './rename-job-sheet';
+import { ScheduleSheet } from './schedule-sheet';
 import { SnoozeSheet } from './snooze-sheet';
 import { useProgressChange } from './use-job-actions';
 import type { JobAddress, ProgressActions, ProgressChange } from './use-job-actions';
@@ -106,15 +108,23 @@ function Fact({ title, children }: { title: string; children: ReactNode }): Reac
   );
 }
 
-export function JobAbout({ details }: { details: JobDetails }): ReactNode {
+export function JobAbout({
+  details,
+  address,
+}: {
+  details: JobDetails;
+  address: JobAddress;
+}): ReactNode {
   return (
     <div className="flex flex-col gap-5">
       <Fact title="How often">
         <p className="text-[1.0625rem] font-bold">{details.howOften}</p>
         {details.recommendation === null ? null : <p>{details.recommendation}</p>}
+        <ScheduleSheet details={details} address={address} />
       </Fact>
       <Fact title="Who does it">
         <p className="text-[1.0625rem]">{details.whoFor}</p>
+        <AssigneeSheet details={details} address={address} />
       </Fact>
       <Fact title="Last done">
         <p className="text-[1.0625rem]">{details.lastDone}</p>

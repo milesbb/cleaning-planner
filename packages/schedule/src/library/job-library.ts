@@ -1,4 +1,5 @@
-import { describeInterval } from '../interval';
+import { approximateDays, describeInterval } from '../interval';
+import type { Interval } from '../types';
 import { KITCHEN_JOBS } from './kitchen';
 import { LAUNDRY_JOBS } from './laundry';
 import {
@@ -48,4 +49,12 @@ export function recommendationText({ shortest, longest }: RecommendedRange): str
   const longestText = describeInterval(longest);
   const range = shortestText === longestText ? shortestText : `${shortestText} to ${longestText}`;
   return `Most homes do this ${range}.`;
+}
+
+export function isRecommendedInterval(interval: Interval, range: RecommendedRange): boolean {
+  const intervalDays = approximateDays(interval);
+  return (
+    intervalDays >= approximateDays(range.shortest) &&
+    intervalDays <= approximateDays(range.longest)
+  );
 }

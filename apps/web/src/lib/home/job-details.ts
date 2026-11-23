@@ -4,8 +4,15 @@ import { addInterval, compareDates } from '@cleaning-planner/schedule/calendar-d
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { describeSchedule } from '@cleaning-planner/schedule/describe-schedule';
 import { findLibraryJob, recommendationText } from '@cleaning-planner/schedule/library/job-library';
-import type { JobIconKey, RoomType } from '@cleaning-planner/schedule/library/types';
+import type {
+  JobIconKey,
+  RecommendedRange,
+  RoomType,
+} from '@cleaning-planner/schedule/library/types';
+import type { Assignment, Schedule } from '@cleaning-planner/schedule/types';
 import { formatShortDate } from '../format-date';
+import { assigneeChoices } from './assignee-choices';
+import type { AssigneeChoice } from './assignee-choices';
 import { lateByText, personLabel } from './job-wording';
 import { nextDueOf, whoFor } from './room-jobs';
 import type { RoomSources } from './room-jobs';
@@ -23,8 +30,13 @@ export interface JobDetails {
   when: string;
   lateBy?: string;
   howOften: string;
+  schedule: Schedule;
   recommendation: string | null;
+  recommendedRange: RecommendedRange | null;
+  recommendedSchedule: Schedule | null;
   whoFor: string;
+  assignment: Assignment;
+  assigneeChoices: AssigneeChoice[];
   why: string | null;
   howTo: readonly string[];
   lastDone: string;
@@ -62,11 +74,26 @@ function lastDoneText(sources: RoomSources, completion: CompletionRecord | null)
   return `${verb} by ${person} on ${formatShortDate(completion.completedOn)}`;
 }
 
-function adviceFor(job: Job): Pick<JobDetails, 'recommendation' | 'why' | 'howTo'> {
+type Advice = Pick<
+  JobDetails,
+  'recommendation' | 'recommendedRange' | 'recommendedSchedule' | 'why' | 'howTo'
+>;
+
+const NO_ADVICE: Advice = {
+  recommendation: null,
+  recommendedRange: null,
+  recommendedSchedule: null,
+  why: null,
+  howTo: [],
+};
+
+function adviceFor(job: Job): Advice {
   const libraryJob = job.libraryId === null ? undefined : findLibraryJob(job.libraryId);
-  if (libraryJob === undefined) return { recommendation: null, why: null, howTo: [] };
+  if (libraryJob === undefined) return NO_ADVICE;
   return {
     recommendation: recommendationText(libraryJob.recommendedRange),
+    recommendedRange: libraryJob.recommendedRange,
+    recommendedSchedule: libraryJob.defaultSchedule,
     why: libraryJob.why,
     howTo: libraryJob.howTo,
   };
@@ -95,8 +122,11 @@ export function jobDetailsOf(sources: RoomSources, jobId: string): JobDetails | 
     when: whenText(job, nextDue, sources.today),
     ...lateness(nextDue, sources.today),
     howOften: describeSchedule(job.schedule),
+    schedule: job.schedule,
     ...adviceFor(job),
     whoFor: whoFor(sources, job),
+    assignment: job.assignment,
+    assigneeChoices: assigneeChoices(sources.members, sources.myUserId),
     lastDone: lastDoneText(sources, latest ?? null),
     version: job.version,
   };

@@ -31,6 +31,23 @@ test.describe('Job detail', () => {
     );
   });
 
+  test('changes how often a job repeats and who does it', async ({ page }) => {
+    await logInToHome(page);
+    await page.goto('/job?id=job-oven');
+    await page.getByRole('button', { name: 'Change how often' }).click();
+    const howOften = page.getByRole('dialog', { name: 'How often' });
+    await howOften.getByRole('button', { name: 'Use the recommendation: every 3 months' }).click();
+    await expect(howOften.getByText('Recommended')).toBeVisible();
+    await howOften.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('region', { name: 'How often' })).toContainText('Every 3 months');
+
+    await page.getByRole('button', { name: 'Change who does it' }).click();
+    const whoDoesIt = page.getByRole('dialog', { name: 'Who does it' });
+    await whoDoesIt.getByRole('radio', { name: 'Sam' }).click();
+    await whoDoesIt.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('region', { name: 'Who does it' })).toContainText('Sam');
+  });
+
   test('snoozes a job to a later day', async ({ page }) => {
     await logInToHome(page);
     await page.goto('/job?id=job-hob');
