@@ -50,7 +50,8 @@ test.describe('Coming up', () => {
     const comingUp = page.getByRole('region', { name: 'Coming up' });
     await expect(comingUp.getByRole('heading', { level: 3 })).toHaveCount(4);
     await comingUp.getByRole('link', { name: /Clean the oven/ }).click();
-    await expect(page.getByRole('heading', { name: 'Clean the oven', level: 1 })).toBeVisible();
+    // Its own page on a phone, beside the week on a laptop.
+    await expect(page.getByRole('heading', { name: 'Clean the oven' })).toBeVisible();
   });
 
   test('explains when the weeks ahead cannot be loaded', async ({ page }) => {

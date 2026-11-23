@@ -13,6 +13,7 @@ import type { JobAddress } from './use-job-actions';
 interface RemoveJobSheetProps extends SheetOpening {
   details: JobDetails;
   address: JobAddress;
+  onRemoved: (() => void) | undefined;
 }
 
 interface RemoveChoicesProps {
@@ -42,6 +43,7 @@ export function RemoveJobSheet({
   open,
   onOpenChange,
   returnFocusTo,
+  onRemoved,
 }: RemoveJobSheetProps): ReactNode {
   const router = useRouter();
   const remove = useRemoveJob(address);
@@ -58,7 +60,8 @@ export function RemoveJobSheet({
         onRemove={() => {
           remove.mutate(undefined, {
             onSuccess: () => {
-              router.replace(details.roomHref);
+              if (onRemoved === undefined) router.replace(details.roomHref);
+              else onRemoved();
             },
           });
         }}

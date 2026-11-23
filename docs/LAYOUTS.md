@@ -92,7 +92,7 @@ Page padding 40px on each side at both widths; 24px between the columns at 1024p
 - **Side column is sticky**: `lg:sticky lg:top-8 lg:self-start lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto`, so the week strip or a job's details stay in view while the list scrolls. It scrolls on its own when taller than the window.
 - **Order**: the main column comes first in the DOM and in tab order, the side column second. Each column is a landmark-friendly `<section>` with a heading (the side column's heading may be visually small, but it exists).
 - **Below 1024px** each screen says what happens to its side content: **stacked** under the main column (Home's Recently), or **not shown** (Today's week strip, the Week and Room hint). Not shown means not rendered at all (a JavaScript media query, `useIsLaptop`), not just hidden with CSS, so phones don't fetch data they never show.
-- **Built as** a `TwoColumns` component in `src/components/shell` (`main`, `side`, `sideLabel`, `sideBelowLaptop: 'stacked' | 'hidden'`; #200 adds `opensJobs`) and `AppShell`'s `layout="split"`.
+- **Built as** a `TwoColumns` component in `src/components/shell` (`main`, `side`, `sideLabel`, `sideBelowLaptop: 'stacked' | 'hidden'`) and `AppShell`'s `layout="split"`. Every `TwoColumns` opens job links from its main column on a laptop (#200), so there is no `opensJobs` switch: Home's main column has no job links.
 
 ### 2.5 Sheets and dialogs
 
@@ -144,7 +144,7 @@ From 1024px, opening a job from **Today, Week or Room** shows Job detail in the 
 
 **Opening.**
 
-- At 1024px or wider, a plain click or tap (or Enter on the focused link) on a job link inside a screen that `opensJobs` is caught and becomes `router.push('?job=<id>', { scroll: false })`. A click with Ctrl, Cmd, Shift or the middle button is left alone, so "open in a new tab" still gives the full page.
+- At 1024px or wider, a plain click or tap (or Enter on the focused link) on a job link in a `TwoColumns` main column is caught and adds `job=<id>` to the address with the browser's own `history.pushState`, which Next.js keeps its router in step with (`useOpenJob`, `lib/navigation/address-record-id.ts`). A click with Ctrl, Cmd, Shift or the middle button is left alone, so "open in a new tab" still gives the full page.
 - Opening a second job while one is open **replaces** the address (`router.replace`), so Back closes the panel instead of stepping through every job looked at.
 - If the window is narrowed below 1024px while a job is open, the page replaces its address with `/job?id=<id>` and shows the full page. If an address with `job=` is opened on a phone, the same happens.
 
@@ -155,7 +155,7 @@ From 1024px, opening a job from **Today, Week or Room** shows Job detail in the 
 - Close, Escape (while focus is in the panel and no sheet is open) and Back all close it. Close and Escape go back in history if the panel was opened from this list, otherwise replace the address without `job=`.
 - On opening, focus moves to the panel's heading (`tabIndex={-1}`), and a screen reader hears the job's name. On closing, focus goes back to the job's row link, or to the page heading if that row has gone (the job was done and left the list, or removed).
 - The panel is **not modal**: no focus trap, no backdrop; the list stays usable. Tab order runs from the list into the panel.
-- The open job's row is marked: `aria-current="true"` on its link and a thicker look (`border-3`, `bg-whole-home`), never colour alone.
+- The open job's row is marked: `aria-current="true"` on its link and a thicker look (`border-3`, `bg-whole-home`), never colour alone. Not built yet: #293.
 
 **Changes made in the panel.** Done, Skip and Snooze update the list beside it at once (the same query cache), and the panel stays open showing the new due date. Remove closes the panel and returns focus to the page heading. A job that no longer exists shows "This job isn't here any more" with a Close button instead of the sections.
 

@@ -4,7 +4,12 @@ import { logInToHome } from './support/fake-home';
 import { calendarDay } from './support/fake-home-state';
 
 test.describe('Job detail', () => {
-  test('opens a job from Today, marks it done, renames it and removes it', async ({ page }) => {
+  test('opens a job from Today, marks it done, renames it and removes it', async ({
+    page,
+    isMobile,
+  }) => {
+    // The page itself; on a laptop the job opens beside the list (job-panel.spec.ts).
+    if (!isMobile) await page.setViewportSize({ width: 1023, height: 800 });
     await logInToHome(page);
     await page.getByRole('link', { name: /Clean the oven/ }).click();
     await expect(page.getByRole('heading', { name: 'Clean the oven', level: 1 })).toBeVisible();
