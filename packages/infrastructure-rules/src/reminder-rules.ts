@@ -1,4 +1,4 @@
-import { isRecord, resourcesOfType } from './cloudformation-template';
+import { isRecord, recordAt, resourcesOfType } from './cloudformation-template';
 import type { CloudFormationTemplate, Properties } from './cloudformation-template';
 
 const SCHEDULER_SERVICE = 'scheduler.amazonaws.com';
@@ -56,11 +56,15 @@ function schedulerRoleProblems(roleId: string, role: Properties): string[] {
   return [...managedPolicies, ...otherActions, ...otherTargets];
 }
 
+function servicesTrustedBy(role: Properties): unknown[] {
+  return listOf(recordAt(role, 'AssumeRolePolicyDocument').Statement)
+    .filter(isRecord)
+    .flatMap((statement) => listOf(recordAt(statement, 'Principal').Service));
+}
+
 export function schedulerRolesOnlyInvokeNotify(template: CloudFormationTemplate): string[] {
   return resourcesOfType(template, 'AWS::IAM::Role')
-    .filter(([, role]) =>
-      JSON.stringify(role.properties.AssumeRolePolicyDocument ?? null).includes(SCHEDULER_SERVICE),
-    )
+    .filter(([, role]) => servicesTrustedBy(role.properties).includes(SCHEDULER_SERVICE))
     .flatMap(([roleId, role]) => schedulerRoleProblems(roleId, role.properties));
 }
 

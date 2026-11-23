@@ -69,6 +69,16 @@ describe('schedulerRolesOnlyInvokeNotify', () => {
     ]);
   });
 
+  it('checks a role that Scheduler can assume alongside other services', () => {
+    const template = templateWith(
+      schedulerRole(INVOKE_NOTIFY.replace('lambda:InvokeFunction', 's3:GetObject')).replace(
+        'Service: scheduler.amazonaws.com',
+        'Service:\n                - lambda.amazonaws.com\n                - scheduler.amazonaws.com',
+      ),
+    );
+    expect(schedulerRolesOnlyInvokeNotify(template)).toEqual(['SchedulerRole allows s3:GetObject']);
+  });
+
   it('catches a Scheduler role that can invoke another function', () => {
     const template = templateWith(
       schedulerRole(`              - Effect: Allow
