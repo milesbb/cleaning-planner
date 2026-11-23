@@ -63,6 +63,7 @@ describe('jobDetailsOf', () => {
       whoFor: 'Anyone',
       assignment: { kind: 'anyone' },
       lastDone: 'Not done yet',
+      lastDoneOn: null,
       version: 1,
     });
   });
@@ -106,7 +107,9 @@ describe('jobDetailsOf', () => {
       completedBy,
       doneAt: '2026-11-20T18:00:00.000Z',
     };
-    expect(detailsOf(oven(), progress({ latestCompletion })).lastDone).toBe(lastDone);
+    const details = detailsOf(oven(), progress({ latestCompletion }));
+    expect(details.lastDone).toBe(lastDone);
+    expect(details.lastDoneOn).toBe('2026-11-20');
   });
 });
 
