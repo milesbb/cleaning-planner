@@ -17,7 +17,6 @@ vi.mock('next/navigation', () => ({
   usePathname: (): string => '/settings',
 }));
 
-const UPDATE_ME = 'PATCH /v1/me';
 const SIGNED_IN = (): AccountAuth => stubAccountAuth({ isSignedIn: () => Promise.resolve(true) });
 
 function openSettings(
@@ -27,11 +26,6 @@ function openSettings(
   const client = clientAnswering(answers);
   renderWithApi(<SettingsScreen />, client, auth);
   return client;
-}
-
-async function openProfileSheet(): Promise<HTMLElement> {
-  await userEvent.click(await screen.findByRole('button', { name: 'Change name and colour' }));
-  return screen.findByRole('dialog', { name: 'Your name and colour' });
 }
 
 afterEach(() => {
@@ -57,9 +51,9 @@ describe('SettingsScreen', () => {
     const you = await screen.findByRole('region', { name: 'You' });
     expect(you).toHaveTextContent('Alex');
     expect(you).toHaveTextContent('alex@example.com');
-    expect(within(you).getByRole('link', { name: 'Change password' })).toHaveAttribute(
+    expect(within(you).getByRole('link', { name: 'Your account' })).toHaveAttribute(
       'href',
-      '/settings/account/password',
+      '/settings/account',
     );
     const home = screen.getByRole('region', { name: 'Our flat' });
     const people = within(home).getAllByRole('listitem');
@@ -72,61 +66,6 @@ describe('SettingsScreen', () => {
       'href',
       '/settings/home',
     );
-  });
-
-  it('changes your name and colour', async () => {
-    const client = openSettings({
-      ...homeAnswers(),
-      [UPDATE_ME]: () =>
-        Promise.resolve({
-          id: 'user-alex',
-          name: 'Lex',
-          email: 'alex@example.com',
-          colour: 'teal',
-        }),
-    });
-    const sheet = await openProfileSheet();
-    const name = within(sheet).getByRole('textbox', { name: 'Name' });
-    await userEvent.clear(name);
-    await userEvent.type(name, 'Lex');
-    await userEvent.click(within(sheet).getByRole('radio', { name: 'Teal' }));
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Save' }));
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    });
-    expect(client.bodies[client.calls.indexOf(UPDATE_ME)]).toEqual({ name: 'Lex', colour: 'teal' });
-  });
-
-  it('sends only what changed, and nothing when nothing did', async () => {
-    const client = openSettings();
-    const sheet = await openProfileSheet();
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Save' }));
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    });
-    expect(client.calls).not.toContain(UPDATE_ME);
-  });
-
-  it('needs a name', async () => {
-    const client = openSettings();
-    const sheet = await openProfileSheet();
-    await userEvent.clear(within(sheet).getByRole('textbox', { name: 'Name' }));
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Save' }));
-    expect(within(sheet).getByRole('textbox', { name: 'Name' })).toHaveAccessibleDescription(
-      /Enter a name/,
-    );
-    expect(client.calls).not.toContain(UPDATE_ME);
-  });
-
-  it('keeps the sheet open and explains when saving fails', async () => {
-    openSettings({
-      ...homeAnswers(),
-      [UPDATE_ME]: () => Promise.reject(new ApiRequestError('rejected', 'Pick one of the colours')),
-    });
-    const sheet = await openProfileSheet();
-    await userEvent.click(within(sheet).getByRole('radio', { name: 'Green' }));
-    await userEvent.click(within(sheet).getByRole('button', { name: 'Save' }));
-    expect(await within(sheet).findByRole('alert')).toHaveTextContent('Pick one of the colours');
   });
 
   it('signs out, forgets this device’s home and goes to the welcome screen', async () => {

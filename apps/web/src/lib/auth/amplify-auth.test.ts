@@ -21,6 +21,9 @@ function fakeAuth(overrides: Partial<AmplifyAuth> = {}): AmplifyAuth {
     fetchAuthSession: vi.fn(() => Promise.resolve({})),
     signOut: vi.fn(() => Promise.resolve()),
     updatePassword: vi.fn(() => Promise.resolve()),
+    updateUserAttribute: vi.fn(),
+    confirmUserAttribute: vi.fn(() => Promise.resolve()),
+    sendUserAttributeVerificationCode: vi.fn(() => Promise.resolve({})),
     ...overrides,
   };
 }
@@ -100,6 +103,32 @@ describe('cognitoFunctionsFrom', () => {
     const cognito = cognitoFunctionsFrom(() => Promise.resolve(fakeAuth({ updatePassword })));
     await cognito.updatePassword({ oldPassword: 'old one', newPassword: 'new one' });
     expect(updatePassword).toHaveBeenCalledWith({ oldPassword: 'old one', newPassword: 'new one' });
+  });
+
+  it('changes the email through Amplify', async () => {
+    const updateUserAttribute = vi.fn(() =>
+      Promise.resolve({ nextStep: { updateAttributeStep: 'CONFIRM_ATTRIBUTE_WITH_CODE' } }),
+    );
+    const confirmUserAttribute = vi.fn(() => Promise.resolve());
+    const sendUserAttributeVerificationCode = vi.fn(() => Promise.resolve({}));
+    const cognito = cognitoFunctionsFrom(() =>
+      Promise.resolve(
+        fakeAuth({ updateUserAttribute, confirmUserAttribute, sendUserAttributeVerificationCode }),
+      ),
+    );
+    await cognito.updateUserAttribute({
+      userAttribute: { attributeKey: 'email', value: 'sam@new.example' },
+    });
+    await cognito.confirmUserAttribute({ userAttributeKey: 'email', confirmationCode: '123456' });
+    await cognito.sendUserAttributeVerificationCode({ userAttributeKey: 'email' });
+    expect(updateUserAttribute).toHaveBeenCalledWith({
+      userAttribute: { attributeKey: 'email', value: 'sam@new.example' },
+    });
+    expect(confirmUserAttribute).toHaveBeenCalledWith({
+      userAttributeKey: 'email',
+      confirmationCode: '123456',
+    });
+    expect(sendUserAttributeVerificationCode).toHaveBeenCalledWith({ userAttributeKey: 'email' });
   });
 
   it('signs out through Amplify', async () => {
