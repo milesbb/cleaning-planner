@@ -1,11 +1,12 @@
 import type { AgendaQuery, AgendaResponse } from '@cleaning-planner/contracts/agenda';
-import type { CompletionRecord } from '@cleaning-planner/contracts/completion';
+import type { CompletionRecord, JobProgress } from '@cleaning-planner/contracts/completion';
 import type { Job } from '@cleaning-planner/contracts/job';
 import { buildAgenda } from '@cleaning-planner/schedule/agenda';
 import type { AgendaJob } from '@cleaning-planner/schedule/agenda';
 import { calendarDateInTimeZone } from '@cleaning-planner/schedule/time-zone';
 import { Errors } from '../utils/errors';
 import type { HouseholdStore } from './household-service';
+import { progressOf } from './job-progress';
 import type { JobStore } from './job-service';
 import type { MemberStore } from './member-service';
 
@@ -15,6 +16,8 @@ export interface HomeCompletionStore {
 
 export interface AgendaService {
   getAgenda: (householdId: string, query: AgendaQuery) => Promise<AgendaResponse>;
+  // Every job's next due date and latest completion, however far ahead it is.
+  listProgress: (householdId: string) => Promise<JobProgress[]>;
 }
 
 interface AgendaDependencies {
@@ -67,8 +70,25 @@ async function getAgenda(
   });
 }
 
+async function listProgress(
+  { jobs, completions }: AgendaDependencies,
+  householdId: string,
+): Promise<JobProgress[]> {
+  const [homeJobs, history] = await Promise.all([
+    jobs.listJobs(householdId),
+    completions.listHomeCompletions(householdId),
+  ]);
+  return homeJobs.map((job) =>
+    progressOf(
+      job,
+      history.filter((completion) => completion.jobId === job.id),
+    ),
+  );
+}
+
 export function createAgendaService(dependencies: AgendaDependencies): AgendaService {
   return {
     getAgenda: (householdId, query) => getAgenda(dependencies, householdId, query),
+    listProgress: (householdId) => listProgress(dependencies, householdId),
   };
 }

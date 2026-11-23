@@ -1,13 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { FormAlert } from '@/components/account/account-screen';
 import { AppShell } from '@/components/shell/app-shell';
 import { HomeSwitcher } from '@/components/shell/home-switcher';
 import { PageHeader } from '@/components/shell/page-header';
-import { Button } from '@/components/ui/button';
+import {
+  ScreenLoading,
+  ScreenProblem,
+  useStartAHomeWhenHomeless,
+} from '@/components/shell/screen-states';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { formatDayHeading } from '@/lib/format-date';
 import { AllDone, DoneList, DueList, TomorrowList } from './today-sections';
@@ -58,31 +60,18 @@ function TodayContent({ state }: { state: ReadyToday }): ReactNode {
   );
 }
 
-function TodayProblem({ message, retry }: { message: string; retry: () => void }): ReactNode {
-  return (
-    <div className="flex flex-col gap-4">
-      <PageHeader title="Today" />
-      <FormAlert>{message}</FormAlert>
-      <Button onClick={retry}>Try again</Button>
-    </div>
-  );
-}
-
 export function TodayScreen(): ReactNode {
   const state = useToday();
-  const router = useRouter();
   const hasNoHome = state.kind === 'noHome';
-  useEffect(() => {
-    if (hasNoHome) router.replace('/homes/new');
-  }, [hasNoHome, router]);
+  useStartAHomeWhenHomeless(hasNoHome);
   return (
     <AppShell activeTab="today">
       {state.kind === 'ready' && <TodayContent state={state} />}
-      {state.kind === 'failed' && <TodayProblem message={state.message} retry={state.retry} />}
+      {state.kind === 'failed' && (
+        <ScreenProblem title="Today" message={state.message} retry={state.retry} />
+      )}
       {(state.kind === 'loading' || hasNoHome) && (
-        <p role="status" className="py-10 text-center text-lg">
-          Getting today ready…
-        </p>
+        <ScreenLoading>Getting today ready…</ScreenLoading>
       )}
     </AppShell>
   );

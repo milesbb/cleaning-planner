@@ -12,7 +12,8 @@ import { IconTile } from './icon-tile';
 export type JobRowStatus =
   | { kind: 'due'; lateBy?: string; onDone: () => void }
   | { kind: 'done'; doneBy: string; doneAt?: string; nextDue?: string; onUndo: () => void }
-  | { kind: 'upcoming' };
+  | { kind: 'upcoming' }
+  | { kind: 'scheduled'; lateBy?: string };
 
 interface Assignee {
   name: string;
@@ -34,6 +35,7 @@ const ROW_CLASSES: Record<JobRowStatus['kind'], string> = {
   due: 'bg-card shadow-hard',
   done: 'bg-done-soft',
   upcoming: 'border-dashed bg-card',
+  scheduled: 'bg-card',
 };
 
 const ROW_BUTTON_CLASSES =
@@ -79,7 +81,7 @@ function JobSummary({ name, room, icon, meta, assignee, status }: JobSummaryProp
           {name}
         </span>
         <span className="text-sm">{metaLine(meta, status)}</span>
-        {status.kind === 'due' && status.lateBy !== undefined ? (
+        {(status.kind === 'due' || status.kind === 'scheduled') && status.lateBy !== undefined ? (
           <Badge tone="late" className="self-start text-xs">
             {status.lateBy}
           </Badge>
@@ -90,7 +92,7 @@ function JobSummary({ name, room, icon, meta, assignee, status }: JobSummaryProp
 }
 
 function RowAction({ name, status }: { name: string; status: JobRowStatus }): ReactNode {
-  if (status.kind === 'upcoming') return null;
+  if (status.kind === 'upcoming' || status.kind === 'scheduled') return null;
   if (status.kind === 'done') {
     return (
       <button

@@ -1,5 +1,5 @@
 import express, { type Express, type Router } from 'express';
-import { agendaRouter } from './controllers/agenda';
+import { agendaRouter, progressRouter } from './controllers/agenda';
 import { healthRouter } from './controllers/health';
 import { householdsRouter } from './controllers/households';
 import { householdInvitesRouter, invitesRouter } from './controllers/invites';
@@ -56,6 +56,7 @@ function householdRouters(services: AppServices): [string, Router][] {
     ['/jobs/:jobId', jobProgressRouter(services.progress, memberships)],
     ['/jobs', jobsRouter(services.jobs, memberships)],
     ['/agenda', agendaRouter(services.agenda, memberships)],
+    ['/progress', progressRouter(services.agenda, memberships)],
     ['/members', membersRouter(services.members, memberships)],
   ];
 }

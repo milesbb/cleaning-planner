@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseCalendarDate } from './calendar-date';
-import { classifyDue, type DueStatus, lastDayOfWeek } from './due-status';
+import { classifyDue, type DueStatus, firstDayOfWeek, lastDayOfWeek } from './due-status';
 import type { Weekday } from './types';
 
 type DueCase = [description: string, dueText: string, todayText: string, expected: DueStatus];
@@ -58,4 +58,31 @@ describe('lastDayOfWeek', () => {
       expect(lastDayOfWeek(parseCalendarDate(todayText), weekStartsOn)).toBe(expected);
     },
   );
+});
+
+const weekStartCases: WeekEndCase[] = [
+  ['2026-11-23', 'monday', '2026-11-23'],
+  ['2026-11-29', 'monday', '2026-11-23'],
+  ['2026-11-25', 'sunday', '2026-11-22'],
+  ['2026-11-29', 'sunday', '2026-11-29'],
+  ['2027-01-02', 'monday', '2026-12-28'],
+  ['2026-11-27', 'saturday', '2026-11-21'],
+  ['2028-03-01', 'monday', '2028-02-28'],
+  ['2026-03-29', 'monday', '2026-03-23'],
+];
+
+describe('firstDayOfWeek', () => {
+  it.each(weekStartCases)(
+    'starts the week of %s (starting %s) on %s',
+    (todayText, weekStartsOn, expected) => {
+      expect(firstDayOfWeek(parseCalendarDate(todayText), weekStartsOn)).toBe(expected);
+    },
+  );
+
+  it('always gives a seven-day week with lastDayOfWeek', () => {
+    const today = parseCalendarDate('2026-11-25');
+    const first = firstDayOfWeek(today, 'wednesday');
+    expect(first).toBe('2026-11-25');
+    expect(lastDayOfWeek(today, 'wednesday')).toBe('2026-12-01');
+  });
 });

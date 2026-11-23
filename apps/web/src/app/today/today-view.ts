@@ -4,8 +4,7 @@ import type { Job } from '@cleaning-planner/contracts/job';
 import type { Room } from '@cleaning-planner/contracts/room';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import type { JobIconKey, RoomType } from '@cleaning-planner/schedule/library/types';
-
-const MILLISECONDS_PER_DAY = 86_400_000;
+import { lateByText, personLabel } from '@/lib/home/job-wording';
 
 export interface TodaySources {
   agenda: AgendaResponse;
@@ -45,21 +44,6 @@ export interface TodayView {
 
 type DueItem = AgendaResponse['late'][number];
 
-function daysBetween(earlier: CalendarDate, later: CalendarDate): number {
-  return Math.round((Date.parse(later) - Date.parse(earlier)) / MILLISECONDS_PER_DAY);
-}
-
-function lateByText(dueDate: CalendarDate, today: CalendarDate): string {
-  const days = daysBetween(dueDate, today);
-  return `${String(days)} ${days === 1 ? 'day' : 'days'} late`;
-}
-
-function personLabel(sources: TodaySources, userId: string | null): string {
-  if (userId === null) return 'Anyone';
-  if (userId === sources.myUserId) return 'You';
-  return sources.members.find((member) => member.userId === userId)?.name ?? 'Former member';
-}
-
 function doneByText(sources: TodaySources, userId: string): string {
   if (userId === sources.myUserId) return 'you';
   return sources.members.find((member) => member.userId === userId)?.name ?? 'a former member';
@@ -78,7 +62,7 @@ function describeJob(
     name: job.name,
     icon: job.icon,
     room: room.type,
-    meta: `${room.name} · ${personLabel(sources, assigneeId)} · ${String(job.effortMinutes)} min`,
+    meta: `${room.name} · ${personLabel(sources.members, sources.myUserId, assigneeId)} · ${String(job.effortMinutes)} min`,
     effortMinutes: job.effortMinutes,
     assignee: sources.members.find((member) => member.userId === assigneeId) ?? null,
   };

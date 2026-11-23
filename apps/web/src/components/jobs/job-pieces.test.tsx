@@ -126,6 +126,16 @@ describe('JobRow', () => {
     expect(screen.getByText('Done by Sam')).toBeInTheDocument();
   });
 
+  it('can show a job’s schedule without any action, late or not', () => {
+    render(<JobRow {...DISHWASHER_FILTER} status={{ kind: 'scheduled', lateBy: '3 days late' }} />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByText('3 days late')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Clean dishwasher filter/ })).toHaveAttribute(
+      'href',
+      '/job?id=job-1',
+    );
+  });
+
   it('has no done button for a job that is not due yet', () => {
     render(<JobRow {...DISHWASHER_FILTER} status={{ kind: 'upcoming' }} />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
