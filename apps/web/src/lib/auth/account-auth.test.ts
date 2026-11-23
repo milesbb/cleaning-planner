@@ -1,39 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AccountAuthError, createAccountAuth } from './account-auth';
+import { cognitoError, failureOf, stubCognito } from '@/test/cognito-stub';
+import { createAccountAuth } from './account-auth';
 import type { CognitoFunctions } from './account-auth';
-
-function cognitoError(name: string, message = name): Error {
-  const error = new Error(message);
-  error.name = name;
-  return error;
-}
-
-function stubCognito(overrides: Partial<CognitoFunctions> = {}): CognitoFunctions {
-  return {
-    signUp: vi.fn(() =>
-      Promise.resolve({ isSignUpComplete: false, nextStep: { signUpStep: 'CONFIRM_SIGN_UP' } }),
-    ),
-    confirmSignUp: vi.fn(() =>
-      Promise.resolve({ isSignUpComplete: true, nextStep: { signUpStep: 'DONE' } }),
-    ),
-    resendSignUpCode: vi.fn(() => Promise.resolve({})),
-    signIn: vi.fn(() => Promise.resolve({ isSignedIn: true, nextStep: { signInStep: 'DONE' } })),
-    resetPassword: vi.fn(() => Promise.resolve({})),
-    confirmResetPassword: vi.fn(() => Promise.resolve()),
-    fetchAuthSession: vi.fn(() => Promise.resolve({ tokens: { accessToken: {} } })),
-    signOut: vi.fn(() => Promise.resolve()),
-    ...overrides,
-  };
-}
-
-async function failureOf(promise: Promise<unknown>): Promise<AccountAuthError> {
-  const outcome: unknown = await promise.then(
-    () => null,
-    (reason: unknown) => reason,
-  );
-  if (outcome instanceof AccountAuthError) return outcome;
-  throw new Error('Expected an AccountAuthError');
-}
 
 const SAM = { name: 'Sam', email: 'sam@example.com', password: 'lemon kettle sunday' };
 

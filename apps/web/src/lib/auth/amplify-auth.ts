@@ -101,7 +101,8 @@ export function cognitoFunctionsFrom(
     resetPassword: async (input) => (await loadAuth()).resetPassword(input),
     confirmResetPassword: async (input) => (await loadAuth()).confirmResetPassword(input),
     fetchAuthSession: async () => (hasStoredSession() ? (await loadAuth()).fetchAuthSession() : {}),
-    signOut: async () => (await loadAuth()).signOut(),
+    signOut: async (input) => (await loadAuth()).signOut(input),
+    updatePassword: async (input) => (await loadAuth()).updatePassword(input),
   };
 }
 

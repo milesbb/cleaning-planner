@@ -98,7 +98,7 @@ export function ProfileSheet({ profile }: { profile: Profile }): ReactNode {
       open={form.isOpen}
       onOpenChange={form.openOrClose}
       trigger={
-        <button type="button" className={`${TEXT_ACTION_CLASSES} self-start`}>
+        <button type="button" className={TEXT_ACTION_CLASSES}>
           Change name and colour
         </button>
       }

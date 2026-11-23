@@ -57,6 +57,10 @@ describe('SettingsScreen', () => {
     const you = await screen.findByRole('region', { name: 'You' });
     expect(you).toHaveTextContent('Alex');
     expect(you).toHaveTextContent('alex@example.com');
+    expect(within(you).getByRole('link', { name: 'Change password' })).toHaveAttribute(
+      'href',
+      '/settings/account/password',
+    );
     const home = screen.getByRole('region', { name: 'Our flat' });
     const people = within(home).getAllByRole('listitem');
     expect(people.map((person) => person.textContent)).toEqual([

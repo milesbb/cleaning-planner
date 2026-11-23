@@ -4,7 +4,8 @@ import type { HouseholdSummary, Member } from '@cleaning-planner/contracts/house
 import type { Profile } from '@cleaning-planner/contracts/profile';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
-import { FormAlert } from '@/components/account/account-screen';
+import Link from 'next/link';
+import { FormAlert, TEXT_ACTION_CLASSES } from '@/components/account/account-screen';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -34,7 +35,12 @@ export function YouSection({ profile }: { profile: Profile }): ReactNode {
             <p className="break-all">{profile.email}</p>
           </div>
         </div>
-        <ProfileSheet profile={profile} />
+        <div className="flex flex-wrap gap-x-4">
+          <ProfileSheet profile={profile} />
+          <Link href="/settings/account/password" className={TEXT_ACTION_CLASSES}>
+            Change password
+          </Link>
+        </div>
       </Card>
     </SettingsSection>
   );
