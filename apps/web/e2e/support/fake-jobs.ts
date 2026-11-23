@@ -24,9 +24,12 @@ const JOBS = [
   job('job-hob', 'room-kitchen', 'Wipe the hob', 'spray'),
 ];
 
-// Jobs can be added, renamed and removed; a snooze is accepted but changes nothing.
-export async function fakeJobs(page: Page): Promise<void> {
-  const jobs = JOBS.map((saved) => ({ ...saved }));
+export type SavedJob = Record<string, unknown>;
+
+// Jobs can be added, renamed and removed; a snooze is accepted but changes
+// nothing. Returns the live list, so other fakes can add and remove jobs.
+export async function fakeJobs(page: Page): Promise<SavedJob[]> {
+  const jobs: SavedJob[] = JOBS.map((saved) => ({ ...saved }));
   await fakeApi(page, `${HOME_PATH}/jobs`, () => ({ body: jobs }), { method: 'GET' });
   await fakeApi(
     page,
@@ -76,4 +79,5 @@ export async function fakeJobs(page: Page): Promise<void> {
       latestCompletion: null,
     },
   }));
+  return jobs;
 }

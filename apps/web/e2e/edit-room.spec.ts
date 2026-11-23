@@ -30,6 +30,18 @@ test.describe('Editing and removing a room', () => {
     await expect(page.getByRole('link', { name: /Living room/ })).toHaveCount(0);
   });
 
+  test('ticking an appliance adds its jobs to the room', async ({ page }) => {
+    await logInToHome(page);
+    const sheet = await openEditRoom(page, 'room-kitchen', 'Kitchen');
+    await expect(sheet).toContainText('Ticking one adds its usual jobs.');
+    await sheet.getByRole('checkbox', { name: 'Dishwasher' }).check();
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const jobs = page.getByRole('list', { name: 'Jobs in Kitchen' });
+    await expect(jobs).toContainText('Clean the dishwasher filter');
+    await expect(page.getByText('5 jobs')).toBeVisible();
+  });
+
   test('explains a name that is too long and saves nothing', async ({ page }) => {
     await logInToHome(page);
     const sheet = await openEditRoom(page, 'room-kitchen', 'Kitchen');

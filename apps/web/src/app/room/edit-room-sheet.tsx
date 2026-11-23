@@ -8,7 +8,7 @@ import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { RemoveRoomChoices } from './remove-room-choices';
-import { RoomNameForm } from './room-name-form';
+import { RoomDetailsForm } from './room-details-form';
 
 interface EditRoomSheetProps {
   householdId: string;
@@ -28,7 +28,7 @@ interface EditViewProps {
 function EditView({ householdId, room, onSaved, onRemove }: EditViewProps): ReactNode {
   return (
     <div className="flex flex-col gap-5">
-      <RoomNameForm key={room.version} householdId={householdId} room={room} onSaved={onSaved} />
+      <RoomDetailsForm key={room.version} householdId={householdId} room={room} onSaved={onSaved} />
       <Button variant="danger" onClick={onRemove}>
         Remove room
       </Button>

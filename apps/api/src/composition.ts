@@ -96,6 +96,7 @@ function createPlanningServices({
   return {
     rooms: createRoomService({
       store: roomStore,
+      jobs: jobStore,
       households: householdStore,
       now,
       newId: randomUUID,
