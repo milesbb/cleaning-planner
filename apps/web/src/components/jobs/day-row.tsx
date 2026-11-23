@@ -12,7 +12,10 @@ interface DayJob {
   name: string;
   icon: JobIconKey;
   state: DayJobState;
+  effortMinutes: number;
 }
+
+const MINUTES_PER_HOUR = 60;
 
 interface DayRowProps {
   weekday: string;
@@ -49,6 +52,26 @@ function DayJobTile({ job }: { job: DayJob }): ReactNode {
   );
 }
 
+// "about 1 hr 30 min": short enough for a day row on a small phone.
+function loadText(minutes: number): string {
+  const hours = Math.floor(minutes / MINUTES_PER_HOUR);
+  const leftOver = minutes % MINUTES_PER_HOUR;
+  const parts = [
+    ...(hours > 0 ? [`${String(hours)} hr`] : []),
+    ...(leftOver > 0 ? [`${String(leftOver)} min`] : []),
+  ];
+  return `about ${parts.join(' ')}`;
+}
+
+// Busy days stay calm: how long is said in words, never shown in warning colours.
+function DayLoad({ jobs }: { jobs: readonly DayJob[] }): ReactNode {
+  const minutesLeft = jobs
+    .filter((job) => job.state !== 'done')
+    .reduce((total, job) => total + job.effortMinutes, 0);
+  if (minutesLeft === 0) return null;
+  return <span className="text-xs">{loadText(minutesLeft)}</span>;
+}
+
 function DayProgress({ jobs }: { jobs: readonly DayJob[] }): ReactNode {
   const lateCount = jobs.filter((job) => job.state === 'late').length;
   if (lateCount > 0) {
@@ -80,7 +103,10 @@ function DayContent({ weekday, dayOfMonth, jobs, isToday }: Omit<DayRowProps, 'h
               <DayJobTile key={`${job.name}-${String(position)}`} job={job} />
             ))}
           </span>
-          <DayProgress jobs={jobs} />
+          <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+            <DayProgress jobs={jobs} />
+            <DayLoad jobs={jobs} />
+          </span>
         </>
       )}
     </>

@@ -118,8 +118,8 @@ function DayRowsDemo(): ReactNode {
         weekday="Fri"
         dayOfMonth={20}
         jobs={[
-          { name: 'Clean dishwasher filter', icon: 'dishwasher', state: 'late' },
-          { name: 'Fridge shelves', icon: 'fridge', state: 'done' },
+          { name: 'Clean dishwasher filter', icon: 'dishwasher', state: 'late', effortMinutes: 15 },
+          { name: 'Fridge shelves', icon: 'fridge', state: 'done', effortMinutes: 20 },
         ]}
       />
       <DayRow weekday="Sat" dayOfMonth={21} jobs={[]} />
@@ -129,9 +129,9 @@ function DayRowsDemo(): ReactNode {
         isToday
         href={DEMO_JOB_HREF}
         jobs={[
-          { name: 'Vacuum the living room', icon: 'vacuum', state: 'toDo' },
-          { name: 'Wipe the washer door seal', icon: 'washer', state: 'toDo' },
-          { name: 'Change the bed sheets', icon: 'bed', state: 'done' },
+          { name: 'Vacuum the living room', icon: 'vacuum', state: 'toDo', effortMinutes: 15 },
+          { name: 'Wipe the washer door seal', icon: 'washer', state: 'toDo', effortMinutes: 5 },
+          { name: 'Change the bed sheets', icon: 'bed', state: 'done', effortMinutes: 10 },
         ]}
       />
     </div>

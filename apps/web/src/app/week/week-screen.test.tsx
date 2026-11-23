@@ -143,6 +143,15 @@ describe('WeekScreen', () => {
     expect(within(dayRow(days, 2)).getByText('Nothing planned')).toBeInTheDocument();
   });
 
+  it('says roughly how long each day’s jobs still to do will take', async () => {
+    openWeek();
+    await screen.findByText('23 November – 29 November · 1 of 3 done');
+    const days = within(screen.getByRole('list', { name: 'Days' })).getAllByRole('listitem');
+    expect(within(dayRow(days, 0)).getByText('about 5 min')).toBeInTheDocument();
+    expect(within(dayRow(days, 1)).getByText('about 15 min')).toBeInTheDocument();
+    expect(within(dayRow(days, 2)).queryByText(/about/)).not.toBeInTheDocument();
+  });
+
   it('moves to next week and back', async () => {
     const client = openWeek();
     await userEvent.click(await screen.findByRole('button', { name: 'Next week' }));

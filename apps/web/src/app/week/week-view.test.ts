@@ -79,11 +79,11 @@ describe('buildWeekView', () => {
 
   it('shows each day’s jobs as done, late or to do', () => {
     expect(view.days[0]?.jobs).toEqual([
-      { name: 'Empty the bins', icon: 'bins', state: 'done' },
-      { name: 'Wipe the hob', icon: 'spray', state: 'late' },
+      { name: 'Empty the bins', icon: 'bins', state: 'done', effortMinutes: 5 },
+      { name: 'Wipe the hob', icon: 'spray', state: 'late', effortMinutes: 5 },
     ]);
     expect(view.days[1]?.jobs).toEqual([
-      { name: 'Vacuum the living room', icon: 'vacuum', state: 'toDo' },
+      { name: 'Vacuum the living room', icon: 'vacuum', state: 'toDo', effortMinutes: 15 },
     ]);
   });
 

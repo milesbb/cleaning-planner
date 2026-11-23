@@ -191,9 +191,9 @@ describe('RoomTile up to date', () => {
 
 describe('DayRow', () => {
   const FRIDAY_JOBS = [
-    { name: 'Clean dishwasher filter', icon: 'dishwasher', state: 'late' },
-    { name: 'Fridge shelves', icon: 'fridge', state: 'done' },
-    { name: 'Clean the hob', icon: 'oven', state: 'toDo' },
+    { name: 'Clean dishwasher filter', icon: 'dishwasher', state: 'late', effortMinutes: 20 },
+    { name: 'Fridge shelves', icon: 'fridge', state: 'done', effortMinutes: 10 },
+    { name: 'Clean the hob', icon: 'oven', state: 'toDo', effortMinutes: 15 },
   ] as const;
 
   it('has no accessibility violations', async () => {
@@ -225,12 +225,43 @@ describe('DayRow', () => {
         weekday="Mon"
         dayOfMonth={16}
         jobs={[
-          { name: 'Kitchen worktops', icon: 'spray', state: 'done' },
-          { name: 'Bins out', icon: 'bins', state: 'toDo' },
+          { name: 'Kitchen worktops', icon: 'spray', state: 'done', effortMinutes: 10 },
+          { name: 'Bins out', icon: 'bins', state: 'toDo', effortMinutes: 5 },
         ]}
       />,
     );
     expect(screen.getByText('1 of 2')).toBeInTheDocument();
+  });
+
+  it('says roughly how long the jobs still to do will take', () => {
+    render(<DayRow weekday="Fri" dayOfMonth={20} jobs={FRIDAY_JOBS} />);
+    expect(screen.getByText('about 35 min')).toBeInTheDocument();
+  });
+
+  it.each([
+    [60, 'about 1 hr'],
+    [90, 'about 1 hr 30 min'],
+    [125, 'about 2 hr 5 min'],
+  ])('says %i minutes as "%s"', (effortMinutes, expected) => {
+    render(
+      <DayRow
+        weekday="Sat"
+        dayOfMonth={21}
+        jobs={[{ name: 'Deep clean', icon: 'spray', state: 'toDo', effortMinutes }]}
+      />,
+    );
+    expect(screen.getByText(expected)).toBeInTheDocument();
+  });
+
+  it('says nothing about time once every job is done', () => {
+    render(
+      <DayRow
+        weekday="Mon"
+        dayOfMonth={16}
+        jobs={[{ name: 'Kitchen worktops', icon: 'spray', state: 'done', effortMinutes: 10 }]}
+      />,
+    );
+    expect(screen.queryByText(/about/)).not.toBeInTheDocument();
   });
 
   it('says when nothing is planned', () => {
