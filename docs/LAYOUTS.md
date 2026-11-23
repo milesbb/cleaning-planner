@@ -92,7 +92,7 @@ Page padding 40px on each side at both widths; 24px between the columns at 1024p
 - **Side column is sticky**: `lg:sticky lg:top-8 lg:self-start lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto`, so the week strip or a job's details stay in view while the list scrolls. It scrolls on its own when taller than the window.
 - **Order**: the main column comes first in the DOM and in tab order, the side column second. Each column is a landmark-friendly `<section>` with a heading (the side column's heading may be visually small, but it exists).
 - **Below 1024px** each screen says what happens to its side content: **stacked** under the main column (Home's Recently), or **not shown** (Today's week strip, the Week and Room hint). Not shown means not rendered at all (a JavaScript media query, `useIsLaptop`), not just hidden with CSS, so phones don't fetch data they never show.
-- **Built as** a `TwoColumns` component in `src/components/shell` (`main`, `side`, `sideLabel`, `sideBelowLaptop: 'stacked' | 'hidden'`, `opensJobs`) and `AppShell`'s `layout="split"`.
+- **Built as** a `TwoColumns` component in `src/components/shell` (`main`, `side`, `sideLabel`, `sideBelowLaptop: 'stacked' | 'hidden'`; #200 adds `opensJobs`) and `AppShell`'s `layout="split"`.
 
 ### 2.5 Sheets and dialogs
 

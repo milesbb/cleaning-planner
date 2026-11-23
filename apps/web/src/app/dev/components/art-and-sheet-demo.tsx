@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArtFrame } from '@/components/art/art-frame';
 import { BottomSheet } from '@/components/shell/bottom-sheet';
+import { ChooseAJobHint } from '@/components/shell/choose-a-job-hint';
 import { HomeSwitcher } from '@/components/shell/home-switcher';
 import { Button } from '@/components/ui/button';
 import { DemoSection } from './demo-section';
@@ -20,7 +21,32 @@ export function ArtDemo(): ReactNode {
         <ArtFrame artKey="welcomeHero" alt="Stand-in for the welcome illustration" />
         <ArtFrame artKey="bathroomScene" alt="Stand-in for the bathroom scene" />
       </div>
+      <div className="max-w-80">
+        <ChooseAJobHint />
+      </div>
     </DemoSection>
+  );
+}
+
+function WideSheetDemo(): ReactNode {
+  const [isWideSheetOpen, setIsWideSheetOpen] = useState(false);
+  return (
+    <BottomSheet
+      title="Add a room"
+      description="Wide sheets hold grids of choices."
+      size="wide"
+      open={isWideSheetOpen}
+      onOpenChange={setIsWideSheetOpen}
+      trigger={<Button variant="secondary">Open a wide sheet</Button>}
+    >
+      <Button
+        onClick={() => {
+          setIsWideSheetOpen(false);
+        }}
+      >
+        Add the room
+      </Button>
+    </BottomSheet>
   );
 }
 
@@ -47,6 +73,7 @@ export function SheetDemo(): ReactNode {
           Snooze until tomorrow
         </Button>
       </BottomSheet>
+      <WideSheetDemo />
     </DemoSection>
   );
 }
