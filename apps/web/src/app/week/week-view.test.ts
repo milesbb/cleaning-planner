@@ -62,6 +62,11 @@ describe('buildWeekView', () => {
     agenda: WEEK_AGENDA,
     jobs: TODAY_FIXTURE.jobs,
     today: TUESDAY,
+    nextDueDates: new Map([
+      ['job-hob', parseCalendarDate('2026-11-23')],
+      ['job-vacuum', parseCalendarDate('2026-11-24')],
+      ['job-bed', parseCalendarDate('2026-11-27')],
+    ]),
   });
 
   it('has a row for every day, with today marked', () => {
@@ -79,12 +84,37 @@ describe('buildWeekView', () => {
 
   it('shows each day’s jobs as done, late or to do', () => {
     expect(view.days[0]?.jobs).toEqual([
-      { name: 'Empty the bins', icon: 'bins', state: 'done' },
-      { name: 'Wipe the hob', icon: 'spray', state: 'late' },
+      {
+        jobId: 'job-bins',
+        name: 'Empty the bins',
+        icon: 'bins',
+        state: 'done',
+        effortMinutes: 5,
+        movableFrom: null,
+      },
+      {
+        jobId: 'job-hob',
+        name: 'Wipe the hob',
+        icon: 'spray',
+        state: 'late',
+        effortMinutes: 5,
+        movableFrom: '2026-11-23',
+      },
     ]);
     expect(view.days[1]?.jobs).toEqual([
-      { name: 'Vacuum the living room', icon: 'vacuum', state: 'toDo' },
+      {
+        jobId: 'job-vacuum',
+        name: 'Vacuum the living room',
+        icon: 'vacuum',
+        state: 'toDo',
+        effortMinutes: 15,
+        movableFrom: '2026-11-24',
+      },
     ]);
+  });
+
+  it('only lets a job move from the day it is next due', () => {
+    expect(view.days[2]?.jobs[0]?.movableFrom).toBeNull();
   });
 
   it('skips jobs that were deleted', () => {

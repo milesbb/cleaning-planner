@@ -17,6 +17,7 @@ import {
   storedSessionCheck,
 } from '@/lib/auth/amplify-auth';
 import { signInPathFor } from '@/lib/navigation/start-route';
+import { useInstallPromptCapture } from '@/lib/pwa/use-install-prompt-capture';
 import { useServiceWorker } from '@/lib/pwa/use-service-worker';
 import { onlyWhileSignedIn, savedDataStorage } from '@/lib/storage/saved-data-storage';
 
@@ -56,6 +57,7 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps): ReactNode {
   const router = useRouter();
   useServiceWorker();
+  useInstallPromptCapture();
   const sendToSignIn = useCallback(() => {
     router.replace(signInPathFor(`${window.location.pathname}${window.location.search}`));
   }, [router]);

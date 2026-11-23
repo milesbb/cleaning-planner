@@ -3,9 +3,14 @@ import { ApiRequestError } from './api-client';
 import type { ApiFailureKind } from './api-client';
 
 const MAX_RETRIES = 2;
-const RETRYABLE_FAILURES: readonly ApiFailureKind[] = ['offline', 'timeout', 'unavailable'];
+const CONNECTION_FAILURES: readonly ApiFailureKind[] = ['offline', 'timeout'];
+const RETRYABLE_FAILURES: readonly ApiFailureKind[] = [...CONNECTION_FAILURES, 'unavailable'];
 
-export function isTransientFailure(error: unknown): boolean {
+export function isConnectionFailure(error: unknown): boolean {
+  return error instanceof ApiRequestError && CONNECTION_FAILURES.includes(error.kind);
+}
+
+function isTransientFailure(error: unknown): boolean {
   return error instanceof ApiRequestError && RETRYABLE_FAILURES.includes(error.kind);
 }
 

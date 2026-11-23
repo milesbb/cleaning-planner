@@ -12,6 +12,7 @@ interface DateParts {
 
 export const DAYS_PER_WEEK = 7;
 const CALENDAR_DATE_LENGTH = 'YYYY-MM-DD'.length;
+const MILLISECONDS_PER_DAY = 86_400_000;
 const LAST_DAY_OF_PREVIOUS_MONTH = 0;
 
 function toDateParts(value: string): DateParts {
@@ -100,4 +101,13 @@ export function withDayOfMonth(date: CalendarDate, requestedDay: number): Calend
 export function compareDates(first: CalendarDate, second: CalendarDate): number {
   if (first < second) return -1;
   return first > second ? 1 : 0;
+}
+
+// Both days are UTC midnights, so a clock change never adds or loses an hour.
+export function daysBetween(from: CalendarDate, to: CalendarDate): number {
+  const start = toDateParts(from);
+  const end = toDateParts(to);
+  const startTime = Date.UTC(start.year, start.monthIndex, start.day);
+  const endTime = Date.UTC(end.year, end.monthIndex, end.day);
+  return (endTime - startTime) / MILLISECONDS_PER_DAY;
 }

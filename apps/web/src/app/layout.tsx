@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Atkinson_Hyperlegible, Bricolage_Grotesque } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { APPLE_TOUCH_ICON, iconUrl, SPLASH_SCREENS } from '@/app-icons/app-icons';
 import { AppProviders } from '@/components/app/app-providers';
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, ThemeColors } from '@/lib/app-identity';
 import './globals.css';
@@ -23,8 +24,20 @@ export const metadata: Metadata = {
   title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
-  appleWebApp: { capable: true, title: APP_SHORT_NAME, statusBarStyle: 'default' },
-  icons: { apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }] },
+  appleWebApp: {
+    capable: true,
+    title: APP_SHORT_NAME,
+    statusBarStyle: 'default',
+    startupImage: SPLASH_SCREENS.map(({ file, media }) => ({ url: iconUrl(file), media })),
+  },
+  icons: {
+    apple: [
+      {
+        url: iconUrl(APPLE_TOUCH_ICON.file),
+        sizes: `${String(APPLE_TOUCH_ICON.sizePixels)}x${String(APPLE_TOUCH_ICON.sizePixels)}`,
+      },
+    ],
+  },
 };
 
 export const viewport: Viewport = {

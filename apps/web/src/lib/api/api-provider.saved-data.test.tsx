@@ -6,34 +6,11 @@ import { axe } from 'vitest-axe';
 import { ApiRequestError } from './api-client';
 import type { ApiClient } from './api-client';
 import { ApiProvider, useApiQuery } from './api-provider';
-import type { SavedDataStorage } from '@/lib/storage/saved-data-storage';
+import { memoryStorage } from '@/test/memory-storage';
+import type { MemoryStorage } from '@/test/memory-storage';
 
 const SAM = { id: 'user-sam', name: 'Sam', email: 'sam@example.com', colour: 'blue' as const };
 const SAVE_WAIT = { timeout: 3000 };
-
-interface MemoryStorage extends SavedDataStorage {
-  saved: Map<string, string>;
-}
-
-function memoryStorage(): MemoryStorage {
-  const saved = new Map<string, string>();
-  return {
-    saved,
-    getItem: (key): Promise<string | null> => Promise.resolve(saved.get(key) ?? null),
-    setItem: (key, value): Promise<void> => {
-      saved.set(key, value);
-      return Promise.resolve();
-    },
-    removeItem: (key): Promise<void> => {
-      saved.delete(key);
-      return Promise.resolve();
-    },
-  };
-}
-
-function savedText(storage: MemoryStorage): string {
-  return [...storage.saved.values()].join('');
-}
 
 function clientAnswering(answer: (path: string) => Promise<unknown>): ApiClient {
   return {
@@ -79,7 +56,7 @@ async function saveSamsProfile(storage: MemoryStorage): Promise<void> {
   );
   await screen.findByText('Signed in as Sam');
   await waitFor(() => {
-    expect(savedText(storage)).toContain('user-sam');
+    expect(storage.savedText()).toContain('user-sam');
   }, SAVE_WAIT);
   unmount();
 }
@@ -129,7 +106,7 @@ describe('ApiProvider with saved data', () => {
     await screen.findByText('Signed out');
     await screen.findByText('Signed in as Sam');
     await waitFor(() => {
-      expect(savedText(storage)).not.toContain('user-sam');
+      expect(storage.savedText()).not.toContain('user-sam');
     }, SAVE_WAIT);
   });
 

@@ -171,6 +171,29 @@ export async function fakeApi(
   });
 }
 
+// Never answers `method` on `path` (preflights are still answered), so a spec
+// can see what a screen shows before the server agrees. Returns the requests held.
+export async function holdApi(
+  page: Page,
+  path: string,
+  method: 'POST' | 'PATCH' | 'DELETE',
+): Promise<Request[]> {
+  const held: Request[] = [];
+  await page.route(`${E2E_ENVIRONMENT.NEXT_PUBLIC_API_URL}${path}`, async (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+    if (request.method() !== method) {
+      await route.fallback();
+      return;
+    }
+    held.push(request);
+  });
+  return held;
+}
+
 export function asObject(value: unknown): object {
   return typeof value === 'object' && value !== null ? value : {};
 }

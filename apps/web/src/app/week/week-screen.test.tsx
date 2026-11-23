@@ -4,105 +4,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
-import type { FakeAnswers, FakeApiClient } from '@/test/fake-api-client';
-import { TODAY_FIXTURE } from '../today/today-fixture';
 import { WeekScreen } from './week-screen';
+import {
+  COMING_UP,
+  COMING_UP_AGENDA,
+  HOME,
+  LAST_WEEK,
+  NEVER,
+  THIS_WEEK,
+  THIS_WEEK_AGENDA,
+  comingUpAgenda,
+  dayRow,
+  emptyWeek,
+  openWeek,
+  weekAnswers,
+} from './week-test-support';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 vi.mock('next/navigation', () => ({
   useRouter: (): typeof router => router,
   usePathname: (): string => '/week',
 }));
-
-const HOME = '/v1/households/home-1';
-const THIS_WEEK = `GET ${HOME}/agenda?from=2026-11-23&to=2026-11-29`;
-const NEXT_WEEK = `GET ${HOME}/agenda?from=2026-11-30&to=2026-12-06`;
-const LAST_WEEK = `GET ${HOME}/agenda?from=2026-11-16&to=2026-11-22`;
-const COMING_UP = `GET ${HOME}/agenda?from=2026-11-30&to=2026-12-27`;
-const NEVER = (): Promise<never> => new Promise(() => undefined);
-
-function day(date: string, due: object[] = [], done: object[] = []): object {
-  return { date, due, done };
-}
-
-function emptyWeek(from: number, month = '11'): object {
-  const days = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(Date.UTC(2026, Number(month) - 1, from + index));
-    return day(date.toISOString().slice(0, 10));
-  });
-  return { late: [], days };
-}
-
-function comingUpAgenda(dueOn: Record<string, string[]> = {}): object {
-  const days = Array.from({ length: 28 }, (_, index) => {
-    const date = new Date(Date.UTC(2026, 10, 30 + index)).toISOString().slice(0, 10);
-    const due = (dueOn[date] ?? []).map((jobId) => ({
-      jobId,
-      dueDate: date,
-      status: 'later',
-      assignee: null,
-    }));
-    return day(date, due);
-  });
-  return { late: [], days };
-}
-
-const COMING_UP_AGENDA = comingUpAgenda({
-  '2026-12-01': ['job-oven'],
-  '2026-12-09': ['job-bed'],
-});
-
-const THIS_WEEK_AGENDA = {
-  late: [],
-  days: [
-    day(
-      '2026-11-23',
-      [{ jobId: 'job-hob', dueDate: '2026-11-23', status: 'late', assignee: null }],
-      [{ jobId: 'job-bins', completedOn: '2026-11-23', completedBy: 'user-sam' }],
-    ),
-    day('2026-11-24', [
-      { jobId: 'job-vacuum', dueDate: '2026-11-24', status: 'today', assignee: null },
-    ]),
-    day('2026-11-25'),
-    day('2026-11-26'),
-    day('2026-11-27'),
-    day('2026-11-28'),
-    day('2026-11-29'),
-  ],
-};
-
-function weekAnswers(): FakeAnswers {
-  return {
-    'GET /v1/households': () =>
-      Promise.resolve([{ id: 'home-1', name: 'Our flat', role: 'member' }]),
-    [`GET ${HOME}`]: () =>
-      Promise.resolve({
-        id: 'home-1',
-        name: 'Our flat',
-        timeZone: 'Europe/London',
-        weekStartsOn: 'monday',
-        ownerId: 'user-sam',
-        version: 1,
-      }),
-    [`GET ${HOME}/jobs`]: () => Promise.resolve(TODAY_FIXTURE.jobs),
-    [THIS_WEEK]: () => Promise.resolve(THIS_WEEK_AGENDA),
-    [NEXT_WEEK]: () => Promise.resolve(emptyWeek(30)),
-    [LAST_WEEK]: () => Promise.resolve(emptyWeek(16)),
-    [COMING_UP]: () => Promise.resolve(COMING_UP_AGENDA),
-  };
-}
-
-function dayRow(days: readonly HTMLElement[], index: number): HTMLElement {
-  const row = days[index];
-  if (row === undefined) throw new Error(`No day ${String(index)}`);
-  return row;
-}
-
-function openWeek(answers: FakeAnswers = weekAnswers()): FakeApiClient {
-  const client = clientAnswering(answers);
-  renderWithApi(<WeekScreen />, client);
-  return client;
-}
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -134,13 +56,22 @@ describe('WeekScreen', () => {
     const days = within(screen.getByRole('list', { name: 'Days' })).getAllByRole('listitem');
     expect(days).toHaveLength(7);
     expect(
-      within(dayRow(days, 0)).getByRole('img', { name: 'Wipe the hob, late' }),
+      within(dayRow(days, 0)).getByRole('button', { name: 'Move Wipe the hob, late' }),
     ).toBeInTheDocument();
     expect(
       within(dayRow(days, 0)).getByRole('img', { name: 'Empty the bins, done' }),
     ).toBeInTheDocument();
     expect(within(dayRow(days, 1)).getByText('Today')).toBeInTheDocument();
     expect(within(dayRow(days, 2)).getByText('Nothing planned')).toBeInTheDocument();
+  });
+
+  it('says roughly how long each day’s jobs still to do will take', async () => {
+    openWeek();
+    await screen.findByText('23 November – 29 November · 1 of 3 done');
+    const days = within(screen.getByRole('list', { name: 'Days' })).getAllByRole('listitem');
+    expect(within(dayRow(days, 0)).getByText('about 5 min')).toBeInTheDocument();
+    expect(within(dayRow(days, 1)).getByText('about 15 min')).toBeInTheDocument();
+    expect(within(dayRow(days, 2)).queryByText(/about/)).not.toBeInTheDocument();
   });
 
   it('moves to next week and back', async () => {

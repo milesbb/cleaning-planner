@@ -4,7 +4,7 @@ import type { Room } from '@cleaning-planner/contracts/room';
 import type { ReactNode } from 'react';
 import { JobRow } from '@/components/jobs/job-row';
 import { AppShell } from '@/components/shell/app-shell';
-import { BackLink, PageHeader } from '@/components/shell/page-header';
+import { PageHeader } from '@/components/shell/page-header';
 import {
   ScreenLoading,
   ScreenProblem,
@@ -18,30 +18,32 @@ import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { countOf } from '@/lib/rooms';
 import { useRecordId } from '@/lib/use-record-id';
-import { EditRoomSheet } from './edit-room-sheet';
+import { EditRoomButton } from './edit-room-button';
+import { freshnessOfJob } from './room-freshness';
+import type { JobFreshness } from './room-freshness';
+import { BACK_HOME, RoomNotFound } from './room-not-found';
 
 type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
 
-const BACK_HOME = <BackLink href="/home" label="Back to Home" />;
+function withFreshness(freshness: JobFreshness | null): { freshness?: JobFreshness } {
+  return freshness === null ? {} : { freshness };
+}
 
-export function RoomNotFound(): ReactNode {
-  return (
-    <>
-      <PageHeader title="Room not found" leading={BACK_HOME} />
-      <p role="alert" className="text-[1.0625rem]">
-        That room isn’t in this home any more. It may have been removed.
-      </p>
-      <ButtonLink href="/home">See all rooms</ButtonLink>
-    </>
-  );
+function freshnessIn({ sources }: ReadyRooms): (jobId: string) => JobFreshness | null {
+  return (jobId) => {
+    const job = sources.jobs.find((candidate) => candidate.id === jobId);
+    const progress = sources.progress.find((entry) => entry.jobId === jobId);
+    return job === undefined ? null : freshnessOfJob(job, progress, sources.today);
+  };
 }
 
 interface RoomJobListProps {
   room: Room;
   jobs: ReturnType<typeof jobsInRoom>;
+  freshnessFor: (jobId: string) => JobFreshness | null;
 }
 
-function RoomJobList({ room, jobs }: RoomJobListProps): ReactNode {
+function RoomJobList({ room, jobs, freshnessFor }: RoomJobListProps): ReactNode {
   if (jobs.length === 0) return <p className="text-[1.0625rem]">No jobs in this room yet.</p>;
   return (
     <ul aria-label={`Jobs in ${room.name}`} className="flex flex-col gap-2.5">
@@ -53,6 +55,7 @@ function RoomJobList({ room, jobs }: RoomJobListProps): ReactNode {
             icon={job.icon}
             meta={job.meta}
             href={jobHref(job.jobId)}
+            {...withFreshness(freshnessFor(job.jobId))}
             status={
               job.lateBy === undefined
                 ? { kind: 'scheduled' }
@@ -75,13 +78,15 @@ function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): Re
         title={room.name}
         subtitle={countOf(jobs.length, 'job')}
         leading={BACK_HOME}
-        action={<EditRoomSheet householdId={home.householdId} room={room} jobCount={jobs.length} />}
+        action={
+          <EditRoomButton householdId={home.householdId} room={room} jobCount={jobs.length} />
+        }
       />
       <ButtonLink href={`/room/add?id=${encodeURIComponent(room.id)}`} variant="dashed">
         <PlusIcon />
         Add a job
       </ButtonLink>
-      <RoomJobList room={room} jobs={jobs} />
+      <RoomJobList room={room} jobs={jobs} freshnessFor={freshnessIn(home)} />
     </>
   );
 }

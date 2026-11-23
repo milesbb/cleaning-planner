@@ -1,16 +1,18 @@
 import type { MetadataRoute } from 'next';
+import { iconUrl, MANIFEST_ICONS } from '@/app-icons/app-icons';
+import type { AppIcon } from '@/app-icons/app-icons';
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, ThemeColors } from '@/lib/app-identity';
 
 export const dynamic = 'force-static';
 
 type ManifestIcon = NonNullable<MetadataRoute.Manifest['icons']>[number];
 
-function pngIcon(path: string, sizePixels: number, purpose: ManifestIcon['purpose']): ManifestIcon {
+function manifestIcon({ file, sizePixels, purpose }: AppIcon): ManifestIcon {
   return {
-    src: path,
+    src: iconUrl(file),
     sizes: `${String(sizePixels)}x${String(sizePixels)}`,
     type: 'image/png',
-    purpose,
+    purpose: purpose === 'maskable' ? 'maskable' : 'any',
   };
 }
 
@@ -24,10 +26,6 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: ThemeColors.background,
     theme_color: ThemeColors.brand,
-    icons: [
-      pngIcon('/icons/icon-192.png', 192, 'any'),
-      pngIcon('/icons/icon-512.png', 512, 'any'),
-      pngIcon('/icons/maskable-512.png', 512, 'maskable'),
-    ],
+    icons: MANIFEST_ICONS.map(manifestIcon),
   };
 }

@@ -11,10 +11,15 @@ const DAYS_PER_WEEK = 7;
 
 type WeekJobState = 'toDo' | 'done' | 'late';
 
-interface WeekJob {
+export interface WeekJob {
+  jobId: string;
   name: string;
   icon: JobIconKey;
   state: WeekJobState;
+  effortMinutes: number;
+  // The due date a move would snooze, or null: only a job's current due date
+  // can be moved, so done jobs and later repeats can't.
+  movableFrom: CalendarDate | null;
 }
 
 interface WeekDay {
@@ -39,7 +44,11 @@ interface WeekSources {
   agenda: AgendaResponse;
   jobs: readonly Job[];
   today: CalendarDate;
+  nextDueDates: ReadonlyMap<string, CalendarDate>;
 }
+
+type AgendaDay = AgendaResponse['days'][number];
+type DueItem = AgendaDay['due'][number];
 
 const weekdayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
 
@@ -56,12 +65,25 @@ export function weekTitle(offset: number, weekStart: CalendarDate): string {
   return `Week of ${formatShortDate(weekStart)}`;
 }
 
-function jobOf(jobs: readonly Job[], jobId: string, state: WeekJobState): WeekJob[] {
+function jobOf(
+  jobs: readonly Job[],
+  jobId: string,
+  details: Pick<WeekJob, 'state' | 'movableFrom'>,
+): WeekJob[] {
   const job = jobs.find((candidate) => candidate.id === jobId);
-  return job === undefined ? [] : [{ name: job.name, icon: job.icon, state }];
+  if (job === undefined) return [];
+  return [{ jobId, name: job.name, icon: job.icon, effortMinutes: job.effortMinutes, ...details }];
 }
 
-function dayOf(day: AgendaResponse['days'][number], sources: WeekSources): WeekDay {
+function dueJobOf(item: DueItem, sources: WeekSources): WeekJob[] {
+  const isCurrentDueDate = sources.nextDueDates.get(item.jobId) === item.dueDate;
+  return jobOf(sources.jobs, item.jobId, {
+    state: item.status === 'late' ? 'late' : 'toDo',
+    movableFrom: isCurrentDueDate ? item.dueDate : null,
+  });
+}
+
+function dayOf(day: AgendaDay, sources: WeekSources): WeekDay {
   const instant = new Date(`${day.date}T00:00:00Z`);
   return {
     date: day.date,
@@ -69,10 +91,10 @@ function dayOf(day: AgendaResponse['days'][number], sources: WeekSources): WeekD
     dayOfMonth: instant.getUTCDate(),
     isToday: day.date === sources.today,
     jobs: [
-      ...day.done.flatMap((item) => jobOf(sources.jobs, item.jobId, 'done')),
-      ...day.due.flatMap((item) =>
-        jobOf(sources.jobs, item.jobId, item.status === 'late' ? 'late' : 'toDo'),
+      ...day.done.flatMap((item) =>
+        jobOf(sources.jobs, item.jobId, { state: 'done', movableFrom: null }),
       ),
+      ...day.due.flatMap((item) => dueJobOf(item, sources)),
     ],
   };
 }

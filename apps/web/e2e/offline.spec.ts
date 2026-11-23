@@ -1,18 +1,8 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import { openPage } from './support/fake-backend';
+import { waitForOfflineCopy } from './support/service-worker';
 
 const WELCOME_HEADING = 'Know what needs cleaning, and when.';
-
-async function waitForOfflineCopy(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-    if (navigator.serviceWorker.controller !== null) return;
-    await new Promise((resolve) => {
-      navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
-    });
-  });
-}
 
 test.describe('opening the app without a connection', () => {
   test.use({ serviceWorkers: 'allow' });

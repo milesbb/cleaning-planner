@@ -155,7 +155,7 @@ describe('RoomTile', () => {
     render(
       <RoomTile room="kitchen" name="Kitchen" jobCount={8} lateCount={1} href="/room?id=room-1" />,
     );
-    const link = screen.getByRole('link', { name: 'Kitchen 8 jobs 1 late' });
+    const link = screen.getByRole('link', { name: 'Kitchen 8 jobs 7 of 8 up to date 1 late' });
     expect(link).toHaveAttribute('href', '/room?id=room-1');
   });
 
@@ -163,16 +163,37 @@ describe('RoomTile', () => {
     render(
       <RoomTile room="laundry" name="Laundry" jobCount={1} lateCount={0} href="/room?id=room-2" />,
     );
-    expect(screen.getByRole('link', { name: 'Laundry 1 job' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Laundry 1 job 1 of 1 up to date' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/late/)).not.toBeInTheDocument();
+  });
+});
+
+describe('RoomTile up to date', () => {
+  it('draws the share of jobs that are not late in the room’s colour', () => {
+    render(
+      <RoomTile room="kitchen" name="Kitchen" jobCount={8} lateCount={2} href="/room?id=room-1" />,
+    );
+    const ring = screen.getByTestId('up-to-date-ring');
+    expect(ring).toHaveAttribute('data-share', '0.75');
+    expect(ring.querySelector('.stroke-kitchen')).not.toBeNull();
+  });
+
+  it('keeps the ring’s space for a room with no jobs, without saying anything about it', () => {
+    render(
+      <RoomTile room="bedroom" name="Bedroom" jobCount={0} lateCount={0} href="/room?id=room-3" />,
+    );
+    expect(screen.getByRole('link', { name: 'Bedroom 0 jobs' })).toBeInTheDocument();
+    expect(screen.getByTestId('up-to-date-ring')).toHaveAttribute('data-share', '0');
   });
 });
 
 describe('DayRow', () => {
   const FRIDAY_JOBS = [
-    { name: 'Clean dishwasher filter', icon: 'dishwasher', state: 'late' },
-    { name: 'Fridge shelves', icon: 'fridge', state: 'done' },
-    { name: 'Clean the hob', icon: 'oven', state: 'toDo' },
+    { name: 'Clean dishwasher filter', icon: 'dishwasher', state: 'late', effortMinutes: 20 },
+    { name: 'Fridge shelves', icon: 'fridge', state: 'done', effortMinutes: 10 },
+    { name: 'Clean the hob', icon: 'oven', state: 'toDo', effortMinutes: 15 },
   ] as const;
 
   it('has no accessibility violations', async () => {
@@ -204,12 +225,80 @@ describe('DayRow', () => {
         weekday="Mon"
         dayOfMonth={16}
         jobs={[
-          { name: 'Kitchen worktops', icon: 'spray', state: 'done' },
-          { name: 'Bins out', icon: 'bins', state: 'toDo' },
+          { name: 'Kitchen worktops', icon: 'spray', state: 'done', effortMinutes: 10 },
+          { name: 'Bins out', icon: 'bins', state: 'toDo', effortMinutes: 5 },
         ]}
       />,
     );
     expect(screen.getByText('1 of 2')).toBeInTheDocument();
+  });
+
+  it('says roughly how long the jobs still to do will take', () => {
+    render(<DayRow weekday="Fri" dayOfMonth={20} jobs={FRIDAY_JOBS} />);
+    expect(screen.getByText('about 35 min')).toBeInTheDocument();
+  });
+
+  it.each([
+    [60, 'about 1 hr'],
+    [90, 'about 1 hr 30 min'],
+    [125, 'about 2 hr 5 min'],
+  ])('says %i minutes as "%s"', (effortMinutes, expected) => {
+    render(
+      <DayRow
+        weekday="Sat"
+        dayOfMonth={21}
+        jobs={[{ name: 'Deep clean', icon: 'spray', state: 'toDo', effortMinutes }]}
+      />,
+    );
+    expect(screen.getByText(expected)).toBeInTheDocument();
+  });
+
+  it('says nothing about time once every job is done', () => {
+    render(
+      <DayRow
+        weekday="Mon"
+        dayOfMonth={16}
+        jobs={[{ name: 'Kitchen worktops', icon: 'spray', state: 'done', effortMinutes: 10 }]}
+      />,
+    );
+    expect(screen.queryByText(/about/)).not.toBeInTheDocument();
+  });
+
+  it('lets a job that can move be tapped, at a full-size target', async () => {
+    const onMove = vi.fn();
+    render(
+      <DayRow
+        weekday="Fri"
+        dayOfMonth={20}
+        jobs={[{ name: 'Clean the hob', icon: 'oven', state: 'toDo', effortMinutes: 15, onMove }]}
+      />,
+    );
+    const job = screen.getByRole('button', { name: 'Move Clean the hob, to do' });
+    expect(job).toHaveClass('size-11');
+    await userEvent.click(job);
+    expect(onMove).toHaveBeenCalled();
+  });
+
+  it('never puts a job button inside a row that is a link', () => {
+    render(
+      <DayRow
+        weekday="Sun"
+        dayOfMonth={22}
+        isToday
+        href="/today"
+        jobs={[
+          {
+            name: 'Clean the hob',
+            icon: 'oven',
+            state: 'toDo',
+            effortMinutes: 15,
+            onMove: vi.fn(),
+          },
+        ]}
+      />,
+    );
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Clean the hob, to do' })).toBeInTheDocument();
   });
 
   it('says when nothing is planned', () => {

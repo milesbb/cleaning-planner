@@ -128,12 +128,18 @@ describe('queueRequests', () => {
 });
 
 describe('keepsTrying', () => {
-  it.each(['offline', 'timeout', 'unavailable'] as const)(
-    'keeps trying a queued change after %s failures, however many',
+  it.each(['offline', 'timeout'] as const)(
+    'keeps trying a queued change while the connection fails (%s), however many times',
     (kind) => {
       expect(keepsTrying(50, new ApiRequestError(kind, 'Try again'))).toBe(true);
     },
   );
+
+  it('gives a server error the usual few tries, then lets the screen put the change back', () => {
+    const serverError = new ApiRequestError('unavailable', 'Try again in a moment');
+    expect(keepsTrying(1, serverError)).toBe(true);
+    expect(keepsTrying(2, serverError)).toBe(false);
+  });
 
   it.each(['rejected', 'signedOut', 'unexpected'] as const)('stops after a %s answer', (kind) => {
     expect(keepsTrying(0, new ApiRequestError(kind, 'No'))).toBe(false);

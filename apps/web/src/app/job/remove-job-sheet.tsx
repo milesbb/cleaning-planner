@@ -1,16 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { FormAlert } from '@/components/account/account-screen';
 import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import type { JobDetails } from '@/lib/home/job-details';
+import type { SheetOpening } from '@/lib/lazy-sheet';
 import { useRemoveJob } from './use-job-actions';
 import type { JobAddress } from './use-job-actions';
 
-interface RemoveJobSheetProps {
+interface RemoveJobSheetProps extends SheetOpening {
   details: JobDetails;
   address: JobAddress;
 }
@@ -35,20 +35,23 @@ function RemoveChoices({ remove, onRemove, onKeep }: RemoveChoicesProps): ReactN
   );
 }
 
-export function RemoveJobSheet({ details, address }: RemoveJobSheetProps): ReactNode {
+// Loaded on first use (`LazySheet`), and fresh each time it opens.
+export function RemoveJobSheet({
+  details,
+  address,
+  open,
+  onOpenChange,
+  returnFocusTo,
+}: RemoveJobSheetProps): ReactNode {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
   const remove = useRemoveJob(address);
   return (
     <BottomSheet
       title="Remove this job?"
       description={`“${details.name}” will stop showing for everyone in this home. This can’t be undone.`}
-      open={isOpen}
-      onOpenChange={(isOpening) => {
-        setIsOpen(isOpening);
-        if (isOpening) remove.reset();
-      }}
-      trigger={<Button variant="danger">Remove job</Button>}
+      open={open}
+      onOpenChange={onOpenChange}
+      returnFocusTo={returnFocusTo}
     >
       <RemoveChoices
         remove={remove}
@@ -60,7 +63,7 @@ export function RemoveJobSheet({ details, address }: RemoveJobSheetProps): React
           });
         }}
         onKeep={() => {
-          setIsOpen(false);
+          onOpenChange(false);
         }}
       />
     </BottomSheet>

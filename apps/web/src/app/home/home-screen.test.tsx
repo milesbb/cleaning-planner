@@ -64,13 +64,14 @@ describe('HomeScreen', () => {
     expect(kitchen).toHaveAttribute('href', '/room?id=room-kitchen');
     expect(within(kitchen).getByText('3 jobs')).toBeInTheDocument();
     expect(within(kitchen).getByText('1 late')).toBeInTheDocument();
+    expect(kitchen).toHaveAccessibleName(/2 of 3 up to date/);
     expect(within(screen.getByRole('link', { name: /Bedroom/ })).queryByText(/late/)).toBeNull();
   });
 
   it('adds a room and refreshes the home', async () => {
     const client = openHome({ ...homeAnswers(), [ADD_ROOM]: () => Promise.resolve(ADDED_ROOM) });
     await userEvent.click(await screen.findByRole('button', { name: 'Add a room' }));
-    const sheet = screen.getByRole('dialog', { name: 'Add a room' });
+    const sheet = await screen.findByRole('dialog', { name: 'Add a room' });
     expect(within(sheet).getByLabelText('Name')).toHaveValue('Bathroom');
     await userEvent.click(within(sheet).getByRole('button', { name: 'Add room' }));
     await waitFor(() => {

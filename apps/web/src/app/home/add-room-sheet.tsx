@@ -4,11 +4,11 @@ import { displayNameSchema } from '@cleaning-planner/contracts/primitives';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { FormAlert } from '@/components/account/account-screen';
-import { PlusIcon } from '@/components/icons/interface-icons';
 import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { TextField } from '@/components/ui/text-field';
+import type { SheetOpening } from '@/lib/lazy-sheet';
 import { SETUP_ROOM_NAMES } from '@/lib/setup/home-setup';
 import type { SetupRoomType } from '@/lib/setup/home-setup';
 import { useAddRoom } from './use-add-room';
@@ -32,7 +32,7 @@ export function suggestedRoomName(type: SetupRoomType, roomNames: readonly strin
   return `${baseName} ${String(number)}`;
 }
 
-interface AddRoomSheetProps {
+interface AddRoomSheetProps extends SheetOpening {
   householdId: string;
   roomNames: readonly string[];
 }
@@ -43,13 +43,12 @@ interface AddRoomForm {
   nameError: string | undefined;
   chooseType: (type: SetupRoomType) => void;
   setName: (name: string) => void;
-  reset: () => void;
   validName: () => string | null;
 }
 
 function useAddRoomForm(roomNames: readonly string[]): AddRoomForm {
   const [type, setType] = useState<SetupRoomType>(FIRST_CHOICE);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => suggestedRoomName(FIRST_CHOICE, roomNames));
   const [nameError, setNameError] = useState<string | undefined>();
   return {
     type,
@@ -60,11 +59,6 @@ function useAddRoomForm(roomNames: readonly string[]): AddRoomForm {
       setName(suggestedRoomName(chosen, roomNames));
     },
     setName,
-    reset: (): void => {
-      setType(FIRST_CHOICE);
-      setName(suggestedRoomName(FIRST_CHOICE, roomNames));
-      setNameError(undefined);
-    },
     validName: (): string | null => {
       const parsed = displayNameSchema.safeParse(name);
       setNameError(parsed.success ? undefined : parsed.error.issues[0]?.message);
@@ -112,16 +106,10 @@ function AddRoomFields({ form, addRoom, onSubmit }: AddRoomFieldsProps): ReactNo
   );
 }
 
-export function AddRoomSheet({ householdId, roomNames }: AddRoomSheetProps): ReactNode {
-  const [isOpen, setIsOpen] = useState(false);
+// Loaded on first use (`AddRoomButton`), and fresh each time it opens.
+export function AddRoomSheet({ householdId, roomNames, ...opening }: AddRoomSheetProps): ReactNode {
   const form = useAddRoomForm(roomNames);
   const addRoom = useAddRoom(householdId);
-  const openOrClose = (isOpening: boolean): void => {
-    setIsOpen(isOpening);
-    if (!isOpening) return;
-    form.reset();
-    addRoom.reset();
-  };
   const submit = (): void => {
     const name = form.validName();
     if (name === null) return;
@@ -129,7 +117,7 @@ export function AddRoomSheet({ householdId, roomNames }: AddRoomSheetProps): Rea
       { type: form.type, name },
       {
         onSuccess: () => {
-          setIsOpen(false);
+          opening.onOpenChange(false);
         },
       },
     );
@@ -138,14 +126,7 @@ export function AddRoomSheet({ householdId, roomNames }: AddRoomSheetProps): Rea
     <BottomSheet
       title="Add a room"
       description="We’ll add the usual jobs for it. You can change them later."
-      open={isOpen}
-      onOpenChange={openOrClose}
-      trigger={
-        <Button variant="dashed">
-          <PlusIcon />
-          Add a room
-        </Button>
-      }
+      {...opening}
     >
       <AddRoomFields form={form} addRoom={addRoom} onSubmit={submit} />
     </BottomSheet>

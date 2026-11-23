@@ -646,6 +646,7 @@ Resources:
                 FilePaths:
                   Includes:
                     - apps/api/**
+                    - packages/contracts/**
                     - packages/schedule/**
                     - infrastructure/**
                     - package.json
