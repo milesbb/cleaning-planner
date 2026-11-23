@@ -59,7 +59,14 @@ describe('jobDetailsOf', () => {
       lateBy: '2 days late',
       howOften: 'Weekly',
       recommendation: 'Most homes do this every 3 months to every 6 months.',
+      recommendedRange: {
+        shortest: { value: 3, unit: 'month' },
+        longest: { value: 6, unit: 'month' },
+      },
+      recommendedSchedule: { type: 'floating', every: { value: 3, unit: 'month' } },
+      schedule: { type: 'floating', every: { value: 1, unit: 'week' } },
       whoFor: 'Anyone',
+      assignment: { kind: 'anyone' },
       why: 'Burnt-on grease smokes, smells and can affect how food tastes.',
       howTo: [
         'Take out the racks and soak them in hot soapy water.',
@@ -74,6 +81,8 @@ describe('jobDetailsOf', () => {
   it('has no advice for a job someone made up', () => {
     expect(detailsOf(oven({ libraryId: null }))).toMatchObject({
       recommendation: null,
+      recommendedRange: null,
+      recommendedSchedule: null,
       why: null,
       howTo: [],
     });

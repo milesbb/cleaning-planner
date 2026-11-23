@@ -8,7 +8,7 @@ import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import type { JobDetails } from '@/lib/home/job-details';
-import { useRenameJob } from './use-job-actions';
+import { useUpdateJob } from './use-job-actions';
 import type { JobAddress } from './use-job-actions';
 
 interface RenameJobSheetProps {
@@ -20,7 +20,7 @@ interface RenameForm {
   isOpen: boolean;
   name: string;
   nameError: string | undefined;
-  rename: ReturnType<typeof useRenameJob>;
+  rename: ReturnType<typeof useUpdateJob>;
   openOrClose: (isOpening: boolean) => void;
   setName: (name: string) => void;
   save: () => void;
@@ -30,7 +30,7 @@ function useRenameForm({ details, address }: RenameJobSheetProps): RenameForm {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(details.name);
   const [nameError, setNameError] = useState<string | undefined>();
-  const rename = useRenameJob(address);
+  const rename = useUpdateJob(address);
   return {
     isOpen,
     name,

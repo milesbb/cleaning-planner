@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { CheckboxGroup } from '@/components/ui/checkbox-group';
 import { SegmentedControl } from '@/components/ui/segmented-control';
+import { SelectField } from '@/components/ui/select-field';
 import { Stepper } from '@/components/ui/stepper';
 import { Switch } from '@/components/ui/switch';
 import { DemoSection } from './demo-section';
@@ -72,11 +74,41 @@ function SwitchesAndStepperDemo(): ReactNode {
   );
 }
 
+const DAY_OPTIONS = [
+  { value: 'monday', label: 'Monday' },
+  { value: 'wednesday', label: 'Wednesday' },
+  { value: 'friday', label: 'Friday' },
+] as const;
+
+type DemoDay = (typeof DAY_OPTIONS)[number]['value'];
+
+function CheckboxesAndSelectDemo(): ReactNode {
+  const [days, setDays] = useState<DemoDay[]>(['monday']);
+  const [monthDay, setMonthDay] = useState('1');
+  return (
+    <>
+      <CheckboxGroup
+        label="Days"
+        options={DAY_OPTIONS}
+        values={days}
+        onValuesChange={setDays}
+        error={days.length === 0 ? 'Pick at least one day' : undefined}
+      />
+      <SelectField label="Day of the month" value={monthDay} onValueChange={setMonthDay}>
+        <option value="1">1</option>
+        <option value="15">15</option>
+        <option value="last">Last day</option>
+      </SelectField>
+    </>
+  );
+}
+
 export function ChoiceControlsDemo(): ReactNode {
   return (
     <DemoSection title="Choice controls">
       <SegmentedControlsDemo />
       <SwitchesAndStepperDemo />
+      <CheckboxesAndSelectDemo />
     </DemoSection>
   );
 }

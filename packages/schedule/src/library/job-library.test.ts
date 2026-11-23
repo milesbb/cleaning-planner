@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { approximateDays } from '../interval';
-import { findLibraryJob, JOB_LIBRARY, recommendationText, suggestJobs } from './job-library';
+import {
+  findLibraryJob,
+  isRecommendedInterval,
+  JOB_LIBRARY,
+  recommendationText,
+  suggestJobs,
+} from './job-library';
+import { days, months, weeks } from './intervals';
 import { HOME_FEATURES, JOB_ICON_KEYS, ROOM_TYPES } from './keys';
 import type { LibraryJob } from './types';
 
@@ -85,5 +92,21 @@ describe('recommendationText', () => {
         longest: { value: 1, unit: 'month' },
       }),
     ).toBe('Most homes do this monthly.');
+  });
+});
+
+describe('isRecommendedInterval', () => {
+  const range = { shortest: weeks(2), longest: months(3) };
+
+  it.each([
+    [weeks(2), true],
+    [days(14), true],
+    [months(1), true],
+    [months(3), true],
+    [days(13), false],
+    [weeks(1), false],
+    [months(4), false],
+  ])('says whether %o is within two weeks to three months', (interval, isRecommended) => {
+    expect(isRecommendedInterval(interval, range)).toBe(isRecommended);
   });
 });
