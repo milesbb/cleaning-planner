@@ -16,10 +16,16 @@ export interface Budget {
 export const BUDGET: Budget = { totalKilobytes: 220, routeSpecificKilobytes: 60 };
 
 const BYTES_PER_KILOBYTE = 1024;
-const EXTERNAL_SCRIPT_PATTERN = /<script[^>]*\ssrc="([^"]+)"/g;
+const SCRIPT_TAG_PATTERN = /<script\b[^>]*>/g;
+const SOURCE_PATTERN = /\ssrc="([^"]+)"/;
+const LEGACY_ONLY_PATTERN = /\snomodule\b/i;
 
+// Scripts a modern browser downloads: `noModule` polyfills are for old browsers only.
 export function scriptSourcesIn(html: string): string[] {
-  return [...html.matchAll(EXTERNAL_SCRIPT_PATTERN)].map((match) => match[1] ?? '');
+  return [...html.matchAll(SCRIPT_TAG_PATTERN)]
+    .map(([tag]) => tag)
+    .filter((tag) => !LEGACY_ONLY_PATTERN.test(tag))
+    .flatMap((tag) => SOURCE_PATTERN.exec(tag)?.[1] ?? []);
 }
 
 function kilobytes(bytes: number): string {

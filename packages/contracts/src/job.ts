@@ -1,4 +1,4 @@
-import { JOB_ICON_KEYS, findLibraryJob } from '@cleaning-planner/schedule/library/job-library';
+import { JOB_ICON_KEYS } from '@cleaning-planner/schedule/library/keys';
 import { calendarDateSchema, recordIdSchema, versionSchema } from './primitives';
 import { assignmentSchema, scheduleSchema, snoozeSchema } from './schedule';
 import { NOTHING_TO_CHANGE, hasAChange } from './updates';
@@ -7,7 +7,7 @@ import { z } from './zod';
 const MAX_JOB_NAME_LENGTH = 80;
 const MAX_EFFORT_MINUTES = 480;
 
-const jobNameSchema = z
+export const jobNameSchema = z
   .string()
   .check(
     z.trim(),
@@ -15,7 +15,7 @@ const jobNameSchema = z
     z.maxLength(MAX_JOB_NAME_LENGTH, `Keep it to ${String(MAX_JOB_NAME_LENGTH)} characters`),
   );
 
-const effortMinutesSchema = z
+export const effortMinutesSchema = z
   .int()
   .check(
     z.minimum(1, 'Allow at least a minute'),
@@ -24,14 +24,19 @@ const effortMinutesSchema = z
 
 export const jobIconSchema = z.enum(JOB_ICON_KEYS);
 
-export const libraryJobIdSchema = z
+const LIBRARY_JOB_ID_PATTERN = /^[a-z][A-Za-z]*\.[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+// A saved job keeps its library id even if that library job is later renamed
+// or retired, so a stored job only needs the id's shape. New jobs are checked
+// against the library itself (job-request.ts).
+const libraryJobReferenceSchema = z
   .string()
-  .check(z.refine((id) => findLibraryJob(id) !== undefined, 'Pick a job from the library'));
+  .check(z.regex(LIBRARY_JOB_ID_PATTERN, 'That isn’t a library job id'));
 
 export const jobSchema = z.strictObject({
   id: recordIdSchema,
   roomId: recordIdSchema,
-  libraryId: z.nullable(libraryJobIdSchema),
+  libraryId: z.nullable(libraryJobReferenceSchema),
   name: jobNameSchema,
   icon: jobIconSchema,
   schedule: scheduleSchema,
@@ -40,17 +45,6 @@ export const jobSchema = z.strictObject({
   snooze: z.nullable(snoozeSchema),
   effortMinutes: effortMinutesSchema,
   version: versionSchema,
-});
-
-export const createJobRequestSchema = z.strictObject({
-  roomId: recordIdSchema,
-  libraryId: z.optional(libraryJobIdSchema),
-  name: jobNameSchema,
-  icon: jobIconSchema,
-  schedule: scheduleSchema,
-  startDate: z.optional(calendarDateSchema),
-  assignment: assignmentSchema,
-  effortMinutes: effortMinutesSchema,
 });
 
 export const updateJobRequestSchema = z
@@ -66,5 +60,4 @@ export const updateJobRequestSchema = z
   .check(z.refine(hasAChange, NOTHING_TO_CHANGE));
 
 export type Job = z.infer<typeof jobSchema>;
-export type CreateJobRequest = z.infer<typeof createJobRequestSchema>;
 export type UpdateJobRequest = z.infer<typeof updateJobRequestSchema>;

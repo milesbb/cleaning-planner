@@ -1,9 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createAppApiClient, readApiUrl } from './app-client';
 
-vi.mock('../auth/amplify-auth', () => ({
-  getAccessToken: (): Promise<string> => Promise.resolve('token'),
-}));
+const getAccessToken = (): Promise<string> => Promise.resolve('token');
 
 describe('readApiUrl', () => {
   it('accepts the deployed https API', () => {
@@ -28,10 +26,10 @@ describe('readApiUrl', () => {
 
 describe('createAppApiClient', () => {
   it('builds a client for a set-up API', () => {
-    expect(createAppApiClient('https://api.example.test')).not.toBeNull();
+    expect(createAppApiClient('https://api.example.test', getAccessToken)).not.toBeNull();
   });
 
   it('builds nothing when the API is not set up', () => {
-    expect(createAppApiClient(undefined)).toBeNull();
+    expect(createAppApiClient(undefined, getAccessToken)).toBeNull();
   });
 });

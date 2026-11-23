@@ -1,4 +1,3 @@
-import { getAccessToken } from '../auth/amplify-auth';
 import { createApiClient } from './api-client';
 import type { ApiClient } from './api-client';
 
@@ -12,7 +11,10 @@ export function readApiUrl(value: string | undefined): string | null {
   return url.origin;
 }
 
-export function createAppApiClient(apiUrl: string | undefined): ApiClient | null {
+export function createAppApiClient(
+  apiUrl: string | undefined,
+  getAccessToken: () => Promise<string | null>,
+): ApiClient | null {
   const baseUrl = readApiUrl(apiUrl);
   if (baseUrl === null) return null;
   return createApiClient({ baseUrl, getAccessToken });

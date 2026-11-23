@@ -16,6 +16,12 @@ describe('scriptSourcesIn', () => {
       '<head><script src="/_next/a.js" async=""></script><script>inline()</script></head><body><script defer src="/_next/b.js"></script></body>';
     expect(scriptSourcesIn(html)).toEqual(['/_next/a.js', '/_next/b.js']);
   });
+
+  it('leaves out the legacy polyfills, which modern browsers never download', () => {
+    const html =
+      '<script src="/_next/polyfills.js" noModule=""></script><script src="/_next/a.js" async=""></script>';
+    expect(scriptSourcesIn(html)).toEqual(['/_next/a.js']);
+  });
 });
 
 describe('budgetProblems', () => {
