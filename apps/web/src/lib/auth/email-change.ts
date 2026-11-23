@@ -20,7 +20,7 @@ export interface EmailChangeCognito {
   }) => Promise<unknown>;
 }
 
-export type EmailChangeOutcome = 'confirmCode' | 'changed';
+type EmailChangeOutcome = 'confirmCode' | 'changed';
 
 export interface EmailChange {
   requestEmailChange: (newEmail: string) => Promise<EmailChangeOutcome>;

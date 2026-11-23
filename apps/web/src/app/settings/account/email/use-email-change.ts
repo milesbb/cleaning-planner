@@ -15,7 +15,7 @@ import { codeError, emailError } from '@/lib/auth/account-validation';
 
 const ALREADY_YOUR_EMAIL = 'That’s already your email.';
 
-export type EmailChangeStep =
+type EmailChangeStep =
   | { kind: 'enterEmail' }
   | { kind: 'enterCode'; newEmail: string }
   | { kind: 'saveFailed'; newEmail: string }
