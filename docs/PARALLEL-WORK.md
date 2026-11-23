@@ -95,9 +95,18 @@ The owner can also open a session themselves and say "pick up the next issue": t
    - Run e2e on a port of your own, so sessions don't share a server: `E2E_PORT` set to 3100 plus your issue number (`E2E_PORT=3280` for #180), with `CI=1` so Playwright starts its own server instead of reusing whatever answers on that port.
 5. **PR** into `development` with `Closes #<issue>` in the body, then `npm run work:board -- review <issue>`.
 6. **Merge** when PR checks pass: rebase onto `development` first if it moved, squash-merge, author email `10620446+milesbb@users.noreply.github.com`.
-7. **Hand back.** `npm run work:board -- --sync-labels`, then reply with the PR link.
+   - Wait for checks with `gh pr checks <pr> --watch` run in the background (it ends when they do), not a polling loop. Every check must pass, Vercel included (it reports `state`, not `conclusion`).
+   - If Vercel fails only because of its daily build limit ("Deployment rate limited"):
+     - **The PR changes nothing under `apps/web`:** merge it once every other check passes (the owner agreed this on 23 November 2026). Say so in the PR.
+     - **The PR changes `apps/web`:** leave it in review and work on another issue; when the limit resets, push an empty commit to rebuild it, then merge when everything passes.
+7. **Hand back.** `npm run work:board -- --sync-labels`.
+8. **Keep going.** Claim the next issue from START NOW and go back to step 2, without asking. Prefer issues that unblock others. Only when START NOW has nothing you can claim: notify the owner (a push notification if you have the tool) and end your turn with the PRs you merged, asking what to work on next.
 
-**Never:** open a release PR or touch `production`; push to another session's branch; claim a second issue before your first is merged; work on an issue in BLOCKED, NEEDS A DECISION or LATER; weaken a rule in `CLAUDE.md` to get a check passing.
+**Found something outside your issue?** Don't fix it in your PR. Open a new issue as described in [Writing new issues](#writing-new-issues), then carry on.
+
+**Needs the owner?** If an issue turns out to need a decision, an account, a key or money: comment on it saying exactly what's needed, add `status: needs decision`, `unclaim` it and move on to another issue.
+
+**Never:** open a release PR or touch `production`; push to another session's branch; claim a second issue before your first is merged (except while one waits on Vercel's build limit); work on an issue in BLOCKED, NEEDS A DECISION or LATER; weaken a rule in `CLAUDE.md` to get a check passing; stop to ask whether to continue.
 
 If you stop without finishing, give the issue back: `npm run work:board -- unclaim <issue>`, and say on the issue how far you got.
 
