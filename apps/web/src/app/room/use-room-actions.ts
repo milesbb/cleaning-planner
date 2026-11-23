@@ -13,7 +13,7 @@ export interface RoomAddress {
   roomId: string;
 }
 
-function roomPath({ householdId, roomId }: RoomAddress): string {
+export function roomPath({ householdId, roomId }: RoomAddress): string {
   return `${homePath(householdId)}/rooms/${encodeURIComponent(roomId)}`;
 }
 

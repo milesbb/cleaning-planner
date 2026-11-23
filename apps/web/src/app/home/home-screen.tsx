@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { RoomTile } from '@/components/jobs/room-tile';
 import { AppShell } from '@/components/shell/app-shell';
@@ -13,13 +14,54 @@ import {
 import { summariseRooms } from '@/lib/home/room-jobs';
 import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
+import { Button } from '@/components/ui/button';
 import { countOf } from '@/lib/rooms';
 import { AddRoomSheet } from './add-room-sheet';
+import { ReorderRooms } from './reorder-rooms';
 
 type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
 
-function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
+function RoomTiles({ home }: { home: ReadyRooms }): ReactNode {
   const rooms = summariseRooms(home.sources);
+  return (
+    <ul aria-label="Rooms" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      {rooms.map((room) => (
+        <li key={room.id} className="grid">
+          <RoomTile
+            room={room.type}
+            name={room.name}
+            jobCount={room.jobCount}
+            lateCount={room.lateCount}
+            href={`/room?id=${encodeURIComponent(room.id)}`}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+interface RoomActionsProps {
+  home: ReadyRooms;
+  onReorder: () => void;
+}
+
+function RoomActions({ home, onReorder }: RoomActionsProps): ReactNode {
+  const { rooms } = home.sources;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <AddRoomSheet householdId={home.householdId} roomNames={rooms.map((room) => room.name)} />
+      {rooms.length > 1 ? (
+        <Button variant="secondary" onClick={onReorder}>
+          Reorder rooms
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
+  const [isReordering, setIsReordering] = useState(false);
+  const { rooms } = home.sources;
   return (
     <>
       <PageHeader
@@ -33,20 +75,25 @@ function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
           />
         }
       />
-      <ul aria-label="Rooms" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-        {rooms.map((room) => (
-          <li key={room.id} className="grid">
-            <RoomTile
-              room={room.type}
-              name={room.name}
-              jobCount={room.jobCount}
-              lateCount={room.lateCount}
-              href={`/room?id=${encodeURIComponent(room.id)}`}
-            />
-          </li>
-        ))}
-      </ul>
-      <AddRoomSheet householdId={home.householdId} roomNames={rooms.map((room) => room.name)} />
+      {isReordering ? (
+        <ReorderRooms
+          householdId={home.householdId}
+          rooms={[...rooms].sort((first, second) => first.order - second.order)}
+          onDone={() => {
+            setIsReordering(false);
+          }}
+        />
+      ) : (
+        <>
+          <RoomTiles home={home} />
+          <RoomActions
+            home={home}
+            onReorder={() => {
+              setIsReordering(true);
+            }}
+          />
+        </>
+      )}
     </>
   );
 }
