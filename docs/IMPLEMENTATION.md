@@ -246,6 +246,7 @@ apps/api/src/
 | Room                    | `HOUSEHOLD#<id>` | `ROOM#<roomId>`           | type, name, order, appliances                                                         |
 | Job                     | `HOUSEHOLD#<id>` | `JOB#<jobId>`             | room, library id, name, icon, schedule, assignment, snooze                            |
 | Completion              | `HOUSEHOLD#<id>` | `DONE#<jobId>#<doneAt>`   | done by, skipped                                                                      |
+| Activity                | `HOUSEHOLD#<id>` | `ACTIVITY#<doneAt>#<id>`  | job id and name, outcome, who and when; written and undone with the completion        |
 | Request already handled | `HOUSEHOLD#<id>` | `REQUEST#<userId>#<key>`  | the first answer to a done, skip, undo or snooze request, `expiresAt` (TTL, 24 hours) |
 | Invite (lookup by code) | `INVITE#<code>`  | `META`                    | home id, invited by, `expiresAt` (TTL, 7 days)                                        |
 
@@ -262,7 +263,7 @@ apps/api/src/
 | Rooms      | `GET/POST …/rooms`, `PATCH/DELETE …/rooms/:roomId`                                                                                                                     |
 | Jobs       | `GET/POST …/jobs`, `GET/PATCH/DELETE …/jobs/:jobId`                                                                                                                    |
 | Doing jobs | `POST …/jobs/:jobId/completions` (done or skipped), `DELETE …/jobs/:jobId/completions/latest` (undo), `POST …/jobs/:jobId/snooze`                                      |
-| Agenda     | `GET …/agenda?from=&to=&person=` (built with `buildAgenda`)                                                                                                            |
+| Agenda     | `GET …/agenda?from=&to=&person=` (built with `buildAgenda`); `GET …/activity?limit=` (latest first)                                                                    |
 
 Passwords never reach our API: sign-up, log in, reset and change go from the app straight to Cognito. Deleting an account asks for the password again, hands over or deletes owned homes, removes memberships, devices and reminder schedules, then the Cognito user. Apple requires in-app account deletion, so this also satisfies App Store review.
 
