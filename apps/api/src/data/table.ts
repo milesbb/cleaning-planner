@@ -28,6 +28,8 @@ export const Keys = {
   allDonePrefix: 'DONE#',
   donePrefix: (jobId: string): string => `DONE#${jobId}#`,
   done: (jobId: string, doneAt: string): string => `DONE#${jobId}#${doneAt}`,
+  activityPrefix: 'ACTIVITY#',
+  activity: (doneAt: string, jobId: string): string => `ACTIVITY#${doneAt}#${jobId}`,
   request: (userId: string, key: string): string => `REQUEST#${userId}#${key}`,
   currentInvite: 'INVITE',
   invite: (code: string): string => `INVITE#${code}`,
@@ -35,6 +37,11 @@ export const Keys = {
   room: (roomId: string): string => `ROOM#${roomId}`,
   job: (jobId: string): string => `JOB#${jobId}`,
   homesOfUser: 'HOUSEHOLD#',
+  reminders: 'REMINDERS',
+  pushDevicePrefix: 'PUSH#',
+  pushDevice: (deviceId: string): string => `PUSH#${deviceId}`,
+  deviceClaim: (deviceId: string): string => `DEVICE#${deviceId}`,
+  deviceOwner: 'OWNER',
 } as const;
 
 export function createDynamoClient(endpoint: string | undefined): DynamoDBClient {
