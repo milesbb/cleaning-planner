@@ -1,17 +1,41 @@
 import { describe, expect, it } from 'vitest';
-import { safeReturnPath, signInPathFor, startRouteFor } from './start-route';
+import { joinPathFor, safeReturnPath, signInPathFor, startRouteFor } from './start-route';
 
 describe('startRouteFor', () => {
   it('sends someone signed out to the welcome screen', () => {
-    expect(startRouteFor({ isSignedIn: false, homeCount: 0 })).toBe('/welcome');
+    expect(startRouteFor({ isSignedIn: false, homeCount: 0, pendingInviteCode: null })).toBe(
+      '/welcome',
+    );
   });
 
   it('sends someone without a home to start one', () => {
-    expect(startRouteFor({ isSignedIn: true, homeCount: 0 })).toBe('/homes/new');
+    expect(startRouteFor({ isSignedIn: true, homeCount: 0, pendingInviteCode: null })).toBe(
+      '/homes/new',
+    );
+  });
+
+  it('brings someone back to the invite they opened before signing up or logging in', () => {
+    expect(startRouteFor({ isSignedIn: true, homeCount: 1, pendingInviteCode: '7K3M9QZA' })).toBe(
+      '/join?code=7K3M9QZA',
+    );
+  });
+
+  it('keeps a pending invite until the person is signed in', () => {
+    expect(startRouteFor({ isSignedIn: false, homeCount: 0, pendingInviteCode: '7K3M9QZA' })).toBe(
+      '/welcome',
+    );
   });
 
   it('sends everyone else to today', () => {
-    expect(startRouteFor({ isSignedIn: true, homeCount: 2 })).toBe('/today');
+    expect(startRouteFor({ isSignedIn: true, homeCount: 2, pendingInviteCode: null })).toBe(
+      '/today',
+    );
+  });
+});
+
+describe('joinPathFor', () => {
+  it('puts the invite code in the query string, the only way a static page can read it', () => {
+    expect(joinPathFor('7K3M9QZA')).toBe('/join?code=7K3M9QZA');
   });
 });
 

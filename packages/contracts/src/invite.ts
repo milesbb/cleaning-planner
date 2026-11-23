@@ -23,6 +23,7 @@ export const invitePreviewSchema = z.strictObject({
   invitedByName: displayNameSchema,
   memberCount: z.int().check(z.minimum(1)),
   expiresAt: instantSchema,
+  isMember: z.boolean(),
 });
 
 export type InviteCode = z.infer<typeof inviteCodeSchema>;
