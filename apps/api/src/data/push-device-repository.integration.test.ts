@@ -58,6 +58,11 @@ describe('push device repository (DynamoDB Local)', () => {
     });
   });
 
+  it('lists each device with everything notify needs to reach it', async () => {
+    await expect(devices.listDevices('user-sam')).resolves.toEqual([BROWSER, PHONE]);
+    await expect(devices.listDevices('user-nobody')).resolves.toEqual([]);
+  });
+
   it('saving the same device again keeps one copy, with the newest details', async () => {
     await devices.saveDevice('user-sam', { ...PHONE, addedAt: '2026-11-24T07:00:00.000Z' });
     await expect(devices.listDeviceIds('user-sam')).resolves.toHaveLength(2);

@@ -21,7 +21,7 @@ function keyCondition(
   };
 }
 
-async function partitionItems(
+export async function partitionItems(
   table: Table,
   pk: string,
   { prefix, projection }: HomeItemsQuery = {},

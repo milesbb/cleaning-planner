@@ -1,10 +1,12 @@
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { DeleteCommand, GetCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { pushDeviceRequestSchema } from '@cleaning-planner/contracts/push-device';
 import { z } from '@cleaning-planner/contracts/zod';
+import type { NotifyDevices } from '../services/notify-service';
 import type { PushDeviceRecord, PushDeviceStore } from '../services/push-device-service';
 import { Errors } from '../utils/errors';
 import { isConditionFailure } from './conditions';
-import { partitionItemKeys } from './home-items';
+import { partitionItemKeys, partitionItems } from './home-items';
 import type { ItemKey } from './home-items';
 import { Keys } from './table';
 import type { Table } from './table';
@@ -25,6 +27,25 @@ function claimKey(deviceId: string): ItemKey {
 async function listDeviceIds(table: Table, userId: string): Promise<string[]> {
   const keys = await partitionItemKeys(table, Keys.user(userId), Keys.pushDevicePrefix);
   return keys.map((key) => key.sk.slice(Keys.pushDevicePrefix.length));
+}
+
+const deviceMetaSchema = z.object({ id: z.string(), addedAt: z.string() });
+const TABLE_KEYS = new Set(['pk', 'sk']);
+
+function deviceRecordFrom(item: Record<string, unknown>): PushDeviceRecord {
+  const fields = Object.fromEntries(Object.entries(item).filter(([name]) => !TABLE_KEYS.has(name)));
+  const { id, addedAt } = deviceMetaSchema.parse(fields);
+  const device = pushDeviceRequestSchema.parse(
+    Object.fromEntries(
+      Object.entries(fields).filter(([name]) => name !== 'id' && name !== 'addedAt'),
+    ),
+  );
+  return { ...device, id, addedAt };
+}
+
+async function listDevices(table: Table, userId: string): Promise<PushDeviceRecord[]> {
+  const items = await partitionItems(table, Keys.user(userId), { prefix: Keys.pushDevicePrefix });
+  return items.map(deviceRecordFrom);
 }
 
 async function ownerOf(table: Table, deviceId: string): Promise<string | undefined> {
@@ -89,9 +110,10 @@ async function removeDevice(table: Table, userId: string, deviceId: string): Pro
   await releaseClaim(table, userId, deviceId);
 }
 
-export function createPushDeviceRepository(table: Table): PushDeviceStore {
+export function createPushDeviceRepository(table: Table): PushDeviceStore & NotifyDevices {
   return {
     listDeviceIds: (userId) => listDeviceIds(table, userId),
+    listDevices: (userId) => listDevices(table, userId),
     saveDevice: (userId, device) => saveDevice(table, userId, device),
     removeDevice: (userId, deviceId) => removeDevice(table, userId, deviceId),
   };

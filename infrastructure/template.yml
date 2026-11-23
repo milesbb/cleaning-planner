@@ -26,6 +26,14 @@ Parameters:
     Type: String
     Default: /cleaning-planner/vapid-private-key
     Description: SSM SecureString with the Web Push (VAPID) private key, read by notify when it runs
+  VapidPublicKey:
+    Type: String
+    Default: ''
+    Description: The Web Push (VAPID) public key, the pair of the private key in SSM. It's public, so it lives here; notify refuses to start while it's empty
+  VapidSubject:
+    Type: String
+    Default: https://cleaning-planner-coral.vercel.app
+    Description: How push services can reach us about our reminders (the website, or a mailto address)
   FcmServiceAccountParameter:
     Type: String
     Default: /cleaning-planner/fcm-service-account
@@ -307,6 +315,8 @@ Resources:
         Variables:
           TABLE_NAME: !Ref DataTable
           VAPID_PRIVATE_KEY_PARAMETER: !Ref VapidPrivateKeyParameter
+          VAPID_PUBLIC_KEY: !Ref VapidPublicKey
+          VAPID_SUBJECT: !Ref VapidSubject
           FCM_SERVICE_ACCOUNT_PARAMETER: !Ref FcmServiceAccountParameter
       Policies:
         - DynamoDBCrudPolicy:
