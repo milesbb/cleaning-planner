@@ -174,6 +174,8 @@ The budget alert is **account-wide** and defaults to $5/month. If the account al
 
 Vercel's GitHub integration also gives every pull request its own preview URL. Previews include the review pages, `/dev/components/` (every component in every state) and `/dev/shell/` (the app frame), so you can check them on a phone; the live site never does.
 
+Vercel only builds what the website is built from. `apps/web/vercel.json` turns off deployments of the `development` branch itself, and its `ignoreCommand` (`apps/web/scripts/vercel-ignored-build-step.ts`) skips a preview when the branch, compared with where it left `development`, changes nothing under `apps/web`, `packages/schedule` or `packages/contracts` and none of the root `package.json`, `package-lock.json`, `turbo.json` or `tsconfig.base.json` (Markdown files never count). Pushes to `production` are always built, and a branch whose changes the script can't work out is built too. So API, infrastructure, CI and docs PRs don't use Vercel builds.
+
 ## Licence
 
 Private project, all rights reserved.
