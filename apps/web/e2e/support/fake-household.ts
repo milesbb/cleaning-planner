@@ -1,16 +1,12 @@
 import type { Page } from '@playwright/test';
-import { fakeApi } from './fake-backend';
+import { asObject, fakeApi } from './fake-backend';
+import { DAY_MS, HOME_PATH } from './fake-home-state';
 
 // Alex's place in "Our flat" (home-1): the home list, the home, its people,
 // invites, and Alex's own profile. Sam owns the home unless `isOwner` makes
 // Alex the owner, who can then change the home and who lives there.
 
-const HOME = '/v1/households/home-1';
-const WEEK_MS = 7 * 86_400_000;
-
-export function asObject(value: unknown): object {
-  return typeof value === 'object' && value !== null ? value : {};
-}
+const WEEK_MS = 7 * DAY_MS;
 
 function peopleFor(isOwner: boolean): Record<string, unknown>[] {
   return [
@@ -35,10 +31,10 @@ async function fakeProfile(page: Page): Promise<void> {
 
 async function fakePeople(page: Page, isOwner: boolean): Promise<void> {
   const people = peopleFor(isOwner);
-  await fakeApi(page, `${HOME}/members`, () => ({ body: people }), { method: 'GET' });
+  await fakeApi(page, `${HOME_PATH}/members`, () => ({ body: people }), { method: 'GET' });
   await fakeApi(
     page,
-    `${HOME}/members/*`,
+    `${HOME_PATH}/members/*`,
     (request) => {
       const userId = request.url().split('/').pop() ?? '';
       const index = people.findIndex((person) => person.userId === userId);
@@ -49,7 +45,7 @@ async function fakePeople(page: Page, isOwner: boolean): Promise<void> {
   );
   await fakeApi(
     page,
-    `${HOME}/invites`,
+    `${HOME_PATH}/invites`,
     () => ({
       status: 201,
       body: { code: '7K3M9QZA', expiresAt: new Date(Date.now() + WEEK_MS).toISOString() },
@@ -67,10 +63,10 @@ async function fakeTheHome(page: Page, isOwner: boolean, onGone: () => void): Pr
     ownerId: isOwner ? 'user-alex' : 'user-sam',
     version: 1,
   };
-  await fakeApi(page, HOME, () => ({ body: home }), { method: 'GET' });
+  await fakeApi(page, HOME_PATH, () => ({ body: home }), { method: 'GET' });
   await fakeApi(
     page,
-    HOME,
+    HOME_PATH,
     (request) => {
       Object.assign(home, asObject(request.postDataJSON()), { version: home.version + 1 });
       return { body: home };
@@ -81,8 +77,8 @@ async function fakeTheHome(page: Page, isOwner: boolean, onGone: () => void): Pr
     onGone();
     return { status: 204, body: undefined };
   };
-  await fakeApi(page, HOME, gone, { method: 'DELETE' });
-  await fakeApi(page, `${HOME}/leave`, gone, { method: 'POST' });
+  await fakeApi(page, HOME_PATH, gone, { method: 'DELETE' });
+  await fakeApi(page, `${HOME_PATH}/leave`, gone, { method: 'POST' });
 }
 
 export async function fakeHousehold(page: Page, { isOwner = false } = {}): Promise<void> {

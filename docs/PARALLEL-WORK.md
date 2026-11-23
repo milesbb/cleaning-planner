@@ -58,8 +58,8 @@ Paths under `src/` are in `apps/web`.
 
 Some files collect a line from almost every feature. Any lane may make **small, additive** edits to them; on a conflict, rebase onto `development` and keep both sides:
 
-- `README.md`, `docs/IMPLEMENTATION.md` and the `CLAUDE.md` files (a row or a sentence each)
-- `apps/web/e2e/support/*` (a new fake for your endpoint)
+- `README.md`, `docs/IMPLEMENTATION.md`, and the shared `CLAUDE.md` files (a row or a sentence each). A screen's own notes go in the `CLAUDE.md` in its folder (`apps/web/src/app/today/CLAUDE.md`, …), which belongs to that screen's lane, not in `apps/web/CLAUDE.md`
+- `apps/web/e2e/support/fake-home.ts`: one line adding your new `fake-<resource>.ts` to `fakeHome`. Each screen has its own `e2e/<screen>.viewports.spec.ts`, so a new screen adds a file rather than editing a shared spec
 - the `/dev/components` demo list, when adding a component in your lane
 - the route list in `apps/api/src/app.ts` and `apps/api/src/composition.ts`
 - `package-lock.json`: after a rebase, run `npm install` rather than editing it by hand

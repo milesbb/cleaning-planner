@@ -159,6 +159,10 @@ export async function fakeApi(
   });
 }
 
+export function asObject(value: unknown): object {
+  return typeof value === 'object' && value !== null ? value : {};
+}
+
 // Load a page and wait for its scripts, so typing isn't wiped when React hydrates.
 export async function openPage(page: Page, path: string): Promise<void> {
   await page.goto(path);
