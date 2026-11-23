@@ -21,7 +21,7 @@ function notUsed(): Promise<never> {
 }
 
 const UNUSED_SERVICES: AppServices = {
-  profiles: { getMyProfile: notUsed, updateMyProfile: notUsed },
+  profiles: { getMyProfile: notUsed, updateMyProfile: notUsed, refreshMyEmail: notUsed },
   households: {
     createHome: notUsed,
     listHomes: notUsed,

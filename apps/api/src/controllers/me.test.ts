@@ -13,6 +13,7 @@ function profileService(): ProfileService {
     updateMyProfile: vi.fn((_userId: string, changes: object) =>
       Promise.resolve({ ...SAM, ...changes }),
     ),
+    refreshMyEmail: vi.fn(() => Promise.resolve({ ...SAM, email: 'sam@new.example.com' })),
   };
 }
 
@@ -44,6 +45,44 @@ describe('GET /v1/me', () => {
       .get('/v1/me')
       .set(CLAIMS_HEADER, SIGNED_IN_AS_SAM);
     expect(response.status).toBe(401);
+  });
+});
+
+describe('POST /v1/me/email', () => {
+  it('needs a signed-in user', async () => {
+    const response = await request(appWith(profileService())).post('/v1/me/email');
+    expect(response.status).toBe(401);
+  });
+
+  it('picks up the new email from Cognito with the access token and returns the profile', async () => {
+    const profiles = profileService();
+    const response = await request(appWith(profiles))
+      .post('/v1/me/email')
+      .set(CLAIMS_HEADER, SIGNED_IN_AS_SAM)
+      .set('Authorization', 'Bearer the-access-token');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ ...SAM, email: 'sam@new.example.com' });
+    expect(profiles.refreshMyEmail).toHaveBeenCalledWith('user-sam', 'the-access-token');
+  });
+
+  it('needs the access token to ask Cognito', async () => {
+    const profiles = profileService();
+    const response = await request(appWith(profiles))
+      .post('/v1/me/email')
+      .set(CLAIMS_HEADER, SIGNED_IN_AS_SAM);
+    expect(response.status).toBe(401);
+    expect(profiles.refreshMyEmail).not.toHaveBeenCalled();
+  });
+
+  it('refuses an email sent by the app, which only Cognito may change', async () => {
+    const profiles = profileService();
+    const response = await request(appWith(profiles))
+      .post('/v1/me/email')
+      .set(CLAIMS_HEADER, SIGNED_IN_AS_SAM)
+      .set('Authorization', 'Bearer the-access-token')
+      .send({ email: 'evil@example.com' });
+    expect(response.status).toBe(400);
+    expect(profiles.refreshMyEmail).not.toHaveBeenCalled();
   });
 });
 

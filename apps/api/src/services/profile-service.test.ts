@@ -12,12 +12,17 @@ function storeWith(existing: Profile | null): ProfileStore {
     updateProfile: vi.fn((userId: string, changes: object) =>
       Promise.resolve({ ...SAM, id: userId, ...changes }),
     ),
+    updateEmail: vi.fn((userId: string, email: string) =>
+      Promise.resolve({ ...SAM, id: userId, email }),
+    ),
   };
 }
 
-const identity: IdentityReader = {
-  readIdentity: vi.fn(() => Promise.resolve({ email: 'sam@example.com', name: 'Sam' })),
-};
+function identityWith(email: string, isEmailVerified: boolean): IdentityReader {
+  return { readIdentity: vi.fn(() => Promise.resolve({ email, name: 'Sam', isEmailVerified })) };
+}
+
+const identity = identityWith('sam@example.com', true);
 
 describe('profile service', () => {
   it('returns an existing profile without asking Cognito', async () => {
@@ -46,6 +51,44 @@ describe('profile service', () => {
     const service = createProfileService(store, identity);
     await service.updateMyProfile('user-sam', { colour: 'pink' });
     expect(store.updateProfile).toHaveBeenCalledWith('user-sam', { colour: 'pink' });
+  });
+});
+
+describe('refreshing my email from Cognito', () => {
+  it('saves a new email once Cognito has verified it', async () => {
+    const store = storeWith(SAM);
+    const reader = identityWith('sam@new.example.com', true);
+    const service = createProfileService(store, reader);
+    await expect(service.refreshMyEmail('user-sam', 'access-token')).resolves.toEqual({
+      ...SAM,
+      email: 'sam@new.example.com',
+    });
+    expect(reader.readIdentity).toHaveBeenCalledWith('access-token');
+    expect(store.updateEmail).toHaveBeenCalledWith('user-sam', 'sam@new.example.com');
+  });
+
+  it('keeps the old email while the new one is unverified', async () => {
+    const store = storeWith(SAM);
+    const service = createProfileService(store, identityWith('sam@new.example.com', false));
+    await expect(service.refreshMyEmail('user-sam', 'access-token')).resolves.toEqual(SAM);
+    expect(store.updateEmail).not.toHaveBeenCalled();
+  });
+
+  it('changes nothing when the email is the same', async () => {
+    const store = storeWith(SAM);
+    const service = createProfileService(store, identity);
+    await expect(service.refreshMyEmail('user-sam', 'access-token')).resolves.toEqual(SAM);
+    expect(store.updateEmail).not.toHaveBeenCalled();
+  });
+
+  it('sets up the profile first if this is the first call', async () => {
+    const store = storeWith(null);
+    const service = createProfileService(store, identity);
+    await expect(service.refreshMyEmail('user-sam', 'access-token')).resolves.toMatchObject({
+      email: 'sam@example.com',
+    });
+    expect(store.createProfile).toHaveBeenCalled();
+    expect(store.updateEmail).not.toHaveBeenCalled();
   });
 });
 

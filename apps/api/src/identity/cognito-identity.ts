@@ -18,6 +18,7 @@ const getUserResponseSchema = z.object({
 });
 
 const identitySchema = z.object({ email: emailSchema, name: displayNameSchema });
+const COGNITO_TRUE = 'true';
 
 async function sendWithToken(
   client: CognitoClient,
@@ -40,7 +41,11 @@ export function createCognitoIdentityReader(client: CognitoClient): IdentityRead
       const attributes = Object.fromEntries(
         UserAttributes.map((attribute) => [attribute.Name, attribute.Value]),
       );
-      return identitySchema.parse({ email: attributes.email, name: attributes.name });
+      const { email, name } = identitySchema.parse({
+        email: attributes.email,
+        name: attributes.name,
+      });
+      return { email, name, isEmailVerified: attributes.email_verified === COGNITO_TRUE };
     },
   };
 }
