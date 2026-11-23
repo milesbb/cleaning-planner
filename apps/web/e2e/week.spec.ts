@@ -21,6 +21,20 @@ test.describe('This week', () => {
     await expect(days.filter({ hasText: 'Nothing planned' })).toHaveCount(7);
   });
 
+  test('says roughly how long each day will take, leaving out what is done', async ({ page }) => {
+    await logInToHome(page);
+    await page.goto('/week');
+    const today = page
+      .getByRole('list', { name: 'Days' })
+      .getByRole('listitem')
+      .filter({ hasText: 'Today' });
+    await expect(today).toContainText('about 20 min');
+    await page.goto('/today');
+    await page.getByRole('button', { name: 'Mark Wipe the hob as done' }).click();
+    await page.goto('/week');
+    await expect(today).toContainText('about 10 min');
+  });
+
   test('explains when the week cannot be loaded', async ({ page }) => {
     await logInToHome(page);
     await fakeApi(page, '/v1/households/home-1/agenda*', {

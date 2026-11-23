@@ -15,6 +15,7 @@ interface WeekJob {
   name: string;
   icon: JobIconKey;
   state: WeekJobState;
+  effortMinutes: number;
 }
 
 interface WeekDay {
@@ -58,7 +59,9 @@ export function weekTitle(offset: number, weekStart: CalendarDate): string {
 
 function jobOf(jobs: readonly Job[], jobId: string, state: WeekJobState): WeekJob[] {
   const job = jobs.find((candidate) => candidate.id === jobId);
-  return job === undefined ? [] : [{ name: job.name, icon: job.icon, state }];
+  return job === undefined
+    ? []
+    : [{ name: job.name, icon: job.icon, state, effortMinutes: job.effortMinutes }];
 }
 
 function dayOf(day: AgendaResponse['days'][number], sources: WeekSources): WeekDay {
