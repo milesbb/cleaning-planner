@@ -3,12 +3,14 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import type { IconComponent } from './create-icon';
+import * as installIcons from './install-icons';
 import * as interfaceIcons from './interface-icons';
 import { JOB_ICONS, JobIcon } from './job-icons';
 
-const interfaceIconEntries = Object.entries(interfaceIcons).filter(
-  (entry): entry is [string, IconComponent] => typeof entry[1] === 'function',
-);
+const interfaceIconEntries = [
+  ...Object.entries(interfaceIcons),
+  ...Object.entries(installIcons),
+].filter((entry): entry is [string, IconComponent] => typeof entry[1] === 'function');
 
 describe('icons', () => {
   it('has no accessibility violations, decorative or labelled', async () => {
