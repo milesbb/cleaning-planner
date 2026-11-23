@@ -41,7 +41,7 @@ apps/api            Express API for Lambda (controllers → service → data)
 packages/schedule   Scheduling engine (pure TypeScript, 95% coverage gate)
 packages/work-board The issue board for parallel sessions (npm run work:board)
 infrastructure/     CloudFormation template (app + pipeline) and CodeBuild buildspec
-docs/               Plan, implementation order and the parallel-work guide
+docs/               Plan, implementation order, the parallel-work guide and the tablet and desktop layouts
 .github/            PR check workflows and Dependabot
 CLAUDE.md           Claude Code context and rules (plus one per app/package)
 ```
@@ -173,6 +173,8 @@ The budget alert is **account-wide** and defaults to $5/month. If the account al
 3. Add the Vercel production URL to the `AllowedOrigins` parameter default in `infrastructure/template.yml` and push (the pipeline updates CORS).
 
 Vercel's GitHub integration also gives every pull request its own preview URL. Previews include the review pages, `/dev/components/` (every component in every state) and `/dev/shell/` (the app frame), so you can check them on a phone; the live site never does.
+
+Vercel only builds what the website is built from. `apps/web/vercel.json` turns off deployments of the `development` branch itself, and its `ignoreCommand` (`apps/web/scripts/vercel-ignored-build-step.ts`) skips a preview when the branch, compared with where it left `development`, changes nothing under `apps/web`, `packages/schedule` or `packages/contracts` and none of the root `package.json`, `package-lock.json`, `turbo.json` or `tsconfig.base.json` (Markdown files never count). Pushes to `production` are always built, and a branch whose changes the script can't work out is built too. So API, infrastructure, CI and docs PRs don't use Vercel builds.
 
 ## Licence
 

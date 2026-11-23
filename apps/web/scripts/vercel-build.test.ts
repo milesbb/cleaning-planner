@@ -27,3 +27,13 @@ describe('the website Vercel serves (vercel.json)', () => {
     expect(build && String(scripts.build)).toContain('scripts/apply-content-security-policy.ts');
   });
 });
+
+describe('which pushes Vercel builds (vercel.json)', () => {
+  it('asks scripts/vercel-ignored-build-step.ts whether a push changes the website', () => {
+    expect(vercel.ignoreCommand).toBe('node scripts/vercel-ignored-build-step.ts');
+  });
+
+  it('never deploys the development branch itself, but does deploy production', () => {
+    expect(vercel.git).toEqual({ deploymentEnabled: { development: false } });
+  });
+});

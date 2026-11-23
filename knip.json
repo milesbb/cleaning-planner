@@ -6,7 +6,7 @@
       "ignoreDependencies": ["@types/aws-lambda"]
     },
     "apps/web": {
-      "entry": ["src/service-worker/service-worker.ts"]
+      "entry": ["src/service-worker/service-worker.ts", "scripts/vercel-ignored-build-step.ts"]
     }
   }
 }
