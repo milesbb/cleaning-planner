@@ -26,3 +26,7 @@ testAtEveryViewport('Home settings for the owner', '/settings/home', {
   prepare: (page) => logInToHome(page, { isOwner: true }),
   readyText: 'Change home details',
 });
+testAtEveryViewport('Change password', '/settings/account/password', {
+  prepare: logInToHome,
+  readyText: 'Current password',
+});
