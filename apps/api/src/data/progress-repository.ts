@@ -1,14 +1,17 @@
+import { activityEntrySchema } from '@cleaning-planner/contracts/activity';
+import type { ActivityEntry } from '@cleaning-planner/contracts/activity';
 import { completionSchema, jobProgressSchema } from '@cleaning-planner/contracts/completion';
 import type { CompletionRecord, JobProgress } from '@cleaning-planner/contracts/completion';
 import type { Job } from '@cleaning-planner/contracts/job';
 import { z } from '@cleaning-planner/contracts/zod';
 import type { Snooze } from '@cleaning-planner/schedule/types';
+import type { ActivityStore } from '../services/activity-service';
 import type { HomeCompletionStore } from '../services/agenda-service';
 import type { ProgressStore, RequestRecord, RequestRef } from '../services/job-progress-service';
-import { findHomeItem, homeItemKey, homeItems } from './home-items';
+import { findHomeItem, homeItemKey, homeItems, latestHomeItems } from './home-items';
 import { Keys } from './table';
 import type { Table } from './table';
-import { deleteItem, putItem, transact, versionedUpdate } from './transactions';
+import { deleteIfPresent, deleteItem, putItem, transact, versionedUpdate } from './transactions';
 import type { TransactItem } from './transactions';
 
 const MILLISECONDS_PER_SECOND = 1000;
@@ -17,6 +20,7 @@ const JOB_CHANGED = 'Someone else changed this job. Reload and try again.';
 
 const storedCompletionSchema = z.object(completionSchema.shape);
 const storedRequestSchema = z.object({ result: jobProgressSchema });
+const storedActivitySchema = z.object(activityEntrySchema.shape);
 
 function rememberRequest(table: Table, householdId: string, request: RequestRecord): TransactItem {
   return putItem(table, {
@@ -28,6 +32,48 @@ function rememberRequest(table: Table, householdId: string, request: RequestReco
 
 function completionKey(householdId: string, completion: CompletionRecord): Record<string, string> {
   return homeItemKey(householdId, Keys.done(completion.jobId, completion.doneAt));
+}
+
+function activityKey(householdId: string, completion: CompletionRecord): Record<string, string> {
+  return homeItemKey(householdId, Keys.activity(completion.doneAt, completion.jobId));
+}
+
+// The completion, and the home's activity entry that keeps the job's name.
+function recordCompletion(
+  table: Table,
+  householdId: string,
+  entry: ActivityEntry,
+  request: RequestRecord,
+): TransactItem[] {
+  const completion = storedCompletionSchema.parse(entry);
+  return [
+    putItem(table, { ...completionKey(householdId, completion), ...completion }),
+    putItem(table, { ...activityKey(householdId, completion), ...entry }),
+    rememberRequest(table, householdId, request),
+  ];
+}
+
+// Completions saved before activity entries existed have none to delete.
+function forgetCompletion(
+  table: Table,
+  householdId: string,
+  completion: CompletionRecord,
+  request: RequestRecord,
+): TransactItem[] {
+  return [
+    deleteItem(table, completionKey(householdId, completion)),
+    deleteIfPresent(table, activityKey(householdId, completion)),
+    rememberRequest(table, householdId, request),
+  ];
+}
+
+async function latestActivity(
+  table: Table,
+  householdId: string,
+  limit: number,
+): Promise<ActivityEntry[]> {
+  const items = await latestHomeItems(table, householdId, { prefix: Keys.activityPrefix, limit });
+  return items.map((item) => storedActivitySchema.parse(item));
 }
 
 async function completionsWith(
@@ -47,29 +93,17 @@ async function findResult(
   return item === undefined ? null : storedRequestSchema.parse(item).result;
 }
 
-export function createProgressRepository(table: Table): ProgressStore & HomeCompletionStore {
+export function createProgressRepository(
+  table: Table,
+): ProgressStore & HomeCompletionStore & ActivityStore {
   return {
     listCompletions: (householdId, jobId) =>
       completionsWith(table, householdId, Keys.donePrefix(jobId)),
     listHomeCompletions: (householdId) => completionsWith(table, householdId, Keys.allDonePrefix),
-    addCompletion: (householdId, completion, request) =>
-      transact(
-        table,
-        [
-          putItem(table, { ...completionKey(householdId, completion), ...completion }),
-          rememberRequest(table, householdId, request),
-        ],
-        ALREADY_SAVED,
-      ),
+    addCompletion: (householdId, entry, request) =>
+      transact(table, recordCompletion(table, householdId, entry, request), ALREADY_SAVED),
     removeCompletion: (householdId, completion, request) =>
-      transact(
-        table,
-        [
-          deleteItem(table, completionKey(householdId, completion)),
-          rememberRequest(table, householdId, request),
-        ],
-        ALREADY_SAVED,
-      ),
+      transact(table, forgetCompletion(table, householdId, completion, request), ALREADY_SAVED),
     snoozeJob: (householdId: string, job: Job, snooze: Snooze, request) =>
       transact(
         table,
@@ -83,5 +117,6 @@ export function createProgressRepository(table: Table): ProgressStore & HomeComp
         JOB_CHANGED,
       ),
     findResult: (request) => findResult(table, request),
+    listActivity: (householdId, limit) => latestActivity(table, householdId, limit),
   };
 }
