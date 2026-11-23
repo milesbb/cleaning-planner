@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { AccountForm, FormAlert } from '@/components/account/account-screen';
+import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { roomsError } from '@/lib/setup/home-setup';
 import { useHomeSetup } from '@/lib/setup/home-setup-draft';
-import { ChoicesContinueButton } from '../setup-screen';
 import { RoomChoices } from './room-choices';
 
 interface RoomsErrors {
@@ -32,7 +32,7 @@ export function RoomsForm(): ReactNode {
     return true;
   };
   return (
-    <AccountForm onSubmit={submit} actions={<ChoicesContinueButton />}>
+    <AccountForm onSubmit={submit} actions={<Button type="submit">Continue</Button>}>
       <TextField
         label="Home name"
         hint="What everyone calls it, like “Our flat”."

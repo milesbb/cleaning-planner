@@ -76,7 +76,7 @@ export function RoomChoices({ roomCounts, onChange }: RoomChoicesProps): ReactNo
   return (
     <fieldset className="flex flex-col gap-3">
       <legend className="mb-3 font-display text-xl font-extrabold">Rooms</legend>
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="flex flex-col gap-3">
         {ROOM_ORDER.map((type) => (
           <RoomChoice
             key={type}

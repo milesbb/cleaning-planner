@@ -8,7 +8,7 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { countOf } from '@/lib/rooms';
 
 function InviteActions({ children }: { children: ReactNode }): ReactNode {
-  return <div className="mt-auto flex flex-col items-stretch gap-3.5 sm:mt-0">{children}</div>;
+  return <div className="mt-auto flex flex-col items-stretch gap-3.5">{children}</div>;
 }
 
 export function SignedOutInvite(): ReactNode {
