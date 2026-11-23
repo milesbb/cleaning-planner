@@ -33,6 +33,7 @@ export function homeAnswers(): FakeAnswers {
     [`GET ${HOME_PATH}/rooms`]: () => Promise.resolve(TODAY_FIXTURE.rooms),
     [`GET ${HOME_PATH}/jobs`]: () => Promise.resolve(TODAY_FIXTURE.jobs),
     [`GET ${HOME_PATH}/jobs/job-oven/completions`]: () => Promise.resolve([]),
+    [`GET ${HOME_PATH}/activity?limit=10`]: () => Promise.resolve([]),
     [`GET ${HOME_PATH}/progress`]: () =>
       Promise.resolve(
         Object.entries(NEXT_DUE).map(([jobId, nextDueDate]) => ({
