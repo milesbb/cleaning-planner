@@ -9,6 +9,7 @@ import {
   ScreenProblem,
   useStartAHomeWhenHomeless,
 } from '@/components/shell/screen-states';
+import { PlusIcon } from '@/components/icons/interface-icons';
 import { ButtonLink } from '@/components/ui/button';
 import { jobHref } from '@/lib/home/job-href';
 import { jobsInRoom } from '@/lib/home/room-jobs';
@@ -21,7 +22,7 @@ type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
 
 const BACK_HOME = <BackLink href="/home" label="Back to Home" />;
 
-function RoomNotFound(): ReactNode {
+export function RoomNotFound(): ReactNode {
   return (
     <>
       <PageHeader title="Room not found" leading={BACK_HOME} />
@@ -40,6 +41,10 @@ function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): Re
   return (
     <>
       <PageHeader title={room.name} subtitle={countOf(jobs.length, 'job')} leading={BACK_HOME} />
+      <ButtonLink href={`/room/add?id=${encodeURIComponent(room.id)}`} variant="dashed">
+        <PlusIcon />
+        Add a job
+      </ButtonLink>
       {jobs.length === 0 ? (
         <p className="text-[1.0625rem]">No jobs in this room yet.</p>
       ) : (

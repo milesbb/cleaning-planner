@@ -30,3 +30,7 @@ testAtEveryViewport('Change password', '/settings/account/password', {
   prepare: logInToHome,
   readyText: 'Current password',
 });
+testAtEveryViewport('Add a job', '/room/add?id=room-kitchen', {
+  prepare: logInToHome,
+  readyText: 'Make your own job',
+});

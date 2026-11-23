@@ -101,10 +101,27 @@ function jobIdIn(url: string): string {
   return /jobs\/([^/?]+)/.exec(url)?.[1] ?? '';
 }
 
-// Jobs can be renamed and removed; a snooze is accepted but changes nothing.
+// Jobs can be added, renamed and removed; a snooze is accepted but changes nothing.
 async function fakeJobs(page: Page): Promise<void> {
   const jobs = JOBS.map((saved) => ({ ...saved }));
   await fakeApi(page, `${HOME}/jobs`, () => ({ body: jobs }), { method: 'GET' });
+  await fakeApi(
+    page,
+    `${HOME}/jobs`,
+    (request) => {
+      const added: Record<string, unknown> = {
+        id: `job-${String(jobs.length + 1)}`,
+        libraryId: null,
+        startDate: calendarDay(0),
+        snooze: null,
+        version: 1,
+        ...asObject(request.postDataJSON()),
+      };
+      jobs.push(added);
+      return { status: 201, body: added };
+    },
+    { method: 'POST' },
+  );
   await fakeApi(
     page,
     `${HOME}/jobs/*`,
