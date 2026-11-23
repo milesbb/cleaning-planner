@@ -136,11 +136,18 @@ function DayRowsDemo(): ReactNode {
         weekday="Fri"
         dayOfMonth={20}
         jobs={[
-          { name: 'Clean dishwasher filter', icon: 'dishwasher', state: 'late', effortMinutes: 15 },
+          {
+            name: 'Clean dishwasher filter',
+            icon: 'dishwasher',
+            state: 'late',
+            effortMinutes: 15,
+            onMove: () => undefined,
+            drag: { onStart: () => undefined, onEnd: () => undefined },
+          },
           { name: 'Fridge shelves', icon: 'fridge', state: 'done', effortMinutes: 20 },
         ]}
       />
-      <DayRow weekday="Sat" dayOfMonth={21} jobs={[]} />
+      <DayRow weekday="Sat" dayOfMonth={21} jobs={[]} onDrop={() => undefined} />
       <DayRow
         weekday="Sun"
         dayOfMonth={22}

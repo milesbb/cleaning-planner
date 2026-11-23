@@ -1,12 +1,17 @@
 import type { JobIconKey } from '@cleaning-planner/schedule/library/types';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { ButtonHTMLAttributes, DragEvent, HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { CheckIcon, ChevronRightIcon } from '../icons/interface-icons';
 import { Badge } from '../ui/badge';
 import { IconTile } from './icon-tile';
 
 type DayJobState = 'toDo' | 'done' | 'late';
+
+export interface JobDrag {
+  onStart: () => void;
+  onEnd: () => void;
+}
 
 interface DayJob {
   name: string;
@@ -15,6 +20,8 @@ interface DayJob {
   effortMinutes: number;
   // Given when the job can be moved to another day; the tile becomes a button.
   onMove?: () => void;
+  // Given as well where a mouse can drag the job to another day.
+  drag?: JobDrag;
 }
 
 const MINUTES_PER_HOUR = 60;
@@ -25,6 +32,8 @@ interface DayRowProps {
   jobs: readonly DayJob[];
   isToday?: boolean;
   href?: string;
+  // Given while a job is being dragged and this day can take it.
+  onDrop?: () => void;
 }
 
 const STATE_LABELS: Record<DayJobState, string> = {
@@ -53,6 +62,21 @@ function DayJobPicture({ job }: { job: DayJob }): ReactNode {
   );
 }
 
+function dragProps(job: DayJob): ButtonHTMLAttributes<HTMLButtonElement> {
+  const { drag } = job;
+  if (drag === undefined) return {};
+  return {
+    draggable: true,
+    onDragStart: (event): void => {
+      event.dataTransfer.effectAllowed = 'move';
+      // Firefox only starts a drag that carries some data.
+      event.dataTransfer.setData('text/plain', job.name);
+      drag.onStart();
+    },
+    onDragEnd: drag.onEnd,
+  };
+}
+
 function DayJobTile({ job, canTap }: { job: DayJob; canTap: boolean }): ReactNode {
   const name = `${job.name}, ${STATE_LABELS[job.state]}`;
   if (!canTap || job.onMove === undefined) {
@@ -67,6 +91,7 @@ function DayJobTile({ job, canTap }: { job: DayJob; canTap: boolean }): ReactNod
       type="button"
       aria-label={`Move ${name}`}
       onClick={job.onMove}
+      {...dragProps(job)}
       className="flex size-11 items-center justify-center rounded-control focus-visible:outline-3 focus-visible:outline-ink"
     >
       <DayJobPicture job={job} />
@@ -109,7 +134,23 @@ function DayProgress({ jobs }: { jobs: readonly DayJob[] }): ReactNode {
   );
 }
 
-interface DayContentProps extends Omit<DayRowProps, 'href'> {
+function dropProps(onDrop: (() => void) | undefined): HTMLAttributes<HTMLDivElement> {
+  if (onDrop === undefined) return {};
+  const takeMove = (event: DragEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  };
+  return {
+    onDragOver: takeMove,
+    onDragEnter: takeMove,
+    onDrop: (event): void => {
+      event.preventDefault();
+      onDrop();
+    },
+  };
+}
+
+interface DayContentProps extends Omit<DayRowProps, 'href' | 'onDrop'> {
   canTapJobs: boolean;
 }
 
@@ -145,11 +186,14 @@ function DayContent({
   );
 }
 
-export function DayRow({ href, ...day }: DayRowProps): ReactNode {
-  const classes = cn(ROW_CLASSES, { 'bg-kitchen': day.isToday === true });
+export function DayRow({ href, onDrop, ...day }: DayRowProps): ReactNode {
+  const classes = cn(ROW_CLASSES, {
+    'bg-kitchen': day.isToday === true,
+    'outline-3 -outline-offset-4 outline-ink outline-dashed': onDrop !== undefined,
+  });
   if (href === undefined)
     return (
-      <div className={classes}>
+      <div className={classes} {...dropProps(onDrop)}>
         <DayContent {...day} canTapJobs />
       </div>
     );

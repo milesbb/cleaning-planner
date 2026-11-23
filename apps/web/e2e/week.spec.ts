@@ -1,7 +1,20 @@
 import { expect, test } from '@playwright/test';
-import { fakeApi } from './support/fake-backend';
+import type { Locator, Page } from '@playwright/test';
+import { fakeApi, holdApi } from './support/fake-backend';
 import { logInToHome } from './support/fake-home';
 import { calendarDay } from './support/fake-home-state';
+
+const MOVE_VACUUM = 'Move Vacuum the living room, to do';
+
+// Today's row and the one after it, or null when today ends the week shown.
+async function todayAndTomorrow(page: Page): Promise<{ today: Locator; tomorrow: Locator } | null> {
+  const days = page.getByRole('list', { name: 'Days' }).getByRole('listitem');
+  await expect(days).toHaveCount(7);
+  const texts = await days.allTextContents();
+  const todayIndex = texts.findIndex((text) => text.startsWith('Today'));
+  if (todayIndex === -1 || todayIndex === texts.length - 1) return null;
+  return { today: days.nth(todayIndex), tomorrow: days.nth(todayIndex + 1) };
+}
 
 test.describe('This week', () => {
   test('shows the week from the tab bar, with today and its jobs, and moves between weeks', async ({
@@ -70,6 +83,38 @@ test.describe('This week', () => {
     await expect(
       page.getByRole('button', { name: 'Move Vacuum the living room, to do' }),
     ).toBeVisible();
+  });
+
+  test('drags a job to tomorrow on a laptop', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mouse only');
+    await logInToHome(page);
+    const snoozes = await holdApi(page, '/v1/households/home-1/jobs/job-vacuum/snooze', 'POST');
+    await page.goto('/week');
+    const rows = await todayAndTomorrow(page);
+    test.skip(rows === null, 'today ends the week, so tomorrow is not shown');
+    if (rows === null) return;
+    await rows.today.getByRole('button', { name: MOVE_VACUUM }).dragTo(rows.tomorrow);
+    await expect(rows.tomorrow.getByRole('img', { name: /Vacuum the living room/ })).toBeVisible();
+    await expect(rows.today.getByText(/Vacuum/)).toHaveCount(0);
+    expect(snoozes[0]?.postDataJSON()).toMatchObject({ until: calendarDay(1) });
+  });
+
+  test('puts a dragged job back and says so when it cannot move', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mouse only');
+    await logInToHome(page);
+    await fakeApi(
+      page,
+      '/v1/households/home-1/jobs/*/snooze',
+      { status: 400, body: { error: { code: 'badRequest', message: 'Snooze to a later day' } } },
+      { method: 'POST' },
+    );
+    await page.goto('/week');
+    const rows = await todayAndTomorrow(page);
+    test.skip(rows === null, 'today ends the week, so tomorrow is not shown');
+    if (rows === null) return;
+    await rows.today.getByRole('button', { name: MOVE_VACUUM }).dragTo(rows.tomorrow);
+    await expect(page.getByRole('main').getByRole('alert')).toHaveText('Snooze to a later day');
+    await expect(rows.today.getByRole('button', { name: MOVE_VACUUM })).toBeVisible();
   });
 
   test('explains when the week cannot be loaded', async ({ page }) => {

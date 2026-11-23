@@ -6,9 +6,12 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { FormAlert } from '@/components/account/account-screen';
 import { DayRow } from '@/components/jobs/day-row';
+import type { JobDrag } from '@/components/jobs/day-row';
 import { Card } from '@/components/ui/card';
 import { MoveJobSheet } from './move-job-sheet';
 import type { JobToMove } from './move-job-sheet';
+import { useJobDrag } from './use-job-drag';
+import type { JobDragging } from './use-job-drag';
 import { useMoveJob } from './use-move-job';
 import type { WeekJob, WeekRange, WeekView } from './week-view';
 
@@ -21,22 +24,42 @@ interface WeekDaysProps {
   view: WeekView;
 }
 
-function withMove(job: WeekJob, pick: (job: JobToMove) => void): WeekJob & { onMove?: () => void } {
+interface MovableWeekJob extends WeekJob {
+  onMove?: () => void;
+  drag?: JobDrag;
+}
+
+function withMove(
+  job: WeekJob,
+  pick: (job: JobToMove) => void,
+  dragging: JobDragging,
+): MovableWeekJob {
   const { movableFrom } = job;
   if (movableFrom === null) return job;
+  const jobToMove: JobToMove = { jobId: job.jobId, name: job.name, dueDate: movableFrom };
+  const drag = dragging.dragFor(jobToMove);
   return {
     ...job,
     onMove: (): void => {
-      pick({ jobId: job.jobId, name: job.name, dueDate: movableFrom });
+      pick(jobToMove);
     },
+    ...(drag === undefined ? {} : { drag }),
   };
 }
 
+function dropProps(dragging: JobDragging, day: CalendarDate): { onDrop?: () => void } {
+  const onDrop = dragging.dropFor(day);
+  return onDrop === undefined ? {} : { onDrop };
+}
+
 // The week's days. Tapping a job that can move offers the later days of this
-// week and the next; the move shows at once and is put back if it fails.
+// week and the next, as does dragging it on a laptop; the move shows at once
+// and is put back if it fails.
 export function WeekDays({ householdId, today, range, view }: WeekDaysProps): ReactNode {
   const [jobToMove, setJobToMove] = useState<JobToMove | null>(null);
   const moving = useMoveJob({ householdId, range });
+  const lastDay = addInterval(range.to, ONE_WEEK);
+  const dragging = useJobDrag({ today, lastDay, onMove: moving.move });
   return (
     <>
       {moving.failure === null ? null : <FormAlert>{moving.failure}</FormAlert>}
@@ -47,8 +70,9 @@ export function WeekDays({ householdId, today, range, view }: WeekDaysProps): Re
               <DayRow
                 weekday={day.weekday}
                 dayOfMonth={day.dayOfMonth}
-                jobs={day.jobs.map((job) => withMove(job, setJobToMove))}
+                jobs={day.jobs.map((job) => withMove(job, setJobToMove, dragging))}
                 isToday={day.isToday}
+                {...dropProps(dragging, day.date)}
               />
             </li>
           ))}
@@ -57,7 +81,7 @@ export function WeekDays({ householdId, today, range, view }: WeekDaysProps): Re
       <MoveJobSheet
         job={jobToMove}
         today={today}
-        lastDay={addInterval(range.to, ONE_WEEK)}
+        lastDay={lastDay}
         onClose={() => {
           setJobToMove(null);
         }}
