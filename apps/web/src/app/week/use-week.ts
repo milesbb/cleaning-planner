@@ -5,7 +5,7 @@ import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useState } from 'react';
 import { homeToday } from '@/lib/home/home-day';
-import { useAgenda, useHousehold, useJobs } from '@/lib/home/home-queries';
+import { useAgenda, useHousehold, useJobs, useProgress } from '@/lib/home/home-queries';
 import { useCurrentHome } from '@/lib/home/use-current-home';
 import { buildWeekView, weekRange, weekTitle } from './week-view';
 import type { WeekRange, WeekView } from './week-view';
@@ -13,6 +13,7 @@ import type { WeekRange, WeekView } from './week-view';
 interface ReadyWeek {
   kind: 'ready';
   title: string;
+  today: CalendarDate;
   range: WeekRange;
   view: WeekView;
   homes: readonly HouseholdSummary[];
@@ -48,17 +49,26 @@ function useWeekQueries(householdId: string | null, offset: number): WeekQueries
       ? null
       : weekRange(today, household.data.weekStartsOn, offset);
   const agenda = useAgenda(householdId, range === null ? null : { ...range, person: null });
+  const progress = useProgress(householdId);
+  const nextDueDates = new Map(
+    (progress.data ?? []).map((entry) => [entry.jobId, entry.nextDueDate]),
+  );
   const isLoaded =
     today !== null && range !== null && jobs.data !== undefined && agenda.data !== undefined;
   return {
     queries: [household, jobs, agenda],
     week: isLoaded
-      ? { today, range, view: buildWeekView({ agenda: agenda.data, jobs: jobs.data, today }) }
+      ? {
+          today,
+          range,
+          view: buildWeekView({ agenda: agenda.data, jobs: jobs.data, today, nextDueDates }),
+        }
       : null,
   };
 }
 
 // The current home's week (or one `offset` weeks away), following its week start.
+// Progress only says which jobs can be moved, so the week shows without it.
 export function useWeek(): WeekState {
   const current = useCurrentHome();
   const [offset, showWeek] = useState(0);
@@ -70,6 +80,7 @@ export function useWeek(): WeekState {
   return {
     kind: 'ready',
     title: weekTitle(offset, week.range.from),
+    today: week.today,
     range: week.range,
     view: week.view,
     homes: current.homes.data ?? [],

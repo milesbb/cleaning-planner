@@ -13,6 +13,8 @@ interface DayJob {
   icon: JobIconKey;
   state: DayJobState;
   effortMinutes: number;
+  // Given when the job can be moved to another day; the tile becomes a button.
+  onMove?: () => void;
 }
 
 const MINUTES_PER_HOUR = 60;
@@ -34,21 +36,41 @@ const STATE_LABELS: Record<DayJobState, string> = {
 const ROW_CLASSES =
   'flex min-h-14 items-center gap-3 px-3 py-2.5 text-ink no-underline focus-visible:outline-3 focus-visible:-outline-offset-4 focus-visible:outline-ink';
 
-function DayJobTile({ job }: { job: DayJob }): ReactNode {
+function DayJobPicture({ job }: { job: DayJob }): ReactNode {
+  if (job.state === 'done') {
+    return (
+      <span className="flex size-8.5 items-center justify-center rounded-[0.5625rem] border-2 border-ink bg-done">
+        <CheckIcon size={20} strokeWidth={3} />
+      </span>
+    );
+  }
   return (
-    <span role="img" aria-label={`${job.name}, ${STATE_LABELS[job.state]}`}>
-      {job.state === 'done' ? (
-        <span className="flex size-8.5 items-center justify-center rounded-[0.5625rem] border-2 border-ink bg-done">
-          <CheckIcon size={20} strokeWidth={3} />
-        </span>
-      ) : (
-        <IconTile
-          icon={job.icon}
-          size="small"
-          colourClass={job.state === 'late' ? 'bg-late' : 'bg-card'}
-        />
-      )}
-    </span>
+    <IconTile
+      icon={job.icon}
+      size="small"
+      colourClass={job.state === 'late' ? 'bg-late' : 'bg-card'}
+    />
+  );
+}
+
+function DayJobTile({ job, canTap }: { job: DayJob; canTap: boolean }): ReactNode {
+  const name = `${job.name}, ${STATE_LABELS[job.state]}`;
+  if (!canTap || job.onMove === undefined) {
+    return (
+      <span role="img" aria-label={name}>
+        <DayJobPicture job={job} />
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      aria-label={`Move ${name}`}
+      onClick={job.onMove}
+      className="flex size-11 items-center justify-center rounded-control focus-visible:outline-3 focus-visible:outline-ink"
+    >
+      <DayJobPicture job={job} />
+    </button>
   );
 }
 
@@ -87,7 +109,17 @@ function DayProgress({ jobs }: { jobs: readonly DayJob[] }): ReactNode {
   );
 }
 
-function DayContent({ weekday, dayOfMonth, jobs, isToday }: Omit<DayRowProps, 'href'>): ReactNode {
+interface DayContentProps extends Omit<DayRowProps, 'href'> {
+  canTapJobs: boolean;
+}
+
+function DayContent({
+  weekday,
+  dayOfMonth,
+  jobs,
+  isToday,
+  canTapJobs,
+}: DayContentProps): ReactNode {
   return (
     <>
       <span className="flex w-11 shrink-0 flex-col items-center">
@@ -100,7 +132,7 @@ function DayContent({ weekday, dayOfMonth, jobs, isToday }: Omit<DayRowProps, 'h
         <>
           <span className="flex grow flex-wrap gap-1.5">
             {jobs.map((job, position) => (
-              <DayJobTile key={`${job.name}-${String(position)}`} job={job} />
+              <DayJobTile key={`${job.name}-${String(position)}`} job={job} canTap={canTapJobs} />
             ))}
           </span>
           <span className="flex shrink-0 flex-col items-end gap-0.5 text-right">
@@ -118,12 +150,12 @@ export function DayRow({ href, ...day }: DayRowProps): ReactNode {
   if (href === undefined)
     return (
       <div className={classes}>
-        <DayContent {...day} />
+        <DayContent {...day} canTapJobs />
       </div>
     );
   return (
     <Link href={href} aria-current={day.isToday === true ? 'date' : undefined} className={classes}>
-      <DayContent {...day} />
+      <DayContent {...day} canTapJobs={false} />
       <ChevronRightIcon size={20} />
     </Link>
   );
