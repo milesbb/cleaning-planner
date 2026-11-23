@@ -16,6 +16,7 @@ import { AssigneeSheet } from './assignee-sheet';
 import { DoneEarlierSheet } from './done-earlier-sheet';
 import { JobFact } from './job-fact';
 import { JobHistory } from './job-history';
+import { JobRoomFact, JobTimeFact } from './job-time-room';
 import { RemoveJobSheet } from './remove-job-sheet';
 import { RenameJobSheet } from './rename-job-sheet';
 import { ScheduleSheet } from './schedule-sheet';
@@ -151,6 +152,8 @@ export function JobAbout({ details, address, describeCompletion }: JobAboutProps
         <p className="text-[1.0625rem]">{details.whoFor}</p>
         <AssigneeSheet details={details} address={address} />
       </JobFact>
+      <JobTimeFact details={details} address={address} />
+      <JobRoomFact details={details} address={address} />
       <JobHistory address={address} lastDone={details.lastDone} describe={describeCompletion} />
       {details.why === null ? null : (
         <JobFact title="Why it matters">

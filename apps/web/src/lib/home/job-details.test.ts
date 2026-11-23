@@ -68,6 +68,17 @@ describe('jobDetailsOf', () => {
     });
   });
 
+  it('says how long it takes and which rooms it could move to, in the home’s order', () => {
+    const details = detailsOf();
+    expect(details.effortMinutes).toBe(30);
+    expect(details.roomId).toBe('room-kitchen');
+    expect(details.roomChoices).toEqual([
+      { value: 'room-kitchen', label: 'Kitchen' },
+      { value: 'room-living', label: 'Living room' },
+      { value: 'room-bed', label: 'Bedroom' },
+    ]);
+  });
+
   it.each([
     ['2026-11-24', 'Due today'],
     ['2026-11-25', 'Due tomorrow'],

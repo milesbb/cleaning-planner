@@ -60,7 +60,7 @@ describe('JobScreen', () => {
 
   it('shows when it is due, how often, who it is for and when it was last done', async () => {
     await openOven();
-    expect(screen.getByText('Kitchen')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Room' })).toHaveTextContent('Kitchen');
     expect(screen.getByText('Was due 22 November')).toBeInTheDocument();
     expect(screen.getByText('2 days late')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'How often' })).toHaveTextContent('Weekly');
