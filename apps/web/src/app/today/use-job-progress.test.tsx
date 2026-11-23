@@ -5,7 +5,8 @@ import type { RenderHookResult } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiProvider } from '@/lib/api/api-provider';
-import type { SavedDataStorage } from '@/lib/storage/saved-data-storage';
+import { memoryStorage } from '@/test/memory-storage';
+import type { MemoryStorage } from '@/test/memory-storage';
 import { clientAnswering } from '@/test/fake-api-client';
 import type { FakeApiClient } from '@/test/fake-api-client';
 import { useJobProgress } from './use-job-progress';
@@ -29,26 +30,6 @@ const CONTEXT: ProgressContext = {
   myUserId: 'user-alex',
   today: TODAY,
 };
-
-interface MemoryStorage extends SavedDataStorage {
-  savedText: () => string;
-}
-
-function memoryStorage(): MemoryStorage {
-  const saved = new Map<string, string>();
-  return {
-    savedText: (): string => [...saved.values()].join(''),
-    getItem: (key): Promise<string | null> => Promise.resolve(saved.get(key) ?? null),
-    setItem: (key, value): Promise<void> => {
-      saved.set(key, value);
-      return Promise.resolve();
-    },
-    removeItem: (key): Promise<void> => {
-      saved.delete(key);
-      return Promise.resolve();
-    },
-  };
-}
 
 function savingClient(): FakeApiClient {
   return clientAnswering({
