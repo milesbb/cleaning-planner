@@ -25,7 +25,6 @@ interface JobRowProps {
   room: RoomType;
   icon: JobIconKey;
   meta: string;
-  // Without an href the row isn't a link (until the job's own screen exists).
   href?: string;
   assignee?: Assignee;
   status: JobRowStatus;

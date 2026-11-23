@@ -61,6 +61,10 @@ describe('RoomScreen', () => {
     expect(screen.getByText('2 days late')).toBeInTheDocument();
     expect(screen.getByText('Weekly · Anyone · next 27 November')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/home');
+    expect(screen.getByRole('link', { name: /Clean the oven/ })).toHaveAttribute(
+      'href',
+      '/job?id=job-oven',
+    );
   });
 
   it('says when a room has no jobs yet', async () => {

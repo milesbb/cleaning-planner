@@ -28,11 +28,11 @@ const ROOMS = [
   },
 ];
 
-function job(id: string, roomId: string, name: string, icon: string): object {
+function job(id: string, roomId: string, name: string, icon: string): Record<string, unknown> {
   return {
     id,
     roomId,
-    libraryId: null,
+    libraryId: id === 'job-oven' ? 'kitchen.oven' : null,
     name,
     icon,
     schedule: { type: 'floating', every: { value: 1, unit: 'week' } },
@@ -123,13 +123,54 @@ async function fakeHomeReads(page: Page): Promise<void> {
     },
   });
   await fakeApi(page, `${HOME}/members`, { body: MEMBERS });
-  await fakeApi(page, `${HOME}/jobs`, { body: JOBS });
+}
+
+function jobIdIn(url: string): string {
+  return /jobs\/([^/?]+)/.exec(url)?.[1] ?? '';
+}
+
+// Jobs can be renamed and removed; a snooze is accepted but changes nothing.
+async function fakeJobs(page: Page): Promise<void> {
+  const jobs = JOBS.map((saved) => ({ ...saved }));
+  await fakeApi(page, `${HOME}/jobs`, () => ({ body: jobs }), { method: 'GET' });
+  await fakeApi(
+    page,
+    `${HOME}/jobs/*`,
+    (request) => {
+      const saved = jobs.find((candidate) => candidate.id === jobIdIn(request.url()));
+      if (saved === undefined) return { status: 404, body: { error: { code: 'notFound' } } };
+      Object.assign(saved, asObject(request.postDataJSON()), {
+        version: Number(saved.version) + 1,
+      });
+      return { body: saved };
+    },
+    { method: 'PATCH' },
+  );
+  await fakeApi(
+    page,
+    `${HOME}/jobs/*`,
+    (request) => {
+      const index = jobs.findIndex((candidate) => candidate.id === jobIdIn(request.url()));
+      if (index >= 0) jobs.splice(index, 1);
+      return { status: 204, body: undefined };
+    },
+    { method: 'DELETE' },
+  );
+  await fakeApi(page, `${HOME}/jobs/*/snooze`, (request) => ({
+    body: {
+      jobId: jobIdIn(request.url()),
+      nextDueDate: calendarDay(3),
+      snooze: null,
+      latestCompletion: null,
+    },
+  }));
 }
 
 // `failTicks` makes every tick fail with a server error.
 async function fakeHome(page: Page, { failTicks = false } = {}): Promise<void> {
   const doneJobIds = new Set<string>();
   await fakeHomeReads(page);
+  await fakeJobs(page);
   await fakeApi(page, `${HOME}/agenda*`, (request) => ({
     body: agendaFor(request.url(), doneJobIds),
   }));
