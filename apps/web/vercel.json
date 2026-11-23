@@ -3,6 +3,8 @@
   "framework": null,
   "buildCommand": "npm run build",
   "outputDirectory": "out",
+  "ignoreCommand": "node scripts/vercel-ignored-build-step.ts",
+  "git": { "deploymentEnabled": { "development": false } },
   "headers": [
     {
       "source": "/(.*)",
