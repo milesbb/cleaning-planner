@@ -52,6 +52,24 @@ export function homeItems(
   return partitionItems(table, Keys.household(householdId), query);
 }
 
+// The last `limit` items under `prefix`, by sort key, highest first: one query.
+export async function latestHomeItems(
+  table: Table,
+  householdId: string,
+  { prefix, limit }: { prefix: string; limit: number },
+): Promise<Record<string, unknown>[]> {
+  const { Items } = await table.client.send(
+    new QueryCommand({
+      TableName: table.name,
+      ...keyCondition(Keys.household(householdId), prefix),
+      ScanIndexForward: false,
+      Limit: limit,
+      ConsistentRead: true,
+    }),
+  );
+  return Items ?? [];
+}
+
 const storedKeySchema = z.object({ pk: z.string(), sk: z.string() });
 
 export type ItemKey = z.infer<typeof storedKeySchema>;

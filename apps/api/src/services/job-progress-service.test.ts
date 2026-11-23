@@ -104,12 +104,16 @@ describe('ticking a job off', () => {
         doneAt: NOW,
       },
     });
-    expect(fakes.store.addCompletion).toHaveBeenCalledWith('home-1', progress.latestCompletion, {
-      userId: 'user-sam',
-      key: KEY,
-      result: progress,
-      expiresAt: '2026-11-24T08:00:00.000Z',
-    });
+    expect(fakes.store.addCompletion).toHaveBeenCalledWith(
+      'home-1',
+      { ...progress.latestCompletion, jobName: WEEKLY_VACUUM.name },
+      {
+        userId: 'user-sam',
+        key: KEY,
+        result: progress,
+        expiresAt: '2026-11-24T08:00:00.000Z',
+      },
+    );
   });
 
   it('moves the job on the same way when it is skipped', async () => {

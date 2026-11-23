@@ -1,3 +1,4 @@
+import type { ActivityEntry } from '@cleaning-planner/contracts/activity';
 import type {
   CompletionRecord,
   CreateCompletionRequest,
@@ -39,9 +40,10 @@ export interface RequestRecord {
 
 export interface ProgressStore {
   listCompletions: (householdId: string, jobId: string) => Promise<CompletionRecord[]>;
+  // Records the completion and the home's activity entry for it together.
   addCompletion: (
     householdId: string,
-    completion: CompletionRecord,
+    entry: ActivityEntry,
     request: RequestRecord,
   ) => Promise<void>;
   removeCompletion: (
@@ -145,7 +147,11 @@ function completeStep(
     }
     const completion = { jobId: job.id, outcome, completedOn, completedBy: userId, doneAt: now() };
     const progress = progressOf(job, [...history, completion]);
-    await store.addCompletion(householdId, completion, remember(progress));
+    await store.addCompletion(
+      householdId,
+      { ...completion, jobName: job.name },
+      remember(progress),
+    );
     return progress;
   };
 }

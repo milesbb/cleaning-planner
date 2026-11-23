@@ -28,6 +28,8 @@ export const Keys = {
   allDonePrefix: 'DONE#',
   donePrefix: (jobId: string): string => `DONE#${jobId}#`,
   done: (jobId: string, doneAt: string): string => `DONE#${jobId}#${doneAt}`,
+  activityPrefix: 'ACTIVITY#',
+  activity: (doneAt: string, jobId: string): string => `ACTIVITY#${doneAt}#${jobId}`,
   request: (userId: string, key: string): string => `REQUEST#${userId}#${key}`,
   currentInvite: 'INVITE',
   invite: (code: string): string => `INVITE#${code}`,

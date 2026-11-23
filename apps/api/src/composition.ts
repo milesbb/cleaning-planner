@@ -35,6 +35,8 @@ import type { ProgressStore } from './services/job-progress-service';
 import type { JobStore } from './services/job-service';
 import { generateInviteCode } from './services/invite-code';
 import { createInviteService } from './services/invite-service';
+import { createActivityService } from './services/activity-service';
+import type { ActivityStore } from './services/activity-service';
 import { createJobHistoryService } from './services/job-history-service';
 import { createJobProgressService } from './services/job-progress-service';
 import { createJobService } from './services/job-service';
@@ -56,14 +58,17 @@ interface PlanningStores {
 
 interface ReadingStores {
   jobStore: JobStore;
-  progressStore: ProgressStore & HomeCompletionStore;
+  progressStore: ProgressStore & HomeCompletionStore & ActivityStore;
   householdStore: HouseholdStore;
   memberStore: MemberStore;
   now: () => string;
 }
 
-function createReadingServices(stores: ReadingStores): Pick<AppServices, 'history' | 'agenda'> {
+function createReadingServices(
+  stores: ReadingStores,
+): Pick<AppServices, 'history' | 'agenda' | 'activity'> {
   return {
+    activity: createActivityService({ activity: stores.progressStore }),
     history: createJobHistoryService({ jobs: stores.jobStore, completions: stores.progressStore }),
     agenda: createAgendaService({
       households: stores.householdStore,
@@ -81,7 +86,10 @@ function createPlanningServices({
   memberStore,
   memberships,
   now,
-}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs' | 'progress' | 'history' | 'agenda'> {
+}: PlanningStores): Pick<
+  AppServices,
+  'rooms' | 'jobs' | 'progress' | 'history' | 'agenda' | 'activity'
+> {
   const roomStore = createRoomRepository(table);
   const jobStore = createJobRepository(table);
   const progressStore = createProgressRepository(table);
