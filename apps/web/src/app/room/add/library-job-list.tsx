@@ -19,6 +19,40 @@ function roomColourOf(room: RoomType): string {
   return ROOM_APPEARANCE[room].colourClass;
 }
 
+interface LibraryJobItemProps {
+  libraryJob: LibraryJob;
+  isAdded: boolean;
+  isAdding: boolean;
+  onAdd: (libraryJob: LibraryJob) => void;
+}
+
+function LibraryJobItem({ libraryJob, isAdded, isAdding, onAdd }: LibraryJobItemProps): ReactNode {
+  return (
+    <li className="flex items-center gap-3 rounded-card border-2 border-ink bg-card p-3">
+      <IconTile icon={libraryJob.icon} colourClass={roomColourOf(libraryJob.room)} />
+      <span className="flex min-w-0 grow flex-col gap-0.5">
+        <span className="font-bold break-words">{libraryJob.name}</span>
+        <span className="text-sm">{describeSchedule(libraryJob.defaultSchedule)}</span>
+      </span>
+      {isAdded ? (
+        <Badge tone="done">Added</Badge>
+      ) : (
+        <Button
+          variant="secondary"
+          aria-label={`Add ${libraryJob.name}`}
+          disabled={isAdding}
+          className="min-h-11 shrink-0 px-4 text-base"
+          onClick={() => {
+            onAdd(libraryJob);
+          }}
+        >
+          Add
+        </Button>
+      )}
+    </li>
+  );
+}
+
 export function LibraryJobList({
   jobs,
   addedLibraryIds,
@@ -26,33 +60,18 @@ export function LibraryJobList({
   onAdd,
 }: LibraryJobListProps): ReactNode {
   return (
-    <ul aria-label="Jobs from the library" className="flex flex-col gap-2.5">
+    <ul
+      aria-label="Jobs from the library"
+      className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3"
+    >
       {jobs.map((libraryJob) => (
-        <li
+        <LibraryJobItem
           key={libraryJob.id}
-          className="flex items-center gap-3 rounded-card border-2 border-ink bg-card p-3"
-        >
-          <IconTile icon={libraryJob.icon} colourClass={roomColourOf(libraryJob.room)} />
-          <span className="flex min-w-0 grow flex-col gap-0.5">
-            <span className="font-bold break-words">{libraryJob.name}</span>
-            <span className="text-sm">{describeSchedule(libraryJob.defaultSchedule)}</span>
-          </span>
-          {addedLibraryIds.has(libraryJob.id) ? (
-            <Badge tone="done">Added</Badge>
-          ) : (
-            <Button
-              variant="secondary"
-              aria-label={`Add ${libraryJob.name}`}
-              disabled={isAdding}
-              className="min-h-11 shrink-0 px-4 text-base"
-              onClick={() => {
-                onAdd(libraryJob);
-              }}
-            >
-              Add
-            </Button>
-          )}
-        </li>
+          libraryJob={libraryJob}
+          isAdded={addedLibraryIds.has(libraryJob.id)}
+          isAdding={isAdding}
+          onAdd={onAdd}
+        />
       ))}
     </ul>
   );

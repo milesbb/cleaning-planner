@@ -75,21 +75,23 @@ function LibrarySearch({ home, room }: { home: ReadyHome; room: Room }): ReactNo
     library === null ? [] : searchLibrary(library, query, scope === 'thisRoom' ? room.type : null);
   return (
     <>
-      <TextField
-        label="Search jobs"
-        type="search"
-        autoComplete="off"
-        value={query}
-        onChange={(event) => {
-          setQuery(event.target.value);
-        }}
-      />
-      <SegmentedControl<Scope>
-        label="Show"
-        options={scopeChoices(room)}
-        value={scope}
-        onValueChange={setScope}
-      />
+      <div className="flex flex-col gap-4 sm:max-w-lg">
+        <TextField
+          label="Search jobs"
+          type="search"
+          autoComplete="off"
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+          }}
+        />
+        <SegmentedControl<Scope>
+          label="Show"
+          options={scopeChoices(room)}
+          value={scope}
+          onValueChange={setScope}
+        />
+      </div>
       {addJob.error === null ? null : <FormAlert>{addJob.error.message}</FormAlert>}
       {library === null ? (
         <p role="status">Getting the job library…</p>
