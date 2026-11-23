@@ -23,3 +23,20 @@ export function personLabel(
   if (userId === myUserId) return 'You';
   return members.find((member) => member.userId === userId)?.name ?? 'Former member';
 }
+
+const MINUTES_PER_HOUR = 60;
+
+function countOf(amount: number, unit: string): string {
+  return `${String(amount)} ${unit}${amount === 1 ? '' : 's'}`;
+}
+
+// "About 1 hour 30 minutes": how long a job takes.
+export function effortText(minutes: number): string {
+  const hours = Math.floor(minutes / MINUTES_PER_HOUR);
+  const leftOver = minutes % MINUTES_PER_HOUR;
+  const parts = [
+    ...(hours > 0 ? [countOf(hours, 'hour')] : []),
+    ...(leftOver > 0 ? [countOf(leftOver, 'minute')] : []),
+  ];
+  return `About ${parts.join(' ')}`;
+}

@@ -44,6 +44,20 @@ function BedroomStepper(): ReactNode {
   );
 }
 
+function MinutesStepper({ start }: { start: number }): ReactNode {
+  const [minutes, setMinutes] = useState(start);
+  return (
+    <Stepper
+      label="Minutes"
+      value={minutes}
+      minimum={1}
+      maximum={480}
+      step={5}
+      onValueChange={setMinutes}
+    />
+  );
+}
+
 describe('SegmentedControl', () => {
   it('has no accessibility violations', async () => {
     const { container } = render(<FrequencyPicker />);
@@ -158,5 +172,22 @@ describe('Stepper', () => {
     await userEvent.click(screen.getByRole('button', { name: 'More bedrooms' }));
     expect(screen.getByRole('button', { name: 'More bedrooms' })).toBeDisabled();
     expect(screen.getByRole('status')).toHaveTextContent('2');
+  });
+
+  it('moves in steps, landing on whole steps from an odd value', async () => {
+    render(<MinutesStepper start={3} />);
+    await userEvent.click(screen.getByRole('button', { name: 'More minutes' }));
+    expect(screen.getByRole('status')).toHaveTextContent('5');
+    await userEvent.click(screen.getByRole('button', { name: 'More minutes' }));
+    expect(screen.getByRole('status')).toHaveTextContent('10');
+    await userEvent.click(screen.getByRole('button', { name: 'Fewer minutes' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Fewer minutes' }));
+    expect(screen.getByRole('status')).toHaveTextContent('1');
+  });
+
+  it('steps down from an odd value to the step below it', async () => {
+    render(<MinutesStepper start={12} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Fewer minutes' }));
+    expect(screen.getByRole('status')).toHaveTextContent('10');
   });
 });

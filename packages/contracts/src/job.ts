@@ -5,7 +5,7 @@ import { NOTHING_TO_CHANGE, hasAChange } from './updates';
 import { z } from './zod';
 
 const MAX_JOB_NAME_LENGTH = 80;
-const MAX_EFFORT_MINUTES = 480;
+export const MAX_EFFORT_MINUTES = 480;
 
 export const jobNameSchema = z
   .string()
