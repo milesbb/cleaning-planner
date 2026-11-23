@@ -64,6 +64,7 @@ describe('HomeScreen', () => {
     expect(kitchen).toHaveAttribute('href', '/room?id=room-kitchen');
     expect(within(kitchen).getByText('3 jobs')).toBeInTheDocument();
     expect(within(kitchen).getByText('1 late')).toBeInTheDocument();
+    expect(kitchen).toHaveAccessibleName(/2 of 3 up to date/);
     expect(within(screen.getByRole('link', { name: /Bedroom/ })).queryByText(/late/)).toBeNull();
   });
 

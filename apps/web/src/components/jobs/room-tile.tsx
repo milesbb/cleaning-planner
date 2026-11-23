@@ -5,6 +5,7 @@ import { ROOM_APPEARANCE, countOf } from '@/lib/rooms';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { IconTile } from './icon-tile';
+import { UpToDateRing } from './up-to-date-ring';
 
 interface RoomTileProps {
   room: RoomType;
@@ -16,6 +17,7 @@ interface RoomTileProps {
 
 export function RoomTile({ room, name, jobCount, lateCount, href }: RoomTileProps): ReactNode {
   const appearance = ROOM_APPEARANCE[room];
+  const upToDate = jobCount - lateCount;
   return (
     <Link
       href={href}
@@ -29,7 +31,18 @@ export function RoomTile({ room, name, jobCount, lateCount, href }: RoomTileProp
         <span className="font-display text-lg font-extrabold break-words min-[400px]:text-[1.375rem]">
           {name}
         </span>{' '}
-        <span className="text-sm">{countOf(jobCount, 'job')}</span>
+        <span className="flex items-end justify-between gap-2">
+          <span className="text-sm">
+            {countOf(jobCount, 'job')}
+            {jobCount === 0 ? null : (
+              <>
+                {' '}
+                <span className="sr-only">{`${String(upToDate)} of ${String(jobCount)} up to date`}</span>
+              </>
+            )}
+          </span>
+          <UpToDateRing room={room} share={jobCount === 0 ? 0 : upToDate / jobCount} />
+        </span>
       </span>
       {lateCount > 0 ? (
         <>

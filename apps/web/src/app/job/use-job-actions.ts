@@ -1,15 +1,14 @@
 'use client';
 
-import { jobProgressSchema } from '@cleaning-planner/contracts/completion';
-import type { JobProgress } from '@cleaning-planner/contracts/completion';
 import { jobSchema } from '@cleaning-planner/contracts/job';
 import type { Job, UpdateJobRequest } from '@cleaning-planner/contracts/job';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { NO_CONTENT } from '@/lib/api/api-client';
-import type { ApiRequest } from '@/lib/api/api-client';
 import { useApiClient } from '@/lib/api/api-provider';
+import { QUEUED_REQUEST_KEY } from '@/lib/api/queued-requests';
+import type { QueuedRequest } from '@/lib/api/queued-requests';
 import { homePath } from '@/lib/home/home-queries';
 
 export interface JobAddress {
@@ -34,6 +33,10 @@ function useRefreshHome(householdId: string): () => Promise<void> {
 
 type ProgressRequest = ProgressChange & { idempotencyKey: string };
 
+// Sent through the offline queue as plain data, so a tap made offline is sent
+// even if the app closes first; the change itself is kept to say what was saved.
+type QueuedChange = ProgressRequest & QueuedRequest;
+
 export interface ProgressActions {
   record: (change: ProgressChange) => void;
   isPending: boolean;
@@ -41,14 +44,14 @@ export interface ProgressActions {
   saved: ProgressChange | null;
 }
 
-function progressRequest(address: JobAddress, request: ProgressRequest): ApiRequest<JobProgress> {
+function progressRequest(address: JobAddress, request: ProgressRequest): QueuedRequest {
   const { idempotencyKey } = request;
   if (request.kind === 'snooze') {
     return {
       method: 'POST',
       path: `${jobPath(address)}/snooze`,
       body: { until: request.until, idempotencyKey },
-      response: jobProgressSchema,
+      response: 'jobProgress',
     };
   }
   const completion =
@@ -59,22 +62,25 @@ function progressRequest(address: JobAddress, request: ProgressRequest): ApiRequ
     method: 'POST',
     path: `${jobPath(address)}/completions`,
     body: { ...completion, idempotencyKey },
-    response: jobProgressSchema,
+    response: 'jobProgress',
   };
 }
 
 // Done, skip and snooze get one idempotency key per tap, made before the first
 // try, so a retried request can't record the job twice.
 export function useProgressChange(address: JobAddress): ProgressActions {
-  const client = useApiClient();
   const refreshHome = useRefreshHome(address.householdId);
-  const mutation = useMutation({
-    mutationFn: (request: ProgressRequest) => client.request(progressRequest(address, request)),
+  const mutation = useMutation<unknown, Error, QueuedChange>({
+    mutationKey: QUEUED_REQUEST_KEY,
+    // This screen shows the failure itself (`error`); the queue's own notice is for
+    // changes sent after the app reopened, with no screen waiting on them.
+    onError: (): void => undefined,
     onSettled: refreshHome,
   });
   return {
     record: (change): void => {
-      mutation.mutate({ ...change, idempotencyKey: crypto.randomUUID() });
+      const request: ProgressRequest = { ...change, idempotencyKey: crypto.randomUUID() };
+      mutation.mutate({ ...request, ...progressRequest(address, request) });
     },
     isPending: mutation.isPending,
     error: mutation.error,
