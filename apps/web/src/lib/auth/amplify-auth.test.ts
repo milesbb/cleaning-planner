@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   accessTokenFrom,
   cognitoFunctionsFrom,
   lazyAmplifyAuth,
   readAuthSettings,
+  storedSessionCheck,
 } from './amplify-auth';
 import type { AmplifyAuth, AmplifyModules } from './amplify-auth';
 
@@ -112,5 +113,49 @@ describe('accessTokenFrom', () => {
       accessTokenFrom(() => Promise.resolve(fakeAuth({ fetchAuthSession })))(),
     ).resolves.toBeNull();
     await expect(accessTokenFrom(() => Promise.reject(new Error('offline')))()).resolves.toBeNull();
+  });
+});
+
+describe('the signed-out shortcut', () => {
+  const LAST_USER_KEY = `CognitoIdentityServiceProvider.${SETTINGS.userPoolClientId}.LastAuthUser`;
+
+  afterEach(() => {
+    window.localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it('knows nobody is signed in when the browser holds no Cognito session', () => {
+    expect(storedSessionCheck(SETTINGS)()).toBe(false);
+    window.localStorage.setItem(LAST_USER_KEY, 'user-sam');
+    expect(storedSessionCheck(SETTINGS)()).toBe(true);
+  });
+
+  it('has no session to find when sign-in is not set up', () => {
+    window.localStorage.setItem(LAST_USER_KEY, 'user-sam');
+    expect(storedSessionCheck(null)()).toBe(false);
+  });
+
+  it('asks Amplify after all when storage cannot be read', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    expect(storedSessionCheck(SETTINGS)()).toBe(true);
+  });
+
+  it('answers signed out without downloading Amplify', async () => {
+    const loadAuth = vi.fn(() => Promise.resolve(fakeAuth()));
+    const signedOut = (): boolean => false;
+    await expect(cognitoFunctionsFrom(loadAuth, signedOut).fetchAuthSession()).resolves.toEqual({});
+    await expect(accessTokenFrom(loadAuth, signedOut)()).resolves.toBeNull();
+    expect(loadAuth).not.toHaveBeenCalled();
+  });
+
+  it('still loads Amplify to sign in, even with no stored session', async () => {
+    const loadAuth = vi.fn(() => Promise.resolve(fakeAuth()));
+    await cognitoFunctionsFrom(loadAuth, () => false).signIn({
+      username: 'sam@example.com',
+      password: 'lemon kettle sunday',
+    });
+    expect(loadAuth).toHaveBeenCalledOnce();
   });
 });

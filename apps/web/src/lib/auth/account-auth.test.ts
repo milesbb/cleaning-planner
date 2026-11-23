@@ -307,4 +307,13 @@ describe('checking for a session', () => {
     await expect(createAccountAuth(noTokens).isSignedIn()).resolves.toBe(false);
     await expect(createAccountAuth(broken).isSignedIn()).resolves.toBe(false);
   });
+
+  it('can tell at once, without Cognito, that nobody is signed in', () => {
+    expect(createAccountAuth(stubCognito(), () => false).mightBeSignedIn()).toBe(false);
+    expect(createAccountAuth(stubCognito(), () => true).mightBeSignedIn()).toBe(true);
+  });
+
+  it('assumes someone might be signed in when it cannot tell', () => {
+    expect(createAccountAuth(stubCognito()).mightBeSignedIn()).toBe(true);
+  });
 });

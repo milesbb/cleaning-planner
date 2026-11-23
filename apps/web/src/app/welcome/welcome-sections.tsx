@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { AppNameRow } from '@/components/account/account-screen';
+import { AccountScreen, AppNameRow } from '@/components/account/account-screen';
 import { ArtFrame } from '@/components/art/art-frame';
 import { ButtonLink } from '@/components/ui/button';
 
-export function WelcomeIntro(): ReactNode {
+function WelcomeIntro(): ReactNode {
   return (
     <div className="flex flex-col gap-8">
       <AppNameRow />
@@ -20,7 +20,7 @@ export function WelcomeIntro(): ReactNode {
   );
 }
 
-export function WelcomeActions(): ReactNode {
+function WelcomeActions(): ReactNode {
   return (
     <div className="mt-auto flex flex-col gap-3.5">
       <ButtonLink href="/sign-up">Create an account</ButtonLink>
@@ -28,5 +28,16 @@ export function WelcomeActions(): ReactNode {
         Log in
       </ButtonLink>
     </div>
+  );
+}
+
+// Welcome is also what "/" shows anyone with no session, straight from the
+// static HTML, so a first visit never waits for JavaScript to see it.
+export function WelcomeScreen(): ReactNode {
+  return (
+    <AccountScreen>
+      <WelcomeIntro />
+      <WelcomeActions />
+    </AccountScreen>
   );
 }

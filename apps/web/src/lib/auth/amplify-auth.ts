@@ -67,7 +67,32 @@ export function lazyAmplifyAuth(
   };
 }
 
-export function cognitoFunctionsFrom(loadAuth: LoadAmplifyAuth): CognitoFunctions {
+// Amplify v6 records who signed in last under this key (in local storage) for
+// as long as it holds a session. Without it nobody is signed in, so a
+// signed-out visitor never waits for Amplify to download.
+function lastAuthUserKey({ userPoolClientId }: AuthSettings): string {
+  return `CognitoIdentityServiceProvider.${userPoolClientId}.LastAuthUser`;
+}
+
+export type HasStoredSession = () => boolean;
+
+export function storedSessionCheck(settings: AuthSettings | null): HasStoredSession {
+  return () => {
+    if (settings === null) return false;
+    try {
+      return window.localStorage.getItem(lastAuthUserKey(settings)) !== null;
+    } catch {
+      return true;
+    }
+  };
+}
+
+const ALWAYS_ASK_AMPLIFY: HasStoredSession = () => true;
+
+export function cognitoFunctionsFrom(
+  loadAuth: LoadAmplifyAuth,
+  hasStoredSession: HasStoredSession = ALWAYS_ASK_AMPLIFY,
+): CognitoFunctions {
   return {
     signUp: async (input) => (await loadAuth()).signUp(input),
     confirmSignUp: async (input) => (await loadAuth()).confirmSignUp(input),
@@ -75,12 +100,16 @@ export function cognitoFunctionsFrom(loadAuth: LoadAmplifyAuth): CognitoFunction
     signIn: async (input) => (await loadAuth()).signIn(input),
     resetPassword: async (input) => (await loadAuth()).resetPassword(input),
     confirmResetPassword: async (input) => (await loadAuth()).confirmResetPassword(input),
-    fetchAuthSession: async () => (await loadAuth()).fetchAuthSession(),
+    fetchAuthSession: async () => (hasStoredSession() ? (await loadAuth()).fetchAuthSession() : {}),
   };
 }
 
-export function accessTokenFrom(loadAuth: LoadAmplifyAuth): () => Promise<string | null> {
+export function accessTokenFrom(
+  loadAuth: LoadAmplifyAuth,
+  hasStoredSession: HasStoredSession = ALWAYS_ASK_AMPLIFY,
+): () => Promise<string | null> {
   return async () => {
+    if (!hasStoredSession()) return null;
     try {
       const { tokens } = await (await loadAuth()).fetchAuthSession();
       return tokens?.accessToken.toString() ?? null;
