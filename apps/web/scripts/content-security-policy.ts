@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 
-const COGNITO_ORIGIN = 'https://cognito-idp.ap-southeast-2.amazonaws.com';
+export const COGNITO_ORIGIN = 'https://cognito-idp.ap-southeast-2.amazonaws.com';
 const INLINE_SCRIPT_PATTERN = /<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g;
-const EXISTING_POLICY_PATTERN = /<meta http-equiv="Content-Security-Policy" content="[^"]*"\/>/;
+const EXISTING_POLICY_PATTERN = /<meta http-equiv="Content-Security-Policy" content="([^"]*)"\/>/;
 const HEAD_OPENING_TAG = '<head>';
 
 export interface PolicyOptions {
@@ -53,4 +53,8 @@ export function addContentSecurityPolicy(html: string, apiOrigin: string | undef
   });
   const meta = `<meta http-equiv="Content-Security-Policy" content="${policy}"/>`;
   return withoutOldPolicy.replace(HEAD_OPENING_TAG, `${HEAD_OPENING_TAG}${meta}`);
+}
+
+export function contentSecurityPolicyOf(html: string): string | null {
+  return EXISTING_POLICY_PATTERN.exec(html)?.[1] ?? null;
 }
