@@ -1,4 +1,3 @@
-import { describeInterval } from '../interval';
 import { KITCHEN_JOBS } from './kitchen';
 import { LAUNDRY_JOBS } from './laundry';
 import {
@@ -9,7 +8,7 @@ import {
   OFFICE_JOBS,
   OUTDOOR_JOBS,
 } from './rooms';
-import type { HomeFeature, LibraryJob, RecommendedRange, RoomType } from './types';
+import type { HomeFeature, LibraryJob, RoomType } from './types';
 import { WHOLE_HOME_JOBS } from './whole-home';
 
 export const JOB_LIBRARY: readonly LibraryJob[] = [
@@ -41,11 +40,4 @@ export function suggestJobs(
   features: readonly HomeFeature[],
 ): LibraryJob[] {
   return JOB_LIBRARY.filter((job) => isInHome(job, rooms) && hasWhatItNeeds(job, features));
-}
-
-export function recommendationText({ shortest, longest }: RecommendedRange): string {
-  const shortestText = describeInterval(shortest);
-  const longestText = describeInterval(longest);
-  const range = shortestText === longestText ? shortestText : `${shortestText} to ${longestText}`;
-  return `Most homes do this ${range}.`;
 }

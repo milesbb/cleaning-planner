@@ -19,11 +19,15 @@ import {
 import type { MembershipReader } from './middlewares/membership';
 import { createAccountService } from './services/account-service';
 import { createAgendaService } from './services/agenda-service';
+import type { HomeCompletionStore } from './services/agenda-service';
 import { createHouseholdService } from './services/household-service';
 import type { HouseholdStore } from './services/household-service';
 import type { MemberStore } from './services/member-service';
+import type { ProgressStore } from './services/job-progress-service';
+import type { JobStore } from './services/job-service';
 import { generateInviteCode } from './services/invite-code';
 import { createInviteService } from './services/invite-service';
+import { createJobHistoryService } from './services/job-history-service';
 import { createJobProgressService } from './services/job-progress-service';
 import { createJobService } from './services/job-service';
 import { createMemberService } from './services/member-service';
@@ -38,13 +42,34 @@ interface PlanningStores {
   now: () => string;
 }
 
+interface ReadingStores {
+  jobStore: JobStore;
+  progressStore: ProgressStore & HomeCompletionStore;
+  householdStore: HouseholdStore;
+  memberStore: MemberStore;
+  now: () => string;
+}
+
+function createReadingServices(stores: ReadingStores): Pick<AppServices, 'history' | 'agenda'> {
+  return {
+    history: createJobHistoryService({ jobs: stores.jobStore, completions: stores.progressStore }),
+    agenda: createAgendaService({
+      households: stores.householdStore,
+      jobs: stores.jobStore,
+      members: stores.memberStore,
+      completions: stores.progressStore,
+      now: stores.now,
+    }),
+  };
+}
+
 function createPlanningServices({
   table,
   householdStore,
   memberStore,
   memberships,
   now,
-}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs' | 'progress' | 'agenda'> {
+}: PlanningStores): Pick<AppServices, 'rooms' | 'jobs' | 'progress' | 'history' | 'agenda'> {
   const roomStore = createRoomRepository(table);
   const jobStore = createJobRepository(table);
   const progressStore = createProgressRepository(table);
@@ -69,13 +94,7 @@ function createPlanningServices({
       households: householdStore,
       now,
     }),
-    agenda: createAgendaService({
-      households: householdStore,
-      jobs: jobStore,
-      members: memberStore,
-      completions: progressStore,
-      now,
-    }),
+    ...createReadingServices({ jobStore, progressStore, householdStore, memberStore, now }),
   };
 }
 

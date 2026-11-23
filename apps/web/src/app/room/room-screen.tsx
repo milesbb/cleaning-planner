@@ -1,6 +1,5 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { JobRow } from '@/components/jobs/job-row';
 import { AppShell } from '@/components/shell/app-shell';
@@ -11,25 +10,16 @@ import {
   useStartAHomeWhenHomeless,
 } from '@/components/shell/screen-states';
 import { ButtonLink } from '@/components/ui/button';
+import { jobHref } from '@/lib/home/job-href';
 import { jobsInRoom } from '@/lib/home/room-jobs';
 import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
-import { readRecordId } from '@/lib/record-id';
 import { countOf } from '@/lib/rooms';
+import { useRecordId } from '@/lib/use-record-id';
 
 type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
 
-const NEVER_CHANGES = (): (() => void) => () => undefined;
 const BACK_HOME = <BackLink href="/home" label="Back to Home" />;
-
-function roomIdInAddress(): string | null {
-  return readRecordId(new URLSearchParams(window.location.search));
-}
-
-// The room's id from `?id=`: undefined until the browser has read the address.
-function useRoomId(): string | null | undefined {
-  return useSyncExternalStore(NEVER_CHANGES, roomIdInAddress, () => undefined);
-}
 
 function RoomNotFound(): ReactNode {
   return (
@@ -61,6 +51,7 @@ function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): Re
                 room={room.type}
                 icon={job.icon}
                 meta={job.meta}
+                href={jobHref(job.jobId)}
                 status={
                   job.lateBy === undefined
                     ? { kind: 'scheduled' }
@@ -77,7 +68,7 @@ function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): Re
 
 export function RoomScreen(): ReactNode {
   const home = useRoomSources();
-  const roomId = useRoomId();
+  const roomId = useRecordId();
   const hasNoHome = home.kind === 'noHome';
   useStartAHomeWhenHomeless(hasNoHome);
   return (

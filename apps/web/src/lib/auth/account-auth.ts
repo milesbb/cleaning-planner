@@ -6,6 +6,7 @@ export type AccountAuthFailureKind =
   | 'wrongCode'
   | 'expiredCode'
   | 'wrongDetails'
+  | 'wrongCurrentPassword'
   | 'tooManyAttempts'
   | 'offline'
   | 'unexpected';
@@ -17,6 +18,7 @@ const MESSAGES: Record<AccountAuthFailureKind, string> = {
   wrongCode: 'That code doesn’t match. Check the email and try again.',
   expiredCode: 'That code has expired. Send a new code and try again.',
   wrongDetails: 'That email and password don’t match. Check for typos, or reset your password.',
+  wrongCurrentPassword: 'That isn’t your current password. Check for typos, or reset it.',
   tooManyAttempts: 'Too many tries for now. Wait a few minutes, then try again.',
   offline: 'Can’t reach Cleaning Planner. Check your connection and try again.',
   unexpected: 'Something went wrong. Try again.',
@@ -91,6 +93,8 @@ export interface CognitoFunctions {
     newPassword: string;
   }) => Promise<unknown>;
   fetchAuthSession: () => Promise<{ tokens?: { accessToken: { toString: () => string } } }>;
+  signOut: (input?: { global: boolean }) => Promise<void>;
+  updatePassword: (input: { oldPassword: string; newPassword: string }) => Promise<void>;
 }
 
 interface NewAccount {
@@ -105,7 +109,15 @@ interface PasswordReset {
   newPassword: string;
 }
 
+interface PasswordChange {
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+  signOutOtherDevices: boolean;
+}
+
 type SignInOutcome = 'signedIn' | 'confirmEmail';
+type PasswordChangeOutcome = 'changed' | 'logIn';
 type ConfirmOutcome = 'signedIn' | 'logIn';
 
 export interface AccountAuth {
@@ -118,6 +130,10 @@ export interface AccountAuth {
   isSignedIn: () => Promise<boolean>;
   // Instant and offline: false only when the browser holds no session at all.
   mightBeSignedIn: () => boolean;
+  signOut: () => Promise<void>;
+  // 'logIn' when other devices were logged out and this one couldn't log
+  // straight back in with the new password.
+  changePassword: (change: PasswordChange) => Promise<PasswordChangeOutcome>;
 }
 
 const CONFIRM_SIGN_UP = 'CONFIRM_SIGN_UP';
@@ -206,6 +222,38 @@ async function isSignedInWith(cognito: CognitoFunctions): Promise<boolean> {
   }
 }
 
+async function updatePasswordWith(
+  cognito: CognitoFunctions,
+  change: PasswordChange,
+): Promise<void> {
+  try {
+    await cognito.updatePassword({
+      oldPassword: change.currentPassword,
+      newPassword: change.newPassword,
+    });
+  } catch (error) {
+    const failure = failureOf(error);
+    throw failure.kind === 'wrongDetails' ? new AccountAuthError('wrongCurrentPassword') : failure;
+  }
+}
+
+// Logging out everywhere ends this device's session too, so it logs back in
+// with the password just set.
+async function changePasswordWith(
+  cognito: CognitoFunctions,
+  change: PasswordChange,
+): Promise<PasswordChangeOutcome> {
+  await updatePasswordWith(cognito, change);
+  if (!change.signOutOtherDevices) return 'changed';
+  await translated(() => cognito.signOut({ global: true }));
+  try {
+    const outcome = await signInWith(cognito, change.email, change.newPassword);
+    return outcome === 'signedIn' ? 'changed' : 'logIn';
+  } catch {
+    return 'logIn';
+  }
+}
+
 const MIGHT_BE_SIGNED_IN = (): boolean => true;
 
 export function createAccountAuth(
@@ -233,5 +281,7 @@ export function createAccountAuth(
     resetPassword: (reset) => resetPasswordWith(cognito, reset),
     isSignedIn: () => isSignedInWith(cognito),
     mightBeSignedIn: hasStoredSession,
+    signOut: () => translated(() => cognito.signOut()),
+    changePassword: (change) => changePasswordWith(cognito, change),
   };
 }

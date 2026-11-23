@@ -16,7 +16,10 @@ type CognitoOperation =
   | 'InitiateAuth'
   | 'RespondToAuthChallenge'
   | 'ForgotPassword'
-  | 'ConfirmForgotPassword';
+  | 'ConfirmForgotPassword'
+  | 'RevokeToken'
+  | 'ChangePassword'
+  | 'GlobalSignOut';
 
 export type CognitoAnswers = Partial<Record<CognitoOperation, FakeAnswer>>;
 
@@ -72,6 +75,9 @@ const DEFAULT_ANSWERS: Record<CognitoOperation, FakeAnswer> = {
   RespondToAuthChallenge: { body: SIGNED_IN },
   ForgotPassword: { body: { CodeDeliveryDetails: { DeliveryMedium: 'EMAIL' } } },
   ConfirmForgotPassword: { body: {} },
+  RevokeToken: { body: {} },
+  ChangePassword: { body: {} },
+  GlobalSignOut: { body: {} },
 };
 
 function fulfil(route: Route, { status = 200, body }: FakeAnswer): Promise<void> {

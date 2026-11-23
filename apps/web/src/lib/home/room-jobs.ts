@@ -38,7 +38,7 @@ export interface RoomJob {
 
 const ONE_DAY = { value: 1, unit: 'day' } as const;
 
-function nextDueOf(sources: RoomSources, jobId: string): CalendarDate | null {
+export function nextDueOf(sources: RoomSources, jobId: string): CalendarDate | null {
   return sources.progress.find((progress) => progress.jobId === jobId)?.nextDueDate ?? null;
 }
 
@@ -62,7 +62,7 @@ export function summariseRooms(sources: RoomSources): RoomSummary[] {
     });
 }
 
-function whoFor(sources: RoomSources, job: Job): string {
+export function whoFor(sources: RoomSources, job: Job): string {
   if (job.assignment.kind === 'takeTurns') return 'Take turns';
   const userId = job.assignment.kind === 'member' ? job.assignment.memberId : null;
   return personLabel(sources.members, sources.myUserId, userId);

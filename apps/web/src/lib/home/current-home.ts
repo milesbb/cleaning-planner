@@ -6,6 +6,7 @@ const rememberedHome = deviceValue('cleaning-planner.current-home');
 
 export const rememberCurrentHome = rememberedHome.remember;
 export const rememberedHomeId = rememberedHome.read;
+export const forgetCurrentHome = rememberedHome.forget;
 
 export function chooseCurrentHome<Home extends { id: string }>(
   homes: readonly Home[],
