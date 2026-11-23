@@ -21,7 +21,7 @@ export function AllActivitySheet({
 }: AllActivitySheetProps): ReactNode {
   const activity = useActivity(householdId, MAX_ACTIVITY_ENTRIES);
   return (
-    <BottomSheet title="Recently done" {...opening}>
+    <BottomSheet title="Recently done" size="wide" {...opening}>
       <ActivityStates activity={activity} people={people} listLabel="Everything recently done" />
     </BottomSheet>
   );

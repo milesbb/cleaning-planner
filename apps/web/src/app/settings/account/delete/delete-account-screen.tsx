@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { AppShell } from '@/components/shell/app-shell';
 import { BackLink, PageHeader } from '@/components/shell/page-header';
 import { ScreenLoading, ScreenProblem } from '@/components/shell/screen-states';
+import { FormColumn } from '../../settings-sections';
 import { DeleteAccountForm } from './delete-account-form';
 import { useDeleteAccountSources } from './use-delete-account-sources';
 
@@ -21,11 +22,13 @@ export function DeleteAccountScreen(): ReactNode {
             title="Delete account"
             leading={<BackLink href="/settings/account" label="Back to Your account" />}
           />
-          <DeleteAccountForm
-            email={sources.profile.email}
-            homes={sources.homes}
-            ownedHomes={sources.ownedHomes}
-          />
+          <FormColumn>
+            <DeleteAccountForm
+              email={sources.profile.email}
+              homes={sources.homes}
+              ownedHomes={sources.ownedHomes}
+            />
+          </FormColumn>
         </>
       )}
     </AppShell>

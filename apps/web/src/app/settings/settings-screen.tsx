@@ -10,7 +10,7 @@ import { ScreenLoading, ScreenProblem } from '@/components/shell/screen-states';
 import { useMe, useMembers } from '@/lib/home/home-queries';
 import { useCurrentHome } from '@/lib/home/use-current-home';
 import { InstallAppSection } from './install-app-section';
-import { HomePeopleSection, SignOutButton, YouSection } from './settings-sections';
+import { HomePeopleSection, SettingsColumns, SignOutButton, YouSection } from './settings-sections';
 
 interface CurrentHomePeople {
   home: HouseholdSummary;
@@ -54,7 +54,7 @@ export function SettingsScreen(): ReactNode {
       {settings.kind === 'ready' && (
         <>
           <PageHeader title="Settings" />
-          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
+          <SettingsColumns>
             <YouSection profile={settings.profile} />
             {settings.homePeople === null ? null : (
               <HomePeopleSection
@@ -63,7 +63,7 @@ export function SettingsScreen(): ReactNode {
                 myUserId={settings.profile.id}
               />
             )}
-          </div>
+          </SettingsColumns>
           <InstallAppSection />
           <SignOutButton />
         </>

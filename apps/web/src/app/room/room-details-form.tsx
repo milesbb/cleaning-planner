@@ -104,6 +104,7 @@ function AppliancesField({ room, draft }: { room: Room; draft: RoomDetailsDraft 
       <CheckboxGroup
         label="Appliances"
         options={choices}
+        optionsClassName="md:grid md:grid-cols-2"
         values={draft.appliances}
         onValuesChange={draft.setAppliances}
       />

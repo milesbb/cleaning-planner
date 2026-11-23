@@ -11,6 +11,7 @@ import {
   ScreenProblem,
   useStartAHomeWhenHomeless,
 } from '@/components/shell/screen-states';
+import { TwoColumns } from '@/components/shell/two-columns';
 import { summariseRooms } from '@/lib/home/room-jobs';
 import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
@@ -25,7 +26,10 @@ type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
 function RoomTiles({ home }: { home: ReadyRooms }): ReactNode {
   const rooms = summariseRooms(home.sources);
   return (
-    <ul aria-label="Rooms" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+    <ul
+      aria-label="Rooms"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-2 xl:grid-cols-3"
+    >
       {rooms.map((room) => (
         <li key={room.id} className="grid">
           <RoomTile
@@ -49,7 +53,7 @@ interface RoomActionsProps {
 function RoomActions({ home, onReorder }: RoomActionsProps): ReactNode {
   const { rooms } = home.sources;
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
       <AddRoomButton householdId={home.householdId} roomNames={rooms.map((room) => room.name)} />
       {rooms.length > 1 ? (
         <Button variant="secondary" onClick={onReorder}>
@@ -60,19 +64,44 @@ function RoomActions({ home, onReorder }: RoomActionsProps): ReactNode {
   );
 }
 
-function HomeOverview({ home, onReorder }: RoomActionsProps): ReactNode {
-  const { members, myUserId, today } = home.sources;
+function RoomsOverview({ home, onReorder }: RoomActionsProps): ReactNode {
   return (
     <>
       <RoomTiles home={home} />
       <RoomActions home={home} onReorder={onReorder} />
-      <RecentActivity householdId={home.householdId} people={{ members, myUserId, today }} />
     </>
   );
 }
 
-function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
+function HomeActivity({ home }: { home: ReadyRooms }): ReactNode {
+  const { members, myUserId, today } = home.sources;
+  return <RecentActivity householdId={home.householdId} people={{ members, myUserId, today }} />;
+}
+
+// docs/LAYOUTS.md §4.5: Recently sits beside the rooms on a laptop and under
+// them below that, and stays while the rooms are reordered.
+function HomeRooms({ home }: { home: ReadyRooms }): ReactNode {
   const [isReordering, setIsReordering] = useState(false);
+  const rooms = isReordering ? (
+    <ReorderRooms
+      householdId={home.householdId}
+      rooms={[...home.sources.rooms].sort((first, second) => first.order - second.order)}
+      onDone={() => {
+        setIsReordering(false);
+      }}
+    />
+  ) : (
+    <RoomsOverview
+      home={home}
+      onReorder={() => {
+        setIsReordering(true);
+      }}
+    />
+  );
+  return <TwoColumns main={rooms} side={<HomeActivity home={home} />} sideLabel="Activity" />;
+}
+
+function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
   const { rooms } = home.sources;
   return (
     <>
@@ -87,22 +116,7 @@ function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
           />
         }
       />
-      {isReordering ? (
-        <ReorderRooms
-          householdId={home.householdId}
-          rooms={[...rooms].sort((first, second) => first.order - second.order)}
-          onDone={() => {
-            setIsReordering(false);
-          }}
-        />
-      ) : (
-        <HomeOverview
-          home={home}
-          onReorder={() => {
-            setIsReordering(true);
-          }}
-        />
-      )}
+      <HomeRooms home={home} />
     </>
   );
 }
@@ -112,7 +126,7 @@ export function HomeScreen(): ReactNode {
   const hasNoHome = home.kind === 'noHome';
   useStartAHomeWhenHomeless(hasNoHome);
   return (
-    <AppShell activeTab="home">
+    <AppShell activeTab="home" layout="split">
       {home.kind === 'ready' && <HomeContent home={home} />}
       {home.kind === 'failed' && (
         <ScreenProblem title="Home" message={home.message} retry={home.retry} />

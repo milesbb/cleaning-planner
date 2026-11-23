@@ -5,6 +5,7 @@ import { ApiRequestError } from '@/lib/api/api-client';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
 import type { FakeAnswers } from '@/test/fake-api-client';
 import { HOME_PATH, homeAnswers } from '@/test/fake-home-answers';
+import { fakeScreenOf, restoreScreen } from '@/test/fake-screen';
 import { RoomScreen } from './room-screen';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
@@ -28,6 +29,7 @@ afterEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
   window.history.replaceState(null, '', '/');
+  restoreScreen();
 });
 
 describe('RoomScreen', () => {
@@ -110,5 +112,18 @@ describe('RoomScreen', () => {
         Promise.reject(new ApiRequestError('rejected', 'You’re not in that home any more')),
     });
     expect(await screen.findByRole('alert')).toHaveTextContent('You’re not in that home any more');
+  });
+
+  it('offers to show a job beside the list on a laptop', async () => {
+    fakeScreenOf(true);
+    openRoom('/room?id=room-kitchen');
+    const details = await screen.findByRole('region', { name: 'Job details' });
+    expect(details).toHaveTextContent("Choose a job to see when it's due, who does it and how.");
+  });
+
+  it('leaves the job hint out on phones and tablets', async () => {
+    openRoom('/room?id=room-kitchen');
+    await screen.findByRole('list', { name: 'Jobs in Kitchen' });
+    expect(screen.queryByRole('region', { name: 'Job details' })).not.toBeInTheDocument();
   });
 });

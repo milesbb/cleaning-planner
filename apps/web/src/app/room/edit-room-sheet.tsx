@@ -45,6 +45,7 @@ export function EditRoomSheet(props: EditRoomSheetProps): ReactNode {
   return (
     <BottomSheet
       title={view === 'edit' ? 'Edit room' : 'Remove this room?'}
+      size="wide"
       open={props.open}
       onOpenChange={onOpenChange}
       returnFocusTo={props.returnFocusTo}

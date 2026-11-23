@@ -14,6 +14,7 @@ import { useHousehold, useMe, useMembers } from '@/lib/home/home-queries';
 import { useCurrentHome } from '@/lib/home/use-current-home';
 import { countOf } from '@/lib/rooms';
 import { PeopleList } from '../people-list';
+import { SettingsColumns } from '../settings-sections';
 import { DeleteHomeSheet } from './delete-home-sheet';
 import { HomeDetailsSection } from './home-details-section';
 import { InviteCard } from './invite-card';
@@ -82,7 +83,7 @@ function HomeSettingsContent({ home }: { home: ReadyHome }): ReactNode {
         subtitle={countOf(home.members.length, 'person', 'people')}
         leading={<BackLink href="/settings" label="Back to Settings" />}
       />
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
+      <SettingsColumns>
         <Card raised={false}>
           <PeopleList
             members={home.members}
@@ -90,13 +91,15 @@ function HomeSettingsContent({ home }: { home: ReadyHome }): ReactNode {
             {...(isOwner ? { actionFor: manage } : {})}
           />
         </Card>
-        <InviteCard
-          householdId={household.id}
-          homeName={household.name}
-          timeZone={household.timeZone}
-        />
-        <HomeDetailsSection household={household} isOwner={isOwner} />
-      </div>
+        <div className="flex flex-col gap-6">
+          <InviteCard
+            householdId={household.id}
+            homeName={household.name}
+            timeZone={household.timeZone}
+          />
+          <HomeDetailsSection household={household} isOwner={isOwner} />
+        </div>
+      </SettingsColumns>
       <OwnerOrLeave home={home} />
     </>
   );

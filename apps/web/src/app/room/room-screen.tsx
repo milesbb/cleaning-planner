@@ -4,12 +4,14 @@ import type { Room } from '@cleaning-planner/contracts/room';
 import type { ReactNode } from 'react';
 import { JobRow } from '@/components/jobs/job-row';
 import { AppShell } from '@/components/shell/app-shell';
+import { ChooseAJobHint } from '@/components/shell/choose-a-job-hint';
 import { PageHeader } from '@/components/shell/page-header';
 import {
   ScreenLoading,
   ScreenProblem,
   useStartAHomeWhenHomeless,
 } from '@/components/shell/screen-states';
+import { TwoColumns } from '@/components/shell/two-columns';
 import { PlusIcon } from '@/components/icons/interface-icons';
 import { ButtonLink } from '@/components/ui/button';
 import { jobHref } from '@/lib/home/job-href';
@@ -82,11 +84,20 @@ function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): Re
           <EditRoomButton householdId={home.householdId} room={room} jobCount={jobs.length} />
         }
       />
-      <ButtonLink href={`/room/add?id=${encodeURIComponent(room.id)}`} variant="dashed">
-        <PlusIcon />
-        Add a job
-      </ButtonLink>
-      <RoomJobList room={room} jobs={jobs} freshnessFor={freshnessIn(home)} />
+      <TwoColumns
+        main={
+          <>
+            <ButtonLink href={`/room/add?id=${encodeURIComponent(room.id)}`} variant="dashed">
+              <PlusIcon />
+              Add a job
+            </ButtonLink>
+            <RoomJobList room={room} jobs={jobs} freshnessFor={freshnessIn(home)} />
+          </>
+        }
+        side={<ChooseAJobHint />}
+        sideLabel="Job details"
+        sideBelowLaptop="hidden"
+      />
     </>
   );
 }
@@ -97,7 +108,7 @@ export function RoomScreen(): ReactNode {
   const hasNoHome = home.kind === 'noHome';
   useStartAHomeWhenHomeless(hasNoHome);
   return (
-    <AppShell activeTab="home">
+    <AppShell activeTab="home" layout="split">
       {home.kind === 'ready' && roomId === null && <RoomNotFound />}
       {home.kind === 'ready' && typeof roomId === 'string' && (
         <RoomContent home={home} roomId={roomId} />
