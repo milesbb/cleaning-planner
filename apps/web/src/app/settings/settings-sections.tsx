@@ -6,10 +6,10 @@ import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { FormAlert } from '@/components/account/account-screen';
 import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SectionHeading } from '@/components/ui/section-heading';
+import { PeopleList } from './people-list';
 import { ProfileSheet } from './profile-sheet';
 import { useSignOut } from './use-settings-actions';
 
@@ -49,18 +49,11 @@ interface HomePeopleProps {
 export function HomePeopleSection({ home, members, myUserId }: HomePeopleProps): ReactNode {
   return (
     <SettingsSection title={home.name}>
-      <Card raised={false}>
-        <ul className="flex flex-col gap-3">
-          {members.map((member) => (
-            <li key={member.userId} className="flex items-center gap-3">
-              <Avatar name={member.name} colour={member.colour} />
-              <span className="font-bold break-words">
-                {member.userId === myUserId ? `${member.name} (you)` : member.name}
-              </span>
-              {member.role === 'owner' ? <Badge tone="owner">Owner</Badge> : null}
-            </li>
-          ))}
-        </ul>
+      <Card raised={false} className="flex flex-col gap-4">
+        <PeopleList members={members} myUserId={myUserId} />
+        <ButtonLink href="/settings/home" variant="secondary">
+          Home settings
+        </ButtonLink>
       </Card>
     </SettingsSection>
   );
