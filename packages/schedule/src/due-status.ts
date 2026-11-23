@@ -9,11 +9,17 @@ import type { Weekday } from './types';
 
 export type DueStatus = 'late' | 'today' | 'tomorrow' | 'thisWeek' | 'later';
 
-export function lastDayOfWeek(today: CalendarDate, weekStartsOn: Weekday): CalendarDate {
+function daysSinceWeekStart(today: CalendarDate, weekStartsOn: Weekday): number {
   const weekStartNumber = WEEKDAYS_FROM_SUNDAY.indexOf(weekStartsOn);
-  const daysSinceWeekStart =
-    (weekdayNumberOf(today) - weekStartNumber + DAYS_PER_WEEK) % DAYS_PER_WEEK;
-  const daysLeftInWeek = DAYS_PER_WEEK - 1 - daysSinceWeekStart;
+  return (weekdayNumberOf(today) - weekStartNumber + DAYS_PER_WEEK) % DAYS_PER_WEEK;
+}
+
+export function firstDayOfWeek(today: CalendarDate, weekStartsOn: Weekday): CalendarDate {
+  return addInterval(today, { value: -daysSinceWeekStart(today, weekStartsOn), unit: 'day' });
+}
+
+export function lastDayOfWeek(today: CalendarDate, weekStartsOn: Weekday): CalendarDate {
+  const daysLeftInWeek = DAYS_PER_WEEK - 1 - daysSinceWeekStart(today, weekStartsOn);
   return addInterval(today, { value: daysLeftInWeek, unit: 'day' });
 }
 

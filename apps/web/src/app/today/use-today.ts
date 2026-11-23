@@ -7,7 +7,6 @@ import type { Profile } from '@cleaning-planner/contracts/profile';
 import type { Room } from '@cleaning-planner/contracts/room';
 import { addInterval } from '@cleaning-planner/schedule/calendar-date';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
-import { calendarDateInTimeZone } from '@cleaning-planner/schedule/time-zone';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -19,6 +18,7 @@ import {
   useRooms,
 } from '@/lib/home/home-queries';
 import type { AgendaRange } from '@/lib/home/home-queries';
+import { homeToday } from '@/lib/home/home-day';
 import { useCurrentHome } from '@/lib/home/use-current-home';
 import type { CurrentHome } from '@/lib/home/use-current-home';
 import { buildTodayView } from './today-view';
@@ -63,7 +63,7 @@ function agendaRangeFor(
   filter: TodayFilter,
 ): AgendaRange | null {
   if (household === undefined || me === undefined) return null;
-  const today = calendarDateInTimeZone(new Date().toISOString(), household.timeZone);
+  const today = homeToday(household);
   const person = filter === 'justMe' ? me.id : null;
   return { from: today, to: addInterval(today, ONE_DAY), person };
 }

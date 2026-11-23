@@ -22,3 +22,14 @@ const dayHeadingFormat = new Intl.DateTimeFormat('en-GB', {
 export function formatDayHeading(date: CalendarDate): string {
   return dayHeadingFormat.format(new Date(`${date}T00:00:00Z`)).replace(',', '');
 }
+
+const shortDateFormat = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  timeZone: 'UTC',
+});
+
+// "14 December".
+export function formatShortDate(date: CalendarDate): string {
+  return shortDateFormat.format(new Date(`${date}T00:00:00Z`));
+}

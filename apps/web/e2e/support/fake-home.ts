@@ -61,24 +61,40 @@ function due(jobId: string, offsetDays: number, status: string): DueItem {
   return { jobId, dueDate: calendarDay(offsetDays), status, assignee: null };
 }
 
-function agendaWithout(doneJobIds: ReadonlySet<string>): object {
+function daysBetween(from: string, to: string): string[] {
+  const days: string[] = [];
+  for (let time = Date.parse(from); time <= Date.parse(to); time += DAY_MS) {
+    days.push(new Date(time).toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+// The agenda for the days asked for: the oven is late (due two days ago), the
+// vacuum and hob are due today, and anything ticked off is done today.
+function agendaFor(url: string, doneJobIds: ReadonlySet<string>): object {
+  const query = new URL(url).searchParams;
   const notDone = (item: DueItem): boolean => !doneJobIds.has(item.jobId);
-  const late = [due('job-oven', -2, 'late')];
-  const today = [due('job-vacuum', 0, 'today'), due('job-hob', 0, 'today')];
+  const dueItems = [
+    due('job-oven', -2, 'late'),
+    due('job-vacuum', 0, 'today'),
+    due('job-hob', 0, 'today'),
+  ].filter(notDone);
   return {
-    late: late.filter(notDone),
-    days: [
-      {
-        date: calendarDay(0),
-        due: today.filter(notDone),
-        done: [...doneJobIds].map((jobId) => ({
-          jobId,
-          completedOn: calendarDay(0),
-          completedBy: 'user-alex',
-        })),
-      },
-      { date: calendarDay(1), due: [], done: [] },
-    ],
+    late: dueItems.filter((item) => item.status === 'late'),
+    days: daysBetween(query.get('from') ?? calendarDay(0), query.get('to') ?? calendarDay(1)).map(
+      (date) => ({
+        date,
+        due: dueItems.filter((item) => item.dueDate === date),
+        done:
+          date === calendarDay(0)
+            ? [...doneJobIds].map((jobId) => ({
+                jobId,
+                completedOn: date,
+                completedBy: 'user-alex',
+              }))
+            : [],
+      }),
+    ),
   };
 }
 
@@ -108,7 +124,9 @@ async function fakeHomeReads(page: Page): Promise<void> {
 async function fakeHome(page: Page, { failTicks = false } = {}): Promise<void> {
   const doneJobIds = new Set<string>();
   await fakeHomeReads(page);
-  await fakeApi(page, `${HOME}/agenda*`, () => ({ body: agendaWithout(doneJobIds) }));
+  await fakeApi(page, `${HOME}/agenda*`, (request) => ({
+    body: agendaFor(request.url(), doneJobIds),
+  }));
   await fakeApi(page, `${HOME}/jobs/*/completions`, (request) => {
     if (failTicks) return { status: 500, body: { error: { code: 'internal', message: 'Broke' } } };
     const jobId = /jobs\/([^/]+)\/completions/.exec(request.url())?.[1] ?? '';
