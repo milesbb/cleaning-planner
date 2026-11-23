@@ -19,16 +19,31 @@ import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { countOf } from '@/lib/rooms';
 import { useRecordId } from '@/lib/use-record-id';
 import { EditRoomButton } from './edit-room-button';
+import { freshnessOfJob } from './room-freshness';
+import type { JobFreshness } from './room-freshness';
 import { BACK_HOME, RoomNotFound } from './room-not-found';
 
 type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
 
+function withFreshness(freshness: JobFreshness | null): { freshness?: JobFreshness } {
+  return freshness === null ? {} : { freshness };
+}
+
+function freshnessIn({ sources }: ReadyRooms): (jobId: string) => JobFreshness | null {
+  return (jobId) => {
+    const job = sources.jobs.find((candidate) => candidate.id === jobId);
+    const progress = sources.progress.find((entry) => entry.jobId === jobId);
+    return job === undefined ? null : freshnessOfJob(job, progress, sources.today);
+  };
+}
+
 interface RoomJobListProps {
   room: Room;
   jobs: ReturnType<typeof jobsInRoom>;
+  freshnessFor: (jobId: string) => JobFreshness | null;
 }
 
-function RoomJobList({ room, jobs }: RoomJobListProps): ReactNode {
+function RoomJobList({ room, jobs, freshnessFor }: RoomJobListProps): ReactNode {
   if (jobs.length === 0) return <p className="text-[1.0625rem]">No jobs in this room yet.</p>;
   return (
     <ul aria-label={`Jobs in ${room.name}`} className="flex flex-col gap-2.5">
@@ -40,6 +55,7 @@ function RoomJobList({ room, jobs }: RoomJobListProps): ReactNode {
             icon={job.icon}
             meta={job.meta}
             href={jobHref(job.jobId)}
+            {...withFreshness(freshnessFor(job.jobId))}
             status={
               job.lateBy === undefined
                 ? { kind: 'scheduled' }
@@ -70,7 +86,7 @@ function RoomContent({ home, roomId }: { home: ReadyRooms; roomId: string }): Re
         <PlusIcon />
         Add a job
       </ButtonLink>
-      <RoomJobList room={room} jobs={jobs} />
+      <RoomJobList room={room} jobs={jobs} freshnessFor={freshnessIn(home)} />
     </>
   );
 }

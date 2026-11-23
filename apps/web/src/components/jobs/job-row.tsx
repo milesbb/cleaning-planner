@@ -7,6 +7,7 @@ import { CheckIcon } from '../icons/interface-icons';
 import { Avatar } from '../ui/avatar';
 import type { PersonColour } from '../ui/avatar';
 import { Badge } from '../ui/badge';
+import { FreshnessBar } from './freshness-bar';
 import { IconTile } from './icon-tile';
 
 export type JobRowStatus =
@@ -28,6 +29,7 @@ interface JobRowProps {
   href?: string;
   assignee?: Assignee;
   status: JobRowStatus;
+  freshness?: { level: number; label: string };
 }
 
 const ROW_CLASSES: Record<JobRowStatus['kind'], string> = {
@@ -56,9 +58,38 @@ interface JobSummaryProps {
   meta: string;
   assignee: Assignee | undefined;
   status: JobRowStatus;
+  freshness: JobRowProps['freshness'];
 }
 
-function JobSummary({ name, room, icon, meta, assignee, status }: JobSummaryProps): ReactNode {
+function JobText({
+  name,
+  meta,
+  status,
+  freshness,
+}: Pick<JobSummaryProps, 'name' | 'meta' | 'status' | 'freshness'>): ReactNode {
+  return (
+    <span className="flex min-w-0 flex-col gap-0.5">
+      <span
+        className={cn('text-[1.0625rem] font-bold break-words', {
+          'line-through': status.kind === 'done',
+        })}
+      >
+        {name}
+      </span>
+      <span className="text-sm">{metaLine(meta, status)}</span>
+      {(status.kind === 'due' || status.kind === 'scheduled') && status.lateBy !== undefined ? (
+        <Badge tone="late" className="self-start text-xs">
+          {status.lateBy}
+        </Badge>
+      ) : null}
+      {freshness === undefined ? null : (
+        <FreshnessBar level={freshness.level} label={freshness.label} className="mt-1 max-w-48" />
+      )}
+    </span>
+  );
+}
+
+function JobSummary({ room, icon, assignee, ...text }: JobSummaryProps): ReactNode {
   return (
     <>
       <IconTile icon={icon} colourClass={ROOM_APPEARANCE[room].colourClass}>
@@ -71,21 +102,7 @@ function JobSummary({ name, room, icon, meta, assignee, status }: JobSummaryProp
           />
         )}
       </IconTile>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span
-          className={cn('text-[1.0625rem] font-bold break-words', {
-            'line-through': status.kind === 'done',
-          })}
-        >
-          {name}
-        </span>
-        <span className="text-sm">{metaLine(meta, status)}</span>
-        {(status.kind === 'due' || status.kind === 'scheduled') && status.lateBy !== undefined ? (
-          <Badge tone="late" className="self-start text-xs">
-            {status.lateBy}
-          </Badge>
-        ) : null}
-      </span>
+      <JobText {...text} />
     </>
   );
 }
@@ -116,9 +133,9 @@ function RowAction({ name, status }: { name: string; status: JobRowStatus }): Re
   );
 }
 
-export function JobRow({ href, assignee, ...summary }: JobRowProps): ReactNode {
+export function JobRow({ href, assignee, freshness, ...summary }: JobRowProps): ReactNode {
   const { name, status } = summary;
-  const summaryContent = <JobSummary {...summary} assignee={assignee} />;
+  const summaryContent = <JobSummary {...summary} assignee={assignee} freshness={freshness} />;
   return (
     <div
       className={cn(

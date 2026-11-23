@@ -71,6 +71,36 @@ function JobRowsDemo(): ReactNode {
   );
 }
 
+// Room's rows for repeat-after-done jobs: fresh, and ready for a clean.
+function FreshnessRowsDemo(): ReactNode {
+  return (
+    <ul className="flex flex-col gap-2.5">
+      <li>
+        <JobRow
+          name="Wipe the fridge shelves"
+          room="kitchen"
+          icon="fridge"
+          meta="Every 2 weeks · Anyone · next 4 December"
+          href={DEMO_JOB_HREF}
+          status={{ kind: 'scheduled' }}
+          freshness={{ level: 0.7, label: 'Fresh for about 10 more days' }}
+        />
+      </li>
+      <li>
+        <JobRow
+          name="Descale the kettle"
+          room="kitchen"
+          icon="kettle"
+          meta="Monthly · Anyone · was due 20 November"
+          href={DEMO_JOB_HREF}
+          status={{ kind: 'scheduled', lateBy: '2 days late' }}
+          freshness={{ level: 0, label: 'Ready for a clean' }}
+        />
+      </li>
+    </ul>
+  );
+}
+
 function RoomTilesDemo(): ReactNode {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -112,6 +142,7 @@ export function JobPiecesDemo(): ReactNode {
   return (
     <DemoSection title="Job pieces">
       <JobRowsDemo />
+      <FreshnessRowsDemo />
       <RoomTilesDemo />
       <DayRowsDemo />
     </DemoSection>
