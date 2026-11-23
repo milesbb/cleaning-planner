@@ -18,3 +18,7 @@ testAtEveryViewport('Job detail', '/job?id=job-oven', {
   readyText: 'How to do it',
 });
 testAtEveryViewport('Settings', '/settings', { prepare: logInToHome, readyText: 'Sign out' });
+testAtEveryViewport('Home settings', '/settings/home', {
+  prepare: logInToHome,
+  readyText: 'Get an invite code',
+});

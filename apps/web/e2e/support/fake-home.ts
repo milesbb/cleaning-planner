@@ -106,9 +106,26 @@ function agendaFor(url: string, doneJobIds: ReadonlySet<string>): object {
 }
 
 async function fakeHomeReads(page: Page): Promise<void> {
-  await fakeApi(page, '/v1/households', {
-    body: [{ id: 'home-1', name: 'Our flat', role: 'member' }],
-  });
+  const homes = [{ id: 'home-1', name: 'Our flat', role: 'member' }];
+  await fakeApi(page, '/v1/households', () => ({ body: homes }));
+  await fakeApi(
+    page,
+    `${HOME}/leave`,
+    () => {
+      homes.length = 0;
+      return { status: 204, body: undefined };
+    },
+    { method: 'POST' },
+  );
+  await fakeApi(
+    page,
+    `${HOME}/invites`,
+    () => ({
+      status: 201,
+      body: { code: '7K3M9QZA', expiresAt: new Date(Date.now() + 7 * DAY_MS).toISOString() },
+    }),
+    { method: 'POST' },
+  );
   const me = { id: 'user-alex', name: 'Alex', email: 'alex@example.com', colour: 'pink' };
   await fakeApi(page, '/v1/me', () => ({ body: me }), { method: 'GET' });
   await fakeApi(

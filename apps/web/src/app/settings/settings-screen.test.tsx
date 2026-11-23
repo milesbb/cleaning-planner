@@ -64,6 +64,10 @@ describe('SettingsScreen', () => {
       expect.stringContaining('Sam'),
     ]);
     expect(within(people[1] ?? home).getByText('Owner')).toBeInTheDocument();
+    expect(within(home).getByRole('link', { name: 'Home settings' })).toHaveAttribute(
+      'href',
+      '/settings/home',
+    );
   });
 
   it('changes your name and colour', async () => {
