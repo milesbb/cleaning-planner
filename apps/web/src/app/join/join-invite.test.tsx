@@ -1,13 +1,12 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
-import type { ApiClient, ApiRequest } from '@/lib/api/api-client';
-import { ApiProvider } from '@/lib/api/api-provider';
-import { AccountAuthProvider } from '@/lib/auth/account-auth-provider';
 import { forgetPendingInvite, pendingInvite } from '@/lib/invites/pending-invite';
 import { stubAccountAuth } from '@/test/account-auth-stub';
+import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
+import type { FakeAnswers, FakeApiClient } from '@/test/fake-api-client';
 import { JoinInvite } from './join-invite';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
@@ -27,46 +26,18 @@ const UNKNOWN_CODE = 'That invite code isn’t valid. Ask for a new one.';
 const EXPIRED = 'That invite has expired. Ask for a new one.';
 const LOCKED_OUT = 'Too many wrong codes. Try again in an hour.';
 
-type Answers = Record<string, () => Promise<unknown>>;
-
-interface RecordingClient extends ApiClient {
-  calls: string[];
-}
-
-function clientAnswering(answers: Answers): RecordingClient {
-  const calls: string[] = [];
-  return {
-    calls,
-    request: async <Result,>(request: ApiRequest<Result>): Promise<Result> => {
-      const route = `${request.method} ${request.path}`;
-      calls.push(route);
-      const answer = answers[route];
-      if (answer === undefined) throw new Error(`No answer for ${route}`);
-      return request.response.parse(await answer());
-    },
-  };
-}
-
-interface OpenOptions {
-  isSignedIn?: boolean;
-  answers?: Answers;
-}
-
 function openInvite(
   address: string,
-  { isSignedIn = true, answers = {} }: OpenOptions = {},
-): RecordingClient {
+  { isSignedIn = true, answers = {} }: { isSignedIn?: boolean; answers?: FakeAnswers } = {},
+): FakeApiClient {
   window.history.replaceState(null, '', address);
   const client = clientAnswering(answers);
-  const auth = stubAccountAuth({ isSignedIn: () => Promise.resolve(isSignedIn) });
-  render(
-    <AccountAuthProvider auth={auth}>
-      <ApiProvider client={client} onSignedOut={vi.fn()}>
-        <main>
-          <JoinInvite />
-        </main>
-      </ApiProvider>
-    </AccountAuthProvider>,
+  renderWithApi(
+    <main>
+      <JoinInvite />
+    </main>,
+    client,
+    stubAccountAuth({ isSignedIn: () => Promise.resolve(isSignedIn) }),
   );
   return client;
 }
@@ -78,7 +49,7 @@ function rejectedWith(
   return () => Promise.reject(new ApiRequestError('rejected', message, { code }));
 }
 
-const previewAnswer: Answers = { [PREVIEW_ROUTE]: () => Promise.resolve(PREVIEW) };
+const previewAnswer: FakeAnswers = { [PREVIEW_ROUTE]: () => Promise.resolve(PREVIEW) };
 
 afterEach(() => {
   vi.clearAllMocks();

@@ -1,15 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { sessionValue } from './session-value';
+import { deviceValue, tabValue } from './stored-value';
 
-const draft = sessionValue('cleaning-planner.test-value');
+const draft = tabValue('cleaning-planner.test-value');
+const preference = deviceValue('cleaning-planner.test-preference');
 
 afterEach(() => {
   vi.restoreAllMocks();
   draft.forget();
+  preference.forget();
 });
 
 describe('a value kept for this tab', () => {
-  it('is remembered in session storage only, so it never goes in a URL or outlives the tab', () => {
+  it('is remembered in session storage only, so it never outlives the tab', () => {
     draft.remember('hello');
     expect(draft.read()).toBe('hello');
     expect(window.sessionStorage.length).toBe(1);
@@ -33,5 +35,15 @@ describe('a value kept for this tab', () => {
       draft.forget();
     }).not.toThrow();
     expect(draft.read()).toBeNull();
+  });
+});
+
+describe('a value kept on this device', () => {
+  it('is remembered in local storage until forgotten', () => {
+    preference.remember('evening');
+    expect(window.localStorage.length).toBe(1);
+    expect(preference.read()).toBe('evening');
+    preference.forget();
+    expect(preference.read()).toBeNull();
   });
 });
