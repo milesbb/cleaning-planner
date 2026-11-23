@@ -11,6 +11,7 @@ test.describe('Job detail', () => {
     );
     await page.getByRole('button', { name: 'Mark as done' }).click();
     await expect(page.getByRole('status')).toHaveText('Marked as done');
+    await expect(page.getByRole('list', { name: 'Times done' })).toContainText('Done by You on');
 
     await page.getByRole('button', { name: 'Rename' }).click();
     const renameSheet = page.getByRole('dialog', { name: 'Rename job' });

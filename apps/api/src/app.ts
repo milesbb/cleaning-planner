@@ -3,6 +3,7 @@ import { agendaRouter, progressRouter } from './controllers/agenda';
 import { healthRouter } from './controllers/health';
 import { householdsRouter } from './controllers/households';
 import { householdInvitesRouter, invitesRouter } from './controllers/invites';
+import { jobHistoryRouter } from './controllers/job-history';
 import { jobProgressRouter } from './controllers/job-progress';
 import { jobsRouter } from './controllers/jobs';
 import { membersRouter } from './controllers/members';
@@ -17,6 +18,7 @@ import type { AccountService } from './services/account-service';
 import type { AgendaService } from './services/agenda-service';
 import type { HouseholdService } from './services/household-service';
 import type { InviteService } from './services/invite-service';
+import type { JobHistoryService } from './services/job-history-service';
 import type { JobProgressService } from './services/job-progress-service';
 import type { JobService } from './services/job-service';
 import type { MemberService } from './services/member-service';
@@ -35,6 +37,7 @@ export interface AppServices {
   rooms: RoomService;
   jobs: JobService;
   progress: JobProgressService;
+  history: JobHistoryService;
   agenda: AgendaService;
   memberships: MembershipReader;
 }
@@ -53,6 +56,7 @@ function householdRouters(services: AppServices): [string, Router][] {
   return [
     ['/invites', householdInvitesRouter(services.invites, memberships)],
     ['/rooms', roomsRouter(services.rooms, memberships)],
+    ['/jobs/:jobId/completions', jobHistoryRouter(services.history, memberships)],
     ['/jobs/:jobId', jobProgressRouter(services.progress, memberships)],
     ['/jobs', jobsRouter(services.jobs, memberships)],
     ['/agenda', agendaRouter(services.agenda, memberships)],

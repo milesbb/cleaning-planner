@@ -6,7 +6,7 @@ import { parseCalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { describe, expect, it } from 'vitest';
 import { TODAY_FIXTURE } from '@/app/today/today-fixture';
 import { jobDetailsOf, snoozeChoices } from './job-details';
-import type { JobDetails } from './job-details';
+import type { JobBasics } from './job-details';
 import type { RoomSources } from './room-jobs';
 
 const TODAY = parseCalendarDate('2026-11-24');
@@ -37,7 +37,7 @@ function sourcesWith(job: Job, jobProgress: JobProgress | null): RoomSources {
   };
 }
 
-function detailsOf(job: Job = oven(), jobProgress: JobProgress | null = progress()): JobDetails {
+function detailsOf(job: Job = oven(), jobProgress: JobProgress | null = progress()): JobBasics {
   const details = jobDetailsOf(sourcesWith(job, jobProgress), 'job-oven');
   if (details === null) throw new Error('Expected the oven to be found');
   return details;
@@ -48,7 +48,7 @@ describe('jobDetailsOf', () => {
     expect(jobDetailsOf(sourcesWith(oven(), progress()), 'job-gone')).toBeNull();
   });
 
-  it('describes a late library job with its room, advice and who it is for', () => {
+  it('describes a late library job with its room and who it is for', () => {
     expect(detailsOf()).toMatchObject({
       name: 'Clean the oven',
       icon: 'oven',
@@ -58,33 +58,12 @@ describe('jobDetailsOf', () => {
       when: 'Was due 22 November',
       lateBy: '2 days late',
       howOften: 'Weekly',
-      recommendation: 'Most homes do this every 3 months to every 6 months.',
-      recommendedRange: {
-        shortest: { value: 3, unit: 'month' },
-        longest: { value: 6, unit: 'month' },
-      },
-      recommendedSchedule: { type: 'floating', every: { value: 3, unit: 'month' } },
+      libraryId: 'kitchen.oven',
       schedule: { type: 'floating', every: { value: 1, unit: 'week' } },
       whoFor: 'Anyone',
       assignment: { kind: 'anyone' },
-      why: 'Burnt-on grease smokes, smells and can affect how food tastes.',
-      howTo: [
-        'Take out the racks and soak them in hot soapy water.',
-        'Spread a paste of bicarbonate of soda and water inside and leave it overnight.',
-        'Wipe it out with a damp cloth and rinse.',
-      ],
       lastDone: 'Not done yet',
       version: 1,
-    });
-  });
-
-  it('has no advice for a job someone made up', () => {
-    expect(detailsOf(oven({ libraryId: null }))).toMatchObject({
-      recommendation: null,
-      recommendedRange: null,
-      recommendedSchedule: null,
-      why: null,
-      howTo: [],
     });
   });
 

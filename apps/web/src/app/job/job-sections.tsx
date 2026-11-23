@@ -1,18 +1,19 @@
 'use client';
 
+import type { CompletionRecord } from '@cleaning-planner/contracts/completion';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
-import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { FormAlert, FormStatus } from '@/components/account/account-screen';
 import { IconTile } from '@/components/jobs/icon-tile';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { SectionHeading } from '@/components/ui/section-heading';
 import { formatShortDate } from '@/lib/format-date';
 import type { JobDetails } from '@/lib/home/job-details';
 import { ROOM_APPEARANCE } from '@/lib/rooms';
 import { AssigneeSheet } from './assignee-sheet';
+import { JobFact } from './job-fact';
+import { JobHistory } from './job-history';
 import { RemoveJobSheet } from './remove-job-sheet';
 import { RenameJobSheet } from './rename-job-sheet';
 import { ScheduleSheet } from './schedule-sheet';
@@ -98,50 +99,38 @@ export function JobDueCard({ details, address, today }: JobDueCardProps): ReactN
   );
 }
 
-function Fact({ title, children }: { title: string; children: ReactNode }): ReactNode {
-  const headingId = useId();
-  return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1.5">
-      <SectionHeading id={headingId}>{title}</SectionHeading>
-      {children}
-    </section>
-  );
-}
-
-export function JobAbout({
-  details,
-  address,
-}: {
+interface JobAboutProps {
   details: JobDetails;
   address: JobAddress;
-}): ReactNode {
+  describeCompletion: (completion: CompletionRecord) => string;
+}
+
+export function JobAbout({ details, address, describeCompletion }: JobAboutProps): ReactNode {
   return (
     <div className="flex flex-col gap-5">
-      <Fact title="How often">
+      <JobFact title="How often">
         <p className="text-[1.0625rem] font-bold">{details.howOften}</p>
         {details.recommendation === null ? null : <p>{details.recommendation}</p>}
         <ScheduleSheet details={details} address={address} />
-      </Fact>
-      <Fact title="Who does it">
+      </JobFact>
+      <JobFact title="Who does it">
         <p className="text-[1.0625rem]">{details.whoFor}</p>
         <AssigneeSheet details={details} address={address} />
-      </Fact>
-      <Fact title="Last done">
-        <p className="text-[1.0625rem]">{details.lastDone}</p>
-      </Fact>
+      </JobFact>
+      <JobHistory address={address} lastDone={details.lastDone} describe={describeCompletion} />
       {details.why === null ? null : (
-        <Fact title="Why it matters">
+        <JobFact title="Why it matters">
           <p className="text-[1.0625rem]">{details.why}</p>
-        </Fact>
+        </JobFact>
       )}
       {details.howTo.length === 0 ? null : (
-        <Fact title="How to do it">
+        <JobFact title="How to do it">
           <ol className="flex list-decimal flex-col gap-1.5 pl-6 text-[1.0625rem]">
             {details.howTo.map((step) => (
               <li key={step}>{step}</li>
             ))}
           </ol>
-        </Fact>
+        </JobFact>
       )}
     </div>
   );
