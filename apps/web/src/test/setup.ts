@@ -47,5 +47,10 @@ if (!('ResizeObserver' in globalThis)) globalThis.ResizeObserver = NoopResizeObs
 Object.defineProperty(window, 'matchMedia', {
   configurable: true,
   writable: true,
-  value: (query: string) => ({ matches: false, media: query }),
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: (): void => undefined,
+    removeEventListener: (): void => undefined,
+  }),
 });
