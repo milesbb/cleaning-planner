@@ -18,6 +18,7 @@ import {
 } from '@/lib/auth/amplify-auth';
 import { signInPathFor } from '@/lib/navigation/start-route';
 import { useServiceWorker } from '@/lib/pwa/use-service-worker';
+import { onlyWhileSignedIn, savedDataStorage } from '@/lib/storage/saved-data-storage';
 
 // Built in at build time from the NEXT_PUBLIC_ variables (Vercel, or the e2e build).
 const authSettings = readAuthSettings({
@@ -46,6 +47,7 @@ const apiClient =
     process.env.NEXT_PUBLIC_API_URL,
     accessTokenFrom(loadAmplifyAuth, hasStoredSession),
   ) ?? NO_API;
+const savedData = onlyWhileSignedIn(savedDataStorage(), hasStoredSession);
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -59,7 +61,7 @@ export function AppProviders({ children }: AppProvidersProps): ReactNode {
   }, [router]);
   return (
     <AccountAuthProvider auth={accountAuth}>
-      <ApiProvider client={apiClient} onSignedOut={sendToSignIn}>
+      <ApiProvider client={apiClient} onSignedOut={sendToSignIn} savedData={savedData}>
         {children}
       </ApiProvider>
     </AccountAuthProvider>

@@ -8,11 +8,17 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import type { QueryKey, UseQueryResult } from '@tanstack/react-query';
-import { createContext, use, useState } from 'react';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createContext, use, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { SavedDataStorage } from '@/lib/storage/saved-data-storage';
 import { ApiRequestError } from './api-client';
 import type { ApiClient, ApiRequest } from './api-client';
 import { shouldRetry } from './query-policy';
+import { queueRequests } from './queued-requests';
+import { RefusedChangeContext } from './refused-change';
+import { SAVED_FOR_MS, savedAnswers as createSavedAnswers } from './saved-answers';
+import type { SavedAnswers } from './saved-answers';
 
 const FRESH_FOR_MS = 30_000;
 
@@ -21,28 +27,96 @@ const ApiClientContext = createContext<ApiClient | null>(null);
 interface ApiProviderProps {
   client: ApiClient;
   onSignedOut: () => void;
+  savedData?: SavedDataStorage;
   children: ReactNode;
+}
+
+function isSignedOut(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.kind === 'signedOut';
 }
 
 function createQueryClient(onSignedOut: () => void): QueryClient {
   const handleError = (error: unknown): void => {
-    if (error instanceof ApiRequestError && error.kind === 'signedOut') onSignedOut();
+    if (isSignedOut(error)) onSignedOut();
   };
+  const queryCache = new QueryCache({ onError: handleError });
+  const mutationCache = new MutationCache({ onError: handleError });
   return new QueryClient({
-    queryCache: new QueryCache({ onError: handleError }),
-    mutationCache: new MutationCache({ onError: handleError }),
+    queryCache,
+    mutationCache,
     defaultOptions: {
-      queries: { retry: shouldRetry, staleTime: FRESH_FOR_MS },
-      mutations: { retry: shouldRetry },
+      queries: { retry: shouldRetry, staleTime: FRESH_FOR_MS, gcTime: SAVED_FOR_MS },
+      mutations: { retry: shouldRetry, gcTime: SAVED_FOR_MS },
     },
   });
 }
 
-export function ApiProvider({ client, onSignedOut, children }: ApiProviderProps): ReactNode {
-  const [queryClient] = useState(() => createQueryClient(onSignedOut));
+// Saved answers show at once but count as stale, so every screen asks the API
+// again in the background (and a device that is no longer signed in finds out).
+function refreshAfterRestoring(queryClient: QueryClient): Promise<void> {
+  void queryClient.resumePausedMutations();
+  return queryClient.invalidateQueries({ refetchType: 'none' });
+}
+
+function QueryProvider({
+  queryClient,
+  savedAnswers,
+  children,
+}: {
+  queryClient: QueryClient;
+  savedAnswers: SavedAnswers | null;
+  children: ReactNode;
+}): ReactNode {
+  if (savedAnswers === null) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  }
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={savedAnswers.persistOptions}
+      onSuccess={() => refreshAfterRestoring(queryClient)}
+    >
+      {children}
+    </PersistQueryClientProvider>
+  );
+}
+
+export function ApiProvider({
+  client,
+  onSignedOut,
+  savedData,
+  children,
+}: ApiProviderProps): ReactNode {
+  const [refusedMessage, setRefusedMessage] = useState<string | null>(null);
+  const [savedAnswers] = useState(() =>
+    savedData === undefined ? null : createSavedAnswers(savedData),
+  );
+  // A 401 also forgets the saved answers, so the next person to sign in on this
+  // device never sees them.
+  const [queryClient] = useState(() => {
+    const newQueryClient = createQueryClient(() => {
+      savedAnswers?.forget();
+      onSignedOut();
+    });
+    queueRequests(newQueryClient, client, setRefusedMessage);
+    return newQueryClient;
+  });
+  const refusedChange = useMemo(
+    () => ({
+      message: refusedMessage,
+      dismiss: (): void => {
+        setRefusedMessage(null);
+      },
+    }),
+    [refusedMessage],
+  );
   return (
     <ApiClientContext value={client}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <RefusedChangeContext value={refusedChange}>
+        <QueryProvider queryClient={queryClient} savedAnswers={savedAnswers}>
+          {children}
+        </QueryProvider>
+      </RefusedChangeContext>
     </ApiClientContext>
   );
 }

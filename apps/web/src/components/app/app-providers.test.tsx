@@ -1,4 +1,7 @@
+import { useIsRestoring, useQueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
+import { set } from 'idb-keyval';
+import { useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { NO_CONTENT } from '@/lib/api/api-client';
@@ -10,6 +13,28 @@ import { AppProviders } from './app-providers';
 vi.mock('next/navigation', () => ({
   useRouter: (): { replace: () => void; push: () => void } => ({ replace: vi.fn(), push: vi.fn() }),
 }));
+
+vi.mock('idb-keyval', () => ({
+  createStore: vi.fn(() => 'saved-data-store'),
+  get: vi.fn(() => Promise.resolve(undefined)),
+  set: vi.fn(() => Promise.resolve()),
+  del: vi.fn(() => Promise.resolve()),
+}));
+
+function RemembersAnAnswer(): ReactNode {
+  const queryClient = useQueryClient();
+  const isRestoring = useIsRestoring();
+  useEffect(() => {
+    if (isRestoring) return;
+    const answerLater = setTimeout(() => {
+      queryClient.setQueryData(['me'], { name: 'Sam' });
+    });
+    return (): void => {
+      clearTimeout(answerLater);
+    };
+  }, [queryClient, isRestoring]);
+  return null;
+}
 
 function CaptureClient({ onClient }: { onClient: (client: ApiClient) => void }): ReactNode {
   onClient(useApiClient());
@@ -68,5 +93,23 @@ describe('AppProviders', () => {
     });
     vi.unstubAllEnvs();
     Reflect.deleteProperty(navigator, 'serviceWorker');
+  });
+
+  it('saves the API’s answers on this device, so the app opens with them next time', async () => {
+    render(
+      <AppProviders>
+        <RemembersAnAnswer />
+      </AppProviders>,
+    );
+    await waitFor(
+      () => {
+        expect(set).toHaveBeenCalledWith(
+          'api-answers',
+          expect.stringContaining('Sam'),
+          'saved-data-store',
+        );
+      },
+      { timeout: 3000 },
+    );
   });
 });
