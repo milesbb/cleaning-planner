@@ -91,6 +91,7 @@ export interface CognitoFunctions {
     newPassword: string;
   }) => Promise<unknown>;
   fetchAuthSession: () => Promise<{ tokens?: { accessToken: { toString: () => string } } }>;
+  signOut: () => Promise<void>;
 }
 
 interface NewAccount {
@@ -118,6 +119,7 @@ export interface AccountAuth {
   isSignedIn: () => Promise<boolean>;
   // Instant and offline: false only when the browser holds no session at all.
   mightBeSignedIn: () => boolean;
+  signOut: () => Promise<void>;
 }
 
 const CONFIRM_SIGN_UP = 'CONFIRM_SIGN_UP';
@@ -233,5 +235,6 @@ export function createAccountAuth(
     resetPassword: (reset) => resetPasswordWith(cognito, reset),
     isSignedIn: () => isSignedInWith(cognito),
     mightBeSignedIn: hasStoredSession,
+    signOut: () => translated(() => cognito.signOut()),
   };
 }

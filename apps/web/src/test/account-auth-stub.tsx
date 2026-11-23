@@ -15,6 +15,7 @@ export function stubAccountAuth(overrides: Partial<AccountAuth> = {}): AccountAu
     resetPassword: vi.fn(() => Promise.resolve()),
     isSignedIn: vi.fn(() => Promise.resolve(false)),
     mightBeSignedIn: vi.fn(() => false),
+    signOut: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

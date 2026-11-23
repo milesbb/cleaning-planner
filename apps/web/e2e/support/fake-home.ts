@@ -109,9 +109,17 @@ async function fakeHomeReads(page: Page): Promise<void> {
   await fakeApi(page, '/v1/households', {
     body: [{ id: 'home-1', name: 'Our flat', role: 'member' }],
   });
-  await fakeApi(page, '/v1/me', {
-    body: { id: 'user-alex', name: 'Alex', email: 'alex@example.com', colour: 'pink' },
-  });
+  const me = { id: 'user-alex', name: 'Alex', email: 'alex@example.com', colour: 'pink' };
+  await fakeApi(page, '/v1/me', () => ({ body: me }), { method: 'GET' });
+  await fakeApi(
+    page,
+    '/v1/me',
+    (request) => {
+      Object.assign(me, asObject(request.postDataJSON()));
+      return { body: me };
+    },
+    { method: 'PATCH' },
+  );
   await fakeApi(page, HOME, {
     body: {
       id: 'home-1',

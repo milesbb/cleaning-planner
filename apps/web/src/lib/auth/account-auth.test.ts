@@ -21,6 +21,7 @@ function stubCognito(overrides: Partial<CognitoFunctions> = {}): CognitoFunction
     resetPassword: vi.fn(() => Promise.resolve({})),
     confirmResetPassword: vi.fn(() => Promise.resolve()),
     fetchAuthSession: vi.fn(() => Promise.resolve({ tokens: { accessToken: {} } })),
+    signOut: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }
@@ -315,5 +316,13 @@ describe('checking for a session', () => {
 
   it('assumes someone might be signed in when it cannot tell', () => {
     expect(createAccountAuth(stubCognito()).mightBeSignedIn()).toBe(true);
+  });
+});
+
+describe('signing out', () => {
+  it('signs out of Cognito on this device', async () => {
+    const cognito = stubCognito();
+    await createAccountAuth(cognito).signOut();
+    expect(cognito.signOut).toHaveBeenCalled();
   });
 });
