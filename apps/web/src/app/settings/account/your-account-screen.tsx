@@ -9,6 +9,7 @@ import { TEXT_ACTION_CLASSES } from '@/components/account/account-screen';
 import { AppShell } from '@/components/shell/app-shell';
 import { BackLink, PageHeader } from '@/components/shell/page-header';
 import { ScreenLoading, ScreenProblem } from '@/components/shell/screen-states';
+import { ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useMe } from '@/lib/home/home-queries';
 import { useCurrentHome } from '@/lib/home/use-current-home';
@@ -90,6 +91,9 @@ export function YourAccountScreen(): ReactNode {
             />
           </div>
           <SignOutButton />
+          <ButtonLink href="/settings/account/delete" variant="danger">
+            Delete account
+          </ButtonLink>
         </>
       )}
     </AppShell>
