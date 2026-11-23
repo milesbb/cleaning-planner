@@ -97,11 +97,11 @@ infrastructure/
 | Range         | Typical device                     | Layout                                                                                                        |
 | ------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | 320–639px     | Phones                             | The designs as drawn: single column, bottom tab bar, bottom sheets                                            |
-| 640–1023px    | Large phones in landscape, tablets | Wider single column (max 40rem) with two-column grids for rooms and setup choices; bottom tab bar             |
+| 640–1023px    | Large phones in landscape, tablets | Wider single column (max 48rem) with more room tiles per row and two-column Settings; bottom tab bar          |
 | 1024–1439px   | Laptops, tablets in landscape      | Left navigation rail; Today shows Late/Today/Tomorrow beside the week strip; Job detail opens as a side panel |
 | 1440px and up | Desktops                           | Same as laptop, content capped at 80rem and centred, with more breathing room                                 |
 
-- Tablet and desktop layouts get designed on the canvas before the screens are built (#92), so they're decisions, not accidents.
+- Tablet and desktop layouts are specified screen by screen in [`LAYOUTS.md`](LAYOUTS.md) (#92), so they're decisions, not accidents. Build from it; changes to it are owner decisions.
 - Touch targets stay 44×44px at every size; hover is only ever an extra, never the only way to do something; everything works with a keyboard.
 - Text stays readable when the browser or phone font size is raised to 200%.
 - **Tests.** A shared Playwright helper runs every screen at 320, 375, 390, 412, 768, 1024, 1280, 1440 and 1920px wide, plus phones in landscape. Each run checks no horizontal scrolling, no axe violations, and touch targets of at least 44px, and saves a screenshot. It runs in release checks, so a layout that breaks at any size can't ship.
@@ -191,7 +191,7 @@ One PR per item. Every component gets a test file with the axe check first.
 1. **Tokens and fonts** (#16).
 2. **Static export** (#90): `output: 'export'`, no server-only features, `next/image` without the image server, a CI check that the export builds. Done early so nothing gets built that can't ship in the apps.
 3. **Viewport matrix** (#91): the Playwright viewport matrix from §3 as a reusable helper, run on the existing pages.
-4. **Tablet and desktop layouts** (#92): design the 640px, 1024px and 1440px versions of the main screens on the canvas.
+4. **Tablet and desktop layouts** (#92): the 640px, 1024px and 1440px versions of the main screens, written as a spec in [`LAYOUTS.md`](LAYOUTS.md).
 5. **Security headers and CSP** (#93) and **performance budgets in CI** (#94).
 6. **Icons** (#17), **primitives** (#18), **form fields** (#19), **choice controls** (#20), **job pieces** (#21).
 7. **App shell** (#22): bottom tab bar on phones, left rail from 1024px, bottom sheet on phones and a centred dialog on larger screens, safe areas for notches and home indicators.
