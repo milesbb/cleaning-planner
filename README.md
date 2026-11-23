@@ -41,7 +41,7 @@ apps/api            Express API for Lambda (controllers → service → data)
 packages/schedule   Scheduling engine (pure TypeScript, 95% coverage gate)
 packages/work-board The issue board for parallel sessions (npm run work:board)
 infrastructure/     CloudFormation template (app + pipeline) and CodeBuild buildspec
-docs/               Plan, implementation order and the parallel-work guide
+docs/               Plan, implementation order, the parallel-work guide and the tablet and desktop layouts
 .github/            PR check workflows and Dependabot
 CLAUDE.md           Claude Code context and rules (plus one per app/package)
 ```

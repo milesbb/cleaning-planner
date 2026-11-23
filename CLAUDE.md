@@ -49,7 +49,7 @@ packages/
 infrastructure/
   template.yml    SAM/CloudFormation: API, DynamoDB, budget, self-updating CodePipeline
   buildspec.yml   CodeBuild steps run by the pipeline
-docs/             PLAN.md, IMPLEMENTATION.md and PARALLEL-WORK.md
+docs/             PLAN.md, IMPLEMENTATION.md, PARALLEL-WORK.md and LAYOUTS.md (tablet and desktop layouts)
 ```
 
 Each app/package has its own `CLAUDE.md` with local rules. Read it before working there.
