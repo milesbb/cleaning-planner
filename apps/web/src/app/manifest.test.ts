@@ -1,5 +1,9 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import manifest from './manifest';
+
+const PUBLIC_FOLDER = resolve(import.meta.dirname, '../../public');
 
 describe('web app manifest', () => {
   const webManifest = manifest();
@@ -17,7 +21,13 @@ describe('web app manifest', () => {
     expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
   });
 
-  it('includes a maskable icon', () => {
-    expect(webManifest.icons?.some((icon) => icon.purpose === 'maskable')).toBe(true);
+  it('marks the maskable icons as maskable, at the same sizes as the others', () => {
+    const maskable = webManifest.icons?.filter((icon) => icon.purpose === 'maskable');
+    expect(maskable?.map((icon) => icon.sizes)).toEqual(['192x192', '512x512']);
+    expect(maskable?.every((icon) => icon.src.includes('maskable'))).toBe(true);
+  });
+
+  it.each(manifest().icons ?? [])('lists $src, which exists', ({ src }) => {
+    expect(existsSync(resolve(PUBLIC_FOLDER, `.${src}`))).toBe(true);
   });
 });
