@@ -23,9 +23,9 @@ async function fakeHome(
 ): Promise<void> {
   const doneJobIds = new Set<string>();
   await fakeHousehold(page, { isOwner });
-  await fakeJobs(page);
+  const jobs = await fakeJobs(page);
   await fakeAgenda(page, doneJobIds);
-  await fakeRooms(page);
+  await fakeRooms(page, jobs);
   await fakeProgress(page, doneJobIds);
   await fakeCompletions(page, doneJobIds, failTicks);
 }

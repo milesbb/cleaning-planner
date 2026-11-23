@@ -215,3 +215,62 @@ describe('removing a room', () => {
     expect(await within(sheet).findByText(new RegExp(`^${wording}`))).toBeInTheDocument();
   });
 });
+
+describe("changing a room's appliances", () => {
+  const KITCHEN_WITH_OVEN = { ...KITCHEN, appliances: ['oven'] };
+
+  it('ticks the appliances the room has and says what changing them does', async () => {
+    await openKitchen({
+      [`GET ${HOME_PATH}/rooms`]: () => Promise.resolve([KITCHEN_WITH_OVEN]),
+    });
+    const sheet = await openEditSheet();
+    const appliances = within(sheet).getByRole('group', { name: 'Appliances' });
+    expect(within(appliances).getByRole('checkbox', { name: 'Oven' })).toBeChecked();
+    expect(within(appliances).getByRole('checkbox', { name: 'Dishwasher' })).not.toBeChecked();
+    expect(sheet).toHaveTextContent(
+      'Ticking one adds its usual jobs. Unticking one removes its jobs from this room.',
+    );
+  });
+
+  it('sends only the appliances when only they changed, with the version it read', async () => {
+    const client = await openKitchen({
+      [`GET ${HOME_PATH}/rooms`]: () => Promise.resolve([KITCHEN_WITH_OVEN]),
+      [`PATCH ${KITCHEN_PATH}`]: () =>
+        Promise.resolve({ ...KITCHEN, appliances: ['dishwasher', 'oven'], version: 2 }),
+    });
+    const sheet = await openEditSheet();
+    await userEvent.click(within(sheet).getByRole('checkbox', { name: 'Dishwasher' }));
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(bodyOf(client, `PATCH ${KITCHEN_PATH}`)).toEqual({
+      appliances: ['dishwasher', 'oven'],
+      version: 1,
+    });
+  });
+
+  it('sends both when the name and the appliances changed', async () => {
+    const client = await openKitchen({
+      [`PATCH ${KITCHEN_PATH}`]: () => Promise.resolve({ ...KITCHEN, version: 2 }),
+    });
+    const sheet = await openEditSheet();
+    await userEvent.click(within(sheet).getByRole('checkbox', { name: 'Kettle' }));
+    await rename(sheet, 'Galley');
+    await waitFor(() => {
+      expect(bodyOf(client, `PATCH ${KITCHEN_PATH}`)).toEqual({
+        name: 'Galley',
+        appliances: ['kettle'],
+        version: 1,
+      });
+    });
+  });
+
+  it('offers no appliances for a room whose jobs need none', async () => {
+    window.history.replaceState(null, '', '/room?id=room-bed');
+    renderWithApi(<RoomScreen />, clientAnswering(homeAnswers()));
+    await screen.findByRole('heading', { name: 'Bedroom', level: 1 });
+    const sheet = await openEditSheet();
+    expect(within(sheet).queryByRole('group', { name: 'Appliances' })).not.toBeInTheDocument();
+  });
+});

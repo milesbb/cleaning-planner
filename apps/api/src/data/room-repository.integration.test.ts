@@ -54,6 +54,13 @@ async function putDone(jobId: string, doneAt: string): Promise<string> {
 const kitchenJobs: Job[] = planJobs([KITCHEN], [], FIRST_DAY, newId);
 const studyJobs: Job[] = planJobs([STUDY], [], FIRST_DAY, newId);
 
+async function storedJob(jobId: string): Promise<unknown> {
+  const { Item } = await table.client.send(
+    new GetCommand({ TableName: table.name, Key: { pk: HOME, sk: Keys.job(jobId) } }),
+  );
+  return Item;
+}
+
 beforeAll(async () => {
   await create();
   await rooms.addRoom('home-1', KITCHEN, kitchenJobs);
@@ -74,19 +81,37 @@ describe('room repository (DynamoDB Local)', () => {
 
   it('changes a room and moves its version on', async () => {
     await expect(
-      rooms.updateRoom('home-1', 'room-study', { name: 'Office', version: 1 }),
+      rooms.updateRoom('home-1', 'room-study', { name: 'Office', version: 1 }, []),
     ).resolves.toEqual({ ...STUDY, name: 'Office', version: 2 });
   });
 
   it('refuses a change made from an old copy', async () => {
     await expect(
-      rooms.updateRoom('home-1', 'room-study', { name: 'Den', version: 1 }),
+      rooms.updateRoom('home-1', 'room-study', { name: 'Den', version: 1 }, []),
     ).rejects.toThrow('Someone else changed this room');
+  });
+
+  it("saves a room's new jobs with the change, and none when the change is stale", async () => {
+    const [newJob] = planJobs(
+      [{ ...STUDY, type: 'kitchen', appliances: ['kettle'] }],
+      [],
+      FIRST_DAY,
+      () => 'job-kettle',
+    ).filter((job) => job.libraryId === 'kitchen.descale-kettle');
+    const jobsToAdd = newJob === undefined ? [] : [newJob];
+    await expect(
+      rooms.updateRoom('home-1', 'room-study', { appliances: [], version: 1 }, jobsToAdd),
+    ).rejects.toThrow('Someone else changed this room');
+    await expect(storedJob('job-kettle')).resolves.toBeUndefined();
+    await rooms.updateRoom('home-1', 'room-study', { appliances: [], version: 2 }, jobsToAdd);
+    await expect(storedJob('job-kettle')).resolves.toMatchObject({
+      libraryId: 'kitchen.descale-kettle',
+    });
   });
 
   it('says so when the room does not exist', async () => {
     await expect(
-      rooms.updateRoom('home-1', 'room-missing', { name: 'Den', version: 1 }),
+      rooms.updateRoom('home-1', 'room-missing', { name: 'Den', version: 1 }, []),
     ).rejects.toThrow('No such room');
     await expect(rooms.deleteRoom('home-1', 'room-missing')).rejects.toThrow('No such room');
   });

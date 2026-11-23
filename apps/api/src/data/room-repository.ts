@@ -9,7 +9,7 @@ import { findHomeItem, homeItemKey, homeItemKeys, homeItems } from './home-items
 import type { ItemKey } from './home-items';
 import { Keys } from './table';
 import type { Table } from './table';
-import { deleteItem, transact, updateIfUnchanged } from './transactions';
+import { deleteItem, putItem, transact, versionedUpdate } from './transactions';
 
 const ROOM_CHANGED = 'Someone else changed this room. Reload and try again.';
 
@@ -39,18 +39,29 @@ async function addRoom(
   ]);
 }
 
+interface RoomUpdate {
+  householdId: string;
+  roomId: string;
+  changes: UpdateRoomRequest;
+  jobsToAdd: readonly Job[];
+}
+
+// The room's new jobs go in with the version-checked change, so a stale change adds none.
 async function updateRoom(
   table: Table,
-  householdId: string,
-  roomId: string,
-  changes: UpdateRoomRequest,
+  { householdId, roomId, changes, jobsToAdd }: RoomUpdate,
 ): Promise<Room> {
   await requireRoom(table, householdId, roomId);
-  await updateIfUnchanged(table, {
-    key: homeItemKey(householdId, Keys.room(roomId)),
-    changes,
-    conflictMessage: ROOM_CHANGED,
-  });
+  await transact(
+    table,
+    [
+      versionedUpdate(table, homeItemKey(householdId, Keys.room(roomId)), changes),
+      ...jobsToAdd.map((job) =>
+        putItem(table, { ...homeItemKey(householdId, Keys.job(job.id)), ...job }),
+      ),
+    ],
+    ROOM_CHANGED,
+  );
   return requireRoom(table, householdId, roomId);
 }
 
@@ -91,7 +102,8 @@ export function createRoomRepository(table: Table): RoomStore {
   return {
     listRooms: (householdId) => listRooms(table, householdId),
     addRoom: (householdId, room, jobs) => addRoom(table, householdId, room, jobs),
-    updateRoom: (householdId, roomId, changes) => updateRoom(table, householdId, roomId, changes),
+    updateRoom: (householdId, roomId, changes, jobsToAdd) =>
+      updateRoom(table, { householdId, roomId, changes, jobsToAdd }),
     deleteRoom: (householdId, roomId) => deleteRoom(table, householdId, roomId),
   };
 }
