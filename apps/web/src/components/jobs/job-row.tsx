@@ -11,7 +11,7 @@ import { IconTile } from './icon-tile';
 
 export type JobRowStatus =
   | { kind: 'due'; lateBy?: string; onDone: () => void }
-  | { kind: 'done'; doneBy: string; doneAt: string; nextDue?: string; onUndo: () => void }
+  | { kind: 'done'; doneBy: string; doneAt?: string; nextDue?: string; onUndo: () => void }
   | { kind: 'upcoming' };
 
 interface Assignee {
@@ -24,7 +24,8 @@ interface JobRowProps {
   room: RoomType;
   icon: JobIconKey;
   meta: string;
-  href: string;
+  // Without an href the row isn't a link (until the job's own screen exists).
+  href?: string;
   assignee?: Assignee;
   status: JobRowStatus;
 }
@@ -40,7 +41,10 @@ const ROW_BUTTON_CLASSES =
 
 function metaLine(meta: string, status: JobRowStatus): string {
   if (status.kind !== 'done') return meta;
-  const doneLine = `Done by ${status.doneBy} at ${status.doneAt}`;
+  const doneLine =
+    status.doneAt === undefined
+      ? `Done by ${status.doneBy}`
+      : `Done by ${status.doneBy} at ${status.doneAt}`;
   return status.nextDue === undefined ? doneLine : `${doneLine} · next ${status.nextDue}`;
 }
 
@@ -121,7 +125,7 @@ export function JobRow({ href, assignee, ...summary }: JobRowProps): ReactNode {
         ROW_CLASSES[status.kind],
       )}
     >
-      {status.kind === 'done' ? (
+      {status.kind === 'done' || href === undefined ? (
         <div className="flex min-w-0 grow items-center gap-3">{summaryContent}</div>
       ) : (
         <Link

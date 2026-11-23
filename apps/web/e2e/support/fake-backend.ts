@@ -1,4 +1,4 @@
-import type { Page, Route } from '@playwright/test';
+import type { Page, Request, Route } from '@playwright/test';
 import { COGNITO_URL, E2E_ENVIRONMENT } from './test-environment';
 
 // Answers Cognito and our API inside the browser, so the signed-out flow runs
@@ -126,12 +126,12 @@ export async function fakeCognito(page: Page, answers: CognitoAnswers = {}): Pro
   return backend;
 }
 
-// Answers every method on `path`, or only `method` (others fall back to an
-// earlier fakeApi for the same path).
+// Answers every method on `path` (a glob), or only `method` (others fall back
+// to an earlier fakeApi for the same path). A function answer can keep state.
 export async function fakeApi(
   page: Page,
   path: string,
-  answer: FakeAnswer,
+  answer: FakeAnswer | ((request: Request) => FakeAnswer),
   { method }: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' } = {},
 ): Promise<void> {
   await page.route(`${E2E_ENVIRONMENT.NEXT_PUBLIC_API_URL}${path}`, async (route) => {
@@ -144,10 +144,11 @@ export async function fakeApi(
       await route.fallback();
       return;
     }
+    const { status = 200, body } = typeof answer === 'function' ? answer(route.request()) : answer;
     await route.fulfill({
-      status: answer.status ?? 200,
+      status,
       headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-      body: JSON.stringify(answer.body),
+      body: JSON.stringify(body),
     });
   });
 }

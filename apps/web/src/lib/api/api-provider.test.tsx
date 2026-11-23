@@ -31,11 +31,38 @@ function clientAnswering(answer: () => Promise<unknown>): ApiClient {
   };
 }
 
+function WaitingName({ isEnabled }: { isEnabled: boolean }): ReactNode {
+  const profile = useApiQuery(
+    ['me'],
+    { method: 'GET', path: '/v1/me', response: profileSchema },
+    { isEnabled },
+  );
+  return <p>{profile.data?.name ?? 'Waiting'}</p>;
+}
+
 describe('ApiProvider and useApiQuery', () => {
   it('has no accessibility violations', async () => {
     const { container } = renderWith(clientAnswering(() => Promise.resolve(SAM)));
     await screen.findByText('Signed in as Sam');
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('waits to ask until the query is enabled', async () => {
+    const answer = vi.fn(() => Promise.resolve(SAM));
+    const client = clientAnswering(answer);
+    const { rerender } = render(
+      <ApiProvider client={client} onSignedOut={vi.fn()}>
+        <WaitingName isEnabled={false} />
+      </ApiProvider>,
+    );
+    expect(screen.getByText('Waiting')).toBeInTheDocument();
+    expect(answer).not.toHaveBeenCalled();
+    rerender(
+      <ApiProvider client={client} onSignedOut={vi.fn()}>
+        <WaitingName isEnabled />
+      </ApiProvider>,
+    );
+    expect(await screen.findByText('Sam')).toBeInTheDocument();
   });
 
   it('loads typed data with one hook', async () => {
