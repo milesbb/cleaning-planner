@@ -291,7 +291,7 @@ Today, This week, Home and Room, Job detail and Add a job, with optimistic updat
 
 ## 12. Milestone 6: reminders
 
-1. **Service worker** (web only): offline shell and Web Push.
+1. **Service worker** (web only): offline shell and Web Push. Serwist precaches every exported page and file, so the site opens offline after one visit; a push shows its `{ title, body, url }` as a notification (a garbled one shows a calm default), and tapping it opens that page of the app (Today by default).
 2. **Native push** (apps): Capacitor push plugin registers an FCM token; the app asks for permission from a button tap, like the web.
 3. **Devices endpoint**: `POST/DELETE /v1/me/push-devices` stores Web Push subscriptions and FCM tokens alike.
 4. **Settings screen** and **one EventBridge Scheduler schedule per person** (daily and weekly, in their time zone).

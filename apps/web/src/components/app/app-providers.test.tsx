@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { NO_CONTENT } from '@/lib/api/api-client';
@@ -56,5 +56,17 @@ describe('AppProviders', () => {
     await expect(
       client?.request({ method: 'GET', path: '/v1/me', response: NO_CONTENT }),
     ).rejects.toMatchObject({ kind: 'unavailable' });
+  });
+
+  it('sets up the service worker on the built site, for offline start and reminders', async () => {
+    const register = vi.fn(() => Promise.resolve());
+    vi.stubEnv('NODE_ENV', 'production');
+    Object.defineProperty(navigator, 'serviceWorker', { value: { register }, configurable: true });
+    render(<AppProviders>{null}</AppProviders>);
+    await waitFor(() => {
+      expect(register).toHaveBeenCalledWith('/sw.js', { scope: '/' });
+    });
+    vi.unstubAllEnvs();
+    Reflect.deleteProperty(navigator, 'serviceWorker');
   });
 });
