@@ -116,6 +116,8 @@ export interface AccountAuth {
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (reset: PasswordReset) => Promise<void>;
   isSignedIn: () => Promise<boolean>;
+  // Instant and offline: false only when the browser holds no session at all.
+  mightBeSignedIn: () => boolean;
 }
 
 const CONFIRM_SIGN_UP = 'CONFIRM_SIGN_UP';
@@ -204,7 +206,12 @@ async function isSignedInWith(cognito: CognitoFunctions): Promise<boolean> {
   }
 }
 
-export function createAccountAuth(cognito: CognitoFunctions): AccountAuth {
+const MIGHT_BE_SIGNED_IN = (): boolean => true;
+
+export function createAccountAuth(
+  cognito: CognitoFunctions,
+  hasStoredSession: () => boolean = MIGHT_BE_SIGNED_IN,
+): AccountAuth {
   let waiting: WaitingSignIn | null = null;
   return {
     signUp: async (account): Promise<void> => {
@@ -225,5 +232,6 @@ export function createAccountAuth(cognito: CognitoFunctions): AccountAuth {
     requestPasswordReset: (email) => requestPasswordResetWith(cognito, email),
     resetPassword: (reset) => resetPasswordWith(cognito, reset),
     isSignedIn: () => isSignedInWith(cognito),
+    mightBeSignedIn: hasStoredSession,
   };
 }

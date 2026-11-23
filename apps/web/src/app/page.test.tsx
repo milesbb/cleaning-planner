@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import type { ApiClient } from '@/lib/api/api-client';
 import { ApiProvider } from '@/lib/api/api-provider';
@@ -12,9 +12,13 @@ vi.mock('next/navigation', () => ({ useRouter: (): typeof router => router }));
 
 const NO_CALLS: ApiClient = { request: () => Promise.reject(new Error('not called')) };
 
-function renderStart(isSignedIn: boolean): void {
+function renderStart(isSignedIn: boolean, mightBeSignedIn = isSignedIn): void {
+  const auth = stubAccountAuth({
+    isSignedIn: () => Promise.resolve(isSignedIn),
+    mightBeSignedIn: () => mightBeSignedIn,
+  });
   render(
-    <AccountAuthProvider auth={stubAccountAuth({ isSignedIn: () => Promise.resolve(isSignedIn) })}>
+    <AccountAuthProvider auth={auth}>
       <ApiProvider client={NO_CALLS} onSignedOut={vi.fn()}>
         <HomePage />
       </ApiProvider>
@@ -22,15 +26,27 @@ function renderStart(isSignedIn: boolean): void {
   );
 }
 
+afterEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('HomePage', () => {
-  it('has no accessibility violations while it decides', async () => {
+  it('has no accessibility violations', async () => {
     renderStart(false);
     expect(await axe(document.body)).toHaveNoViolations();
-    expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
-  it('sends someone signed out to Welcome', async () => {
+  it('shows Welcome at once to anyone with no session, without asking Cognito', () => {
     renderStart(false);
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Know what needs cleaning, and when.' }),
+    ).toBeInTheDocument();
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('checks a stored session, and sends someone whose session ended to Welcome', async () => {
+    renderStart(false, true);
+    expect(screen.getByRole('status')).toHaveTextContent('Getting your homes ready');
     await waitFor(() => {
       expect(router.replace).toHaveBeenCalledWith('/welcome');
     });

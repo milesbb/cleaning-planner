@@ -13,7 +13,6 @@ async function logIn(page: Page, password = 'lemon kettle sunday'): Promise<void
 test.describe('logging in', () => {
   test('signed out, the start page shows Welcome', async ({ page }) => {
     await openPage(page, '/');
-    await expect(page).toHaveURL(/\/welcome\/?$/);
     await expect(
       page.getByRole('heading', { level: 1, name: 'Know what needs cleaning, and when.' }),
     ).toBeVisible();

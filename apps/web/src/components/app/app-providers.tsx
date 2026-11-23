@@ -14,16 +14,17 @@ import {
   cognitoFunctionsFrom,
   lazyAmplifyAuth,
   readAuthSettings,
+  storedSessionCheck,
 } from '@/lib/auth/amplify-auth';
 import { signInPathFor } from '@/lib/navigation/start-route';
 
 // Built in at build time from the NEXT_PUBLIC_ variables (Vercel, or the e2e build).
-const loadAmplifyAuth = lazyAmplifyAuth(
-  readAuthSettings({
-    userPoolId: process.env.NEXT_PUBLIC_USER_POOL_ID,
-    userPoolClientId: process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID,
-  }),
-);
+const authSettings = readAuthSettings({
+  userPoolId: process.env.NEXT_PUBLIC_USER_POOL_ID,
+  userPoolClientId: process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID,
+});
+const loadAmplifyAuth = lazyAmplifyAuth(authSettings);
+const hasStoredSession = storedSessionCheck(authSettings);
 
 const NO_API: ApiClient = {
   request: () =>
@@ -35,9 +36,15 @@ const NO_API: ApiClient = {
     ),
 };
 
-const accountAuth = createAccountAuth(cognitoFunctionsFrom(loadAmplifyAuth));
+const accountAuth = createAccountAuth(
+  cognitoFunctionsFrom(loadAmplifyAuth, hasStoredSession),
+  hasStoredSession,
+);
 const apiClient =
-  createAppApiClient(process.env.NEXT_PUBLIC_API_URL, accessTokenFrom(loadAmplifyAuth)) ?? NO_API;
+  createAppApiClient(
+    process.env.NEXT_PUBLIC_API_URL,
+    accessTokenFrom(loadAmplifyAuth, hasStoredSession),
+  ) ?? NO_API;
 
 interface AppProvidersProps {
   children: ReactNode;
