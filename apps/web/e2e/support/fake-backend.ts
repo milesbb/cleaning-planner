@@ -126,10 +126,22 @@ export async function fakeCognito(page: Page, answers: CognitoAnswers = {}): Pro
   return backend;
 }
 
-export async function fakeApi(page: Page, path: string, answer: FakeAnswer): Promise<void> {
+// Answers every method on `path`, or only `method` (others fall back to an
+// earlier fakeApi for the same path).
+export async function fakeApi(
+  page: Page,
+  path: string,
+  answer: FakeAnswer,
+  { method }: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' } = {},
+): Promise<void> {
   await page.route(`${E2E_ENVIRONMENT.NEXT_PUBLIC_API_URL}${path}`, async (route) => {
-    if (route.request().method() === 'OPTIONS') {
+    const requestMethod = route.request().method();
+    if (requestMethod === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+    if (method !== undefined && requestMethod !== method) {
+      await route.fallback();
       return;
     }
     await route.fulfill({
