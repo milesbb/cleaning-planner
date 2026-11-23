@@ -26,6 +26,10 @@ Never: commit or push directly to `development` or `production`; open a PR into 
 
 The repository is **public**: never commit secrets, personal data or account identifiers (push protection will reject secrets). CodeQL must report no error-level or high-severity issues for a PR to merge; fix the code, never dismiss an alert without the user agreeing.
 
+## Parallel sessions — non-negotiable rules
+
+Several sessions may work at once, each on one GitHub issue in its own worktree. **Before working on any issue, read [`docs/PARALLEL-WORK.md`](docs/PARALLEL-WORK.md).** In short: run `npm run work:board`; only work on an issue labelled `status: in progress` for you (claim one from START NOW with `npm run work:board -- claim`); stay inside its `lane:` labels; never open a release PR unless you are the coordinating session.
+
 ## What this is
 
 Household cleaning planner, shipped as a **website (PWA), an iOS app and an Android app from one codebase**: `apps/web` is a Next.js static export, and `apps/mobile` wraps that build with Capacitor. Every screen must work at every size, from a 320px phone to a 1920px desktop. Users see what needs cleaning today, this week and later, with recommended frequencies they can adjust, and get reminders (Web Push, optional email). People sign up with email and password and share one or more homes ("households") with the people they live with.
@@ -41,10 +45,11 @@ packages/
   schedule/       Pure TypeScript recurrence engine + task library (shared by web, api and reminders)
   contracts/      zod request/response schemas shared by the API and the web app
   infrastructure-rules/  Vitest suite that checks infrastructure/template.yml against the rules below
+  work-board/     `npm run work:board`: the issue board and claims for parallel sessions
 infrastructure/
   template.yml    SAM/CloudFormation: API, DynamoDB, budget, self-updating CodePipeline
   buildspec.yml   CodeBuild steps run by the pipeline
-docs/             PLAN.md and decision records
+docs/             PLAN.md, IMPLEMENTATION.md and PARALLEL-WORK.md
 ```
 
 Each app/package has its own `CLAUDE.md` with local rules. Read it before working there.

@@ -39,8 +39,9 @@ Expected AWS cost: **about $0–1 a month** (breakdown in [docs/PLAN.md §7](doc
 apps/web            Next.js PWA
 apps/api            Express API for Lambda (controllers → service → data)
 packages/schedule   Scheduling engine (pure TypeScript, 95% coverage gate)
+packages/work-board The issue board for parallel sessions (npm run work:board)
 infrastructure/     CloudFormation template (app + pipeline) and CodeBuild buildspec
-docs/               Plan and decision records
+docs/               Plan, implementation order and the parallel-work guide
 .github/            PR check workflows and Dependabot
 CLAUDE.md           Claude Code context and rules (plus one per app/package)
 ```
@@ -65,6 +66,7 @@ Check the API: `curl http://localhost:4000/v1/health`.
 | `npm run lint`                                               | ESLint across all workspaces                                                                                                                                                                     |
 | `npm run typecheck`                                          | `tsc --noEmit` across all workspaces                                                                                                                                                             |
 | `npm test`                                                   | Unit tests (Vitest) across all workspaces                                                                                                                                                        |
+| `npm run work:board`                                         | What can start, what is in flight and what is blocked; also claims issues for parallel sessions ([docs/PARALLEL-WORK.md](docs/PARALLEL-WORK.md))                                                 |
 | `npm run test:integration --workspace=@cleaning-planner/api` | API repository tests against DynamoDB Local: start it with `docker run -p 8000:8000 amazon/dynamodb-local` and set `DYNAMODB_ENDPOINT=http://localhost:8000` (CI runs it as a service container) |
 | `npm run test:e2e`                                           | Playwright e2e on desktop, Android and iPhone projects                                                                                                                                           |
 | `npm run test:smoke`                                         | Invoke the built Lambda bundle with an API Gateway event (run `npm run build` first)                                                                                                             |

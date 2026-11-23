@@ -18,7 +18,8 @@
     "dupes": "jscpd apps packages",
     "test:mutation": "npm run test:mutation --workspace=@cleaning-planner/schedule",
     "test:lighthouse": "npm run test:lighthouse --workspace=@cleaning-planner/web",
-    "test:smoke": "npm run test:smoke --workspace=@cleaning-planner/api"
+    "test:smoke": "npm run test:smoke --workspace=@cleaning-planner/api",
+    "work:board": "npm run --silent board --workspace=@cleaning-planner/work-board --"
   },
   "engines": {
     "node": ">=24"
