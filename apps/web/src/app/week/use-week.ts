@@ -2,6 +2,7 @@
 
 import type { HouseholdSummary } from '@cleaning-planner/contracts/household';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
+import type { Household } from '@cleaning-planner/contracts/household';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useState } from 'react';
 import { homeToday } from '@/lib/home/home-day';
@@ -29,39 +30,67 @@ export type WeekState =
   | { kind: 'failed'; message: string; retry: () => void }
   | ReadyWeek;
 
-function failedState(queries: readonly UseQueryResult[]): WeekState | null {
+interface WeekFailure {
+  message: string;
+  retry: () => void;
+}
+
+export function failureOf(queries: readonly UseQueryResult[]): WeekFailure | null {
   const failed = queries.find((query) => query.isError);
   if (failed === undefined) return null;
-  return { kind: 'failed', message: failed.error.message, retry: () => void failed.refetch() };
+  return { message: failed.error.message, retry: () => void failed.refetch() };
 }
 
 interface WeekQueries {
   queries: readonly UseQueryResult[];
-  week: { today: CalendarDate; range: WeekRange; view: WeekView } | null;
+  week: (HomeWeek & { view: WeekView }) | null;
 }
 
-function useWeekQueries(householdId: string | null, offset: number): WeekQueries {
+interface HomeWeek {
+  today: CalendarDate;
+  range: WeekRange;
+}
+
+function homeWeekOf(household: Household | undefined, offset: number): HomeWeek | null {
+  if (household === undefined) return null;
+  const today = homeToday(household);
+  return { today, range: weekRange(today, household.weekStartsOn, offset) };
+}
+
+interface WeekChoice {
+  offset: number;
+  showsMoves: boolean;
+}
+
+// A week of the home's agenda. Which jobs can move comes from their progress,
+// fetched only where moving is offered.
+export function useWeekData(
+  householdId: string | null,
+  { offset, showsMoves }: WeekChoice,
+): WeekQueries {
   const household = useHousehold(householdId);
   const jobs = useJobs(householdId);
-  const today = household.data === undefined ? null : homeToday(household.data);
-  const range =
-    today === null || household.data === undefined
-      ? null
-      : weekRange(today, household.data.weekStartsOn, offset);
-  const agenda = useAgenda(householdId, range === null ? null : { ...range, person: null });
-  const progress = useProgress(householdId);
+  const homeWeek = homeWeekOf(household.data, offset);
+  const agenda = useAgenda(
+    householdId,
+    homeWeek === null ? null : { ...homeWeek.range, person: null },
+  );
+  const progress = useProgress(showsMoves ? householdId : null);
   const nextDueDates = new Map(
     (progress.data ?? []).map((entry) => [entry.jobId, entry.nextDueDate]),
   );
-  const isLoaded =
-    today !== null && range !== null && jobs.data !== undefined && agenda.data !== undefined;
+  const isLoaded = homeWeek !== null && jobs.data !== undefined && agenda.data !== undefined;
   return {
     queries: [household, jobs, agenda],
     week: isLoaded
       ? {
-          today,
-          range,
-          view: buildWeekView({ agenda: agenda.data, jobs: jobs.data, today, nextDueDates }),
+          ...homeWeek,
+          view: buildWeekView({
+            agenda: agenda.data,
+            jobs: jobs.data,
+            today: homeWeek.today,
+            nextDueDates,
+          }),
         }
       : null,
   };
@@ -72,9 +101,9 @@ function useWeekQueries(householdId: string | null, offset: number): WeekQueries
 export function useWeek(): WeekState {
   const current = useCurrentHome();
   const [offset, showWeek] = useState(0);
-  const { queries, week } = useWeekQueries(current.home?.id ?? null, offset);
-  const failed = failedState([current.homes, ...queries]);
-  if (failed !== null) return failed;
+  const { queries, week } = useWeekData(current.home?.id ?? null, { offset, showsMoves: true });
+  const failure = failureOf([current.homes, ...queries]);
+  if (failure !== null) return { kind: 'failed', ...failure };
   if (current.homes.data?.length === 0) return { kind: 'noHome' };
   if (current.home === null || week === null) return { kind: 'loading' };
   return {

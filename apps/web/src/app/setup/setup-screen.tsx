@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react';
 import { AccountHeading, AccountScreen } from '@/components/account/account-screen';
-import type { AccountScreenLayout } from '@/components/account/account-screen';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const STEP_COUNT = 3;
@@ -12,7 +10,6 @@ interface SetupScreenProps {
   back: string;
   title: string;
   intro: string;
-  layout?: Exclude<AccountScreenLayout, 'welcome'>;
   children: ReactNode;
 }
 
@@ -37,30 +34,13 @@ function StepProgress({ step }: { step: number }): ReactNode {
   );
 }
 
-// The frame for the three setup steps: back link, progress, heading. Steps
-// with a list of choices take the `choices` layout, which widens from 1024px.
-export function SetupScreen({
-  step,
-  back,
-  title,
-  intro,
-  layout = 'form',
-  children,
-}: SetupScreenProps): ReactNode {
+// The frame for the three setup steps: back link, progress, heading.
+export function SetupScreen({ step, back, title, intro, children }: SetupScreenProps): ReactNode {
   return (
-    <AccountScreen back={{ href: back, label: 'Back' }} layout={layout}>
+    <AccountScreen back={{ href: back, label: 'Back' }}>
       <StepProgress step={step} />
       <AccountHeading title={title}>{intro}</AccountHeading>
       {children}
     </AccountScreen>
-  );
-}
-
-// Under two columns of choices a full-width button would stretch across both.
-export function ChoicesContinueButton(): ReactNode {
-  return (
-    <Button type="submit" className="lg:max-w-xs">
-      Continue
-    </Button>
   );
 }

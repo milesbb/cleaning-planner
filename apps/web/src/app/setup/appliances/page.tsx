@@ -12,7 +12,6 @@ export default function SetupAppliancesPage(): ReactNode {
       back="/setup/rooms"
       title="What do you have at home?"
       intro="Appliances and floors add their own jobs, like cleaning the oven or mopping."
-      layout="choices"
     >
       <AppliancesForm />
     </SetupScreen>
