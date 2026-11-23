@@ -111,6 +111,36 @@ describe('BottomSheet', () => {
     });
   });
 
+  it('gives focus to the element it was told to, even when nothing had focus', async () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <BottomSheet
+        title="Your homes"
+        open
+        onOpenChange={onOpenChange}
+        returnFocusTo={{ current: opener }}
+      >
+        <p>Content</p>
+      </BottomSheet>,
+    );
+    rerender(
+      <BottomSheet
+        title="Your homes"
+        open={false}
+        onOpenChange={onOpenChange}
+        returnFocusTo={{ current: opener }}
+      >
+        <p>Content</p>
+      </BottomSheet>,
+    );
+    await waitFor(() => {
+      expect(opener).toHaveFocus();
+    });
+    opener.remove();
+  });
+
   it('closes with Escape', async () => {
     render(<SheetWithTrigger />);
     await userEvent.click(screen.getByRole('button', { name: 'Open sheet' }));
@@ -139,7 +169,7 @@ describe('HomeSwitcher', () => {
   it('shows the current home and lists every home when pressed', async () => {
     render(<HomeSwitcher homes={HOMES} currentHomeId="home-1" onSwitch={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: 'Our flat, switch home' }));
-    const sheet = screen.getByRole('dialog', { name: 'Your homes' });
+    const sheet = await screen.findByRole('dialog', { name: 'Your homes' });
     expect(sheet).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Our flat' })).toHaveAttribute(
       'aria-current',
@@ -152,7 +182,7 @@ describe('HomeSwitcher', () => {
     const onSwitch = vi.fn();
     render(<HomeSwitcher homes={HOMES} currentHomeId="home-1" onSwitch={onSwitch} />);
     await userEvent.click(screen.getByRole('button', { name: 'Our flat, switch home' }));
-    await userEvent.click(screen.getByRole('button', { name: "Mum's house" }));
+    await userEvent.click(await screen.findByRole('button', { name: "Mum's house" }));
     expect(onSwitch).toHaveBeenCalledWith('home-2');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -160,10 +190,23 @@ describe('HomeSwitcher', () => {
   it('offers to start or join another home', async () => {
     render(<HomeSwitcher homes={HOMES} currentHomeId="home-1" onSwitch={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: 'Our flat, switch home' }));
-    expect(screen.getByRole('link', { name: 'Start or join a home' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Start or join a home' })).toHaveAttribute(
       'href',
       '/homes/new',
     );
+  });
+
+  it('gives focus back to the switch button when it closes', async () => {
+    render(<HomeSwitcher homes={HOMES} currentHomeId="home-1" onSwitch={vi.fn()} />);
+    const switchButton = screen.getByRole('button', { name: 'Our flat, switch home' });
+    await userEvent.click(switchButton);
+    await screen.findByRole('dialog', { name: 'Your homes' });
+    expect(switchButton).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(switchButton).toHaveFocus();
+    });
+    expect(switchButton).toHaveAttribute('aria-expanded', 'false');
   });
 });
 
