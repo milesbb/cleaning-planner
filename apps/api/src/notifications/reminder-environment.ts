@@ -1,8 +1,8 @@
 import type { ScheduleTarget } from './reminder-schedules';
 
-type Environment = Record<string, string | undefined>;
+export type Environment = Record<string, string | undefined>;
 
-function required(environment: Environment, name: string): string {
+export function required(environment: Environment, name: string): string {
   const value = environment[name];
   if (value === undefined || value === '') throw new Error(`${name} is not set`);
   return value;
