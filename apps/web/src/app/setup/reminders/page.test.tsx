@@ -4,6 +4,7 @@ import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
+import { useHomes } from '@/lib/home/home-queries';
 import { DEFAULT_HOME_SETUP } from '@/lib/setup/home-setup';
 import { forgetHomeSetup, useHomeSetup } from '@/lib/setup/home-setup-draft';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
@@ -31,6 +32,11 @@ afterEach(() => {
 
 function SetupName(): string {
   return useHomeSetup().setup.homeName;
+}
+
+function HomeCount(): string {
+  const homes = useHomes();
+  return homes.data === undefined ? '' : `${String(homes.data.length)} homes`;
 }
 
 function openReminders(answers: FakeAnswers = {}): ReturnType<typeof clientAnswering> {
@@ -80,6 +86,27 @@ describe('Setup: reminders', () => {
     });
     expect(request.rooms).toContainEqual({ type: 'kitchen', name: 'Kitchen' });
     expect(window.localStorage.getItem('cleaning-planner.reminder-time')).toBe('evening');
+    expect(window.localStorage.getItem('cleaning-planner.current-home')).toBe('home-1');
+  });
+
+  it('refreshes the list of homes, so Today finds the new one', async () => {
+    const homesRoute = 'GET /v1/households';
+    const client = clientAnswering({
+      [homesRoute]: () => Promise.resolve([]),
+      [CREATE_ROUTE]: () => Promise.resolve(CREATED),
+    });
+    renderWithApi(
+      <>
+        <SetupRemindersPage />
+        <HomeCount />
+      </>,
+      client,
+    );
+    expect(await screen.findByText('0 homes')).toBeInTheDocument();
+    await createHome();
+    await waitFor(() => {
+      expect(client.calls.filter((call) => call === homesRoute)).toHaveLength(2);
+    });
   });
 
   it('forgets the setup choices once the home exists', async () => {

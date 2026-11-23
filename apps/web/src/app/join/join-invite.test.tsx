@@ -3,6 +3,7 @@ import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
+import { rememberedHomeId } from '@/lib/home/current-home';
 import { forgetPendingInvite, pendingInvite } from '@/lib/invites/pending-invite';
 import { stubAccountAuth } from '@/test/account-auth-stub';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
@@ -87,6 +88,7 @@ describe('JoinInvite', () => {
     });
     expect(client.calls).toContain(ACCEPT_ROUTE);
     expect(pendingInvite()).toBeNull();
+    expect(rememberedHomeId()).toBe('home-1');
   });
 
   it('explains a failed join and lets you try again', async () => {

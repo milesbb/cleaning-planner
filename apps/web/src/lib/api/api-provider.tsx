@@ -53,10 +53,12 @@ export function useApiClient(): ApiClient {
   return client;
 }
 
+// `isEnabled: false` waits, for a request that needs another query's answer first.
 export function useApiQuery<Result>(
   queryKey: QueryKey,
   request: ApiRequest<Result>,
+  { isEnabled = true }: { isEnabled?: boolean } = {},
 ): UseQueryResult<Result> {
   const client = useApiClient();
-  return useQuery({ queryKey, queryFn: () => client.request(request) });
+  return useQuery({ queryKey, queryFn: () => client.request(request), enabled: isEnabled });
 }

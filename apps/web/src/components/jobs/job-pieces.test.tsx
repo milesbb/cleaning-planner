@@ -96,6 +96,36 @@ describe('JobRow', () => {
     expect(onUndo).toHaveBeenCalledOnce();
   });
 
+  it('is not a link when there is nowhere to go yet', () => {
+    render(
+      <JobRow
+        name="Clean dishwasher filter"
+        room="kitchen"
+        icon="dishwasher"
+        meta="Kitchen · Alex · 15 min"
+        status={{ kind: 'due', onDone: vi.fn() }}
+      />,
+    );
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Mark Clean dishwasher filter as done' }),
+    ).toBeEnabled();
+  });
+
+  it('says who did a job even when the time is not known', () => {
+    render(
+      <JobRow
+        name="Wipe the hob"
+        room="kitchen"
+        icon="spray"
+        meta="Kitchen · 5 min"
+        href="/job?id=job-1"
+        status={{ kind: 'done', doneBy: 'Sam', onUndo: vi.fn() }}
+      />,
+    );
+    expect(screen.getByText('Done by Sam')).toBeInTheDocument();
+  });
+
   it('has no done button for a job that is not due yet', () => {
     render(<JobRow {...DISHWASHER_FILTER} status={{ kind: 'upcoming' }} />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();

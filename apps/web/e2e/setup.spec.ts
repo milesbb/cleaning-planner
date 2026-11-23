@@ -11,9 +11,16 @@ const CREATED = {
   version: 1,
 };
 
+// The home list is empty until the home is created.
 async function logInWithoutAHome(page: Page): Promise<void> {
+  let homes: object[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().endsWith('/v1/households')) {
+      homes = [{ id: CREATED.id, name: CREATED.name, role: 'owner' }];
+    }
+  });
   await fakeCognito(page);
-  await fakeApi(page, '/v1/households', { body: [] }, { method: 'GET' });
+  await fakeApi(page, '/v1/households', () => ({ body: homes }), { method: 'GET' });
   await openPage(page, '/sign-in');
   await page.getByLabel('Email', { exact: true }).fill('sam@example.com');
   await page.getByLabel('Password', { exact: true }).fill('lemon kettle sunday');
@@ -85,6 +92,7 @@ test.describe('setting up a home', () => {
     );
     await expect(page.getByRole('button', { name: 'Create home' })).toBeEnabled();
     await page.getByRole('link', { name: 'Back' }).click();
+    await expect(page.getByRole('heading', { name: 'What do you have at home?' })).toBeVisible();
     await page.getByRole('link', { name: 'Back' }).click();
     await expect(page.getByLabel('Home name')).toHaveValue('Our flat');
   });

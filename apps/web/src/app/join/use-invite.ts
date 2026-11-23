@@ -3,12 +3,13 @@
 import { householdSummarySchema } from '@cleaning-planner/contracts/household';
 import { invitePreviewSchema } from '@cleaning-planner/contracts/invite';
 import type { InvitePreview } from '@cleaning-planner/contracts/invite';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect } from 'react';
 import { ApiRequestError } from '@/lib/api/api-client';
 import { useApiClient } from '@/lib/api/api-provider';
+import { rememberCurrentHome } from '@/lib/home/current-home';
 import { useAccountAuth } from '@/lib/auth/account-auth-provider';
 import { forgetPendingInvite, rememberPendingInvite } from '@/lib/invites/pending-invite';
 
@@ -61,6 +62,7 @@ function useFollowUps(view: UseQueryResult<InviteView>, goHome: () => void): voi
 // signed in, and taken straight to the home when the person already lives there.
 export function useInvite(code: string): Invite {
   const client = useApiClient();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const view = useInviteView(code);
   useEffect(() => {
@@ -84,7 +86,11 @@ export function useInvite(code: string): Invite {
         path: `/v1/invites/${encodeURIComponent(code)}/accept`,
         response: householdSummarySchema,
       }),
-    onSuccess: goHome,
+    onSuccess: async (home): Promise<void> => {
+      rememberCurrentHome(home.id);
+      await queryClient.invalidateQueries({ queryKey: ['homes'] });
+      goHome();
+    },
   });
   return {
     view,

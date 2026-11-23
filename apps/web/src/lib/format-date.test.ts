@@ -1,6 +1,6 @@
 import { parseCalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { describe, expect, it } from 'vitest';
-import { formatLongDate } from './format-date';
+import { formatDayHeading, formatLongDate } from './format-date';
 
 describe('formatLongDate', () => {
   it.each([
@@ -8,5 +8,14 @@ describe('formatLongDate', () => {
     ['2027-02-28', '28 February 2027'],
   ])('formats %s as %s', (input, expected) => {
     expect(formatLongDate(parseCalendarDate(input))).toBe(expected);
+  });
+});
+
+describe('formatDayHeading', () => {
+  it.each([
+    ['2026-11-24', 'Tuesday 24 November'],
+    ['2027-01-01', 'Friday 1 January'],
+  ])('formats %s as %s', (input, expected) => {
+    expect(formatDayHeading(parseCalendarDate(input))).toBe(expected);
   });
 });

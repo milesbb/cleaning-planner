@@ -64,12 +64,25 @@ export async function accessibilityViolations(page: Page): Promise<string[]> {
   );
 }
 
-export function testAtEveryViewport(screenName: string, path: string): void {
+interface ScreenSetup {
+  // Runs before the screen opens, for screens that need a signed-in person.
+  prepare?: (page: Page) => Promise<void>;
+  // Text that shows once the screen has its data.
+  readyText?: string;
+}
+
+export function testAtEveryViewport(
+  screenName: string,
+  path: string,
+  { prepare, readyText }: ScreenSetup = {},
+): void {
   test.describe(`${screenName} at every screen size`, () => {
     for (const viewport of VIEWPORTS) {
       test(viewport.name, async ({ page }, testInfo) => {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        await prepare?.(page);
         await page.goto(path);
+        if (readyText !== undefined) await page.getByText(readyText).first().waitFor();
         await testInfo.attach(`${screenName} – ${viewport.name}`, {
           body: await page.screenshot({ fullPage: true }),
           contentType: 'image/png',
