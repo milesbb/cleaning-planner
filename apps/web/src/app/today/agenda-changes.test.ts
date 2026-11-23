@@ -1,6 +1,12 @@
 import { parseCalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { describe, expect, it } from 'vitest';
-import { findDueItem, withJobDone, withJobUndone } from './agenda-changes';
+import {
+  findDueItem,
+  withJobDone,
+  withJobSkipped,
+  withJobSnoozed,
+  withJobUndone,
+} from './agenda-changes';
 import { TODAY_FIXTURE } from './today-fixture';
 
 const { agenda } = TODAY_FIXTURE;
@@ -56,5 +62,38 @@ describe('findDueItem', () => {
     expect(findDueItem(agenda, 'job-oven')?.status).toBe('late');
     expect(findDueItem(agenda, 'job-bed')?.status).toBe('tomorrow');
     expect(findDueItem(agenda, 'job-bins')).toBeNull();
+  });
+});
+
+describe('withJobSkipped', () => {
+  it('takes a job due today off today’s list without marking it done', () => {
+    const skipped = withJobSkipped(agenda, 'job-hob');
+    expect(skipped.days[0]?.due.map((item) => item.jobId)).toEqual(['job-vacuum']);
+    expect(skipped.days[0]?.done).toEqual(agenda.days[0]?.done);
+  });
+
+  it('takes a late job off the late list', () => {
+    expect(withJobSkipped(agenda, 'job-oven').late).toEqual([]);
+  });
+});
+
+describe('withJobSnoozed', () => {
+  const TOMORROW = parseCalendarDate('2026-11-25');
+
+  it('moves a job due today to tomorrow, after tomorrow’s own jobs', () => {
+    const snoozed = withJobSnoozed(agenda, 'job-hob', TOMORROW);
+    expect(snoozed.days[0]?.due.map((item) => item.jobId)).toEqual(['job-vacuum']);
+    expect(snoozed.days[1]?.due.map((item) => item.jobId)).toEqual(['job-bed', 'job-hob']);
+    expect(snoozed.days[1]?.due.at(-1)?.dueDate).toBe('2026-11-25');
+  });
+
+  it('moves a late job to tomorrow', () => {
+    const snoozed = withJobSnoozed(agenda, 'job-oven', TOMORROW);
+    expect(snoozed.late).toEqual([]);
+    expect(snoozed.days[1]?.due.map((item) => item.jobId)).toContain('job-oven');
+  });
+
+  it('leaves the agenda alone for a job that is not due', () => {
+    expect(withJobSnoozed(agenda, 'job-bins', TOMORROW)).toEqual(agenda);
   });
 });

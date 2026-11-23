@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
-import type { FakeAnswers, FakeApiClient } from '@/test/fake-api-client';
 import { TODAY_FIXTURE } from './today-fixture';
 import { TodayScreen } from './today-screen';
+import { AGENDA, HOME, NEVER, SAVED, homeAnswers, openToday, section } from './today-test-support';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 vi.mock('next/navigation', () => ({
@@ -14,49 +14,8 @@ vi.mock('next/navigation', () => ({
   usePathname: (): string => '/today',
 }));
 
-const HOME = '/v1/households/home-1';
-const AGENDA = `GET ${HOME}/agenda?from=2026-11-24&to=2026-11-25`;
 const DONE_HOB = `POST ${HOME}/jobs/job-hob/completions`;
 const UNDO_BINS = `DELETE ${HOME}/jobs/job-bins/completions/latest`;
-const SAVED = {
-  jobId: 'job-hob',
-  nextDueDate: '2026-11-25',
-  snooze: null,
-  latestCompletion: null,
-};
-const NEVER = (): Promise<never> => new Promise(() => undefined);
-
-function homeAnswers(agenda: unknown = TODAY_FIXTURE.agenda): FakeAnswers {
-  return {
-    'GET /v1/households': () =>
-      Promise.resolve([{ id: 'home-1', name: 'Our flat', role: 'member' }]),
-    'GET /v1/me': () =>
-      Promise.resolve({ id: 'user-alex', name: 'Alex', email: 'alex@example.com', colour: 'pink' }),
-    [`GET ${HOME}`]: () =>
-      Promise.resolve({
-        id: 'home-1',
-        name: 'Our flat',
-        timeZone: 'Europe/London',
-        weekStartsOn: 'monday',
-        ownerId: 'user-sam',
-        version: 1,
-      }),
-    [`GET ${HOME}/members`]: () => Promise.resolve(TODAY_FIXTURE.members),
-    [`GET ${HOME}/rooms`]: () => Promise.resolve(TODAY_FIXTURE.rooms),
-    [`GET ${HOME}/jobs`]: () => Promise.resolve(TODAY_FIXTURE.jobs),
-    [AGENDA]: () => Promise.resolve(agenda),
-  };
-}
-
-function openToday(answers: FakeAnswers = homeAnswers()): FakeApiClient {
-  const client = clientAnswering(answers);
-  renderWithApi(<TodayScreen />, client);
-  return client;
-}
-
-function section(name: string): HTMLElement {
-  return screen.getByRole('region', { name });
-}
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });

@@ -30,6 +30,7 @@ interface JobRowProps {
   assignee?: Assignee;
   status: JobRowStatus;
   freshness?: { level: number; label: string };
+  more?: ReactNode;
 }
 
 const ROW_CLASSES: Record<JobRowStatus['kind'], string> = {
@@ -133,7 +134,7 @@ function RowAction({ name, status }: { name: string; status: JobRowStatus }): Re
   );
 }
 
-export function JobRow({ href, assignee, freshness, ...summary }: JobRowProps): ReactNode {
+export function JobRow({ href, assignee, freshness, more, ...summary }: JobRowProps): ReactNode {
   const { name, status } = summary;
   const summaryContent = <JobSummary {...summary} assignee={assignee} freshness={freshness} />;
   return (
@@ -153,6 +154,7 @@ export function JobRow({ href, assignee, freshness, ...summary }: JobRowProps): 
           {summaryContent}
         </Link>
       )}
+      {more}
       <RowAction name={name} status={status} />
     </div>
   );
