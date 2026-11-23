@@ -103,7 +103,7 @@ Page padding 40px on each side at both widths; 24px between the columns at 1024p
   - Edit room (the appliance ticks in two columns from 768px),
   - See all activity (long lines read better wider).
 
-  Every other sheet (snooze, done earlier, schedule, assignee, rename, remove, profile, home details, Your homes, manage member, leave, delete) stays 32rem: they are short forms.
+  Every other sheet (snooze, done earlier, Move to…, schedule, assignee, rename, remove, profile, home details, Your homes, manage member, leave, delete) stays 32rem: they are short forms.
 
 - Dialogs never become side panels. The only side panel is Job detail ([§3](#3-job-detail-as-a-side-panel)), and a sheet opened from inside it (Snooze, Change how often…) is still a centred dialog over everything.
 - Phones in landscape (640px or more wide but under 500px tall) get the centred dialog too; its 85dvh max height and inner scroll keep the buttons reachable.
@@ -240,6 +240,7 @@ Each screen: phones as now, then 640px, 1024px and 1440px. "As now" means the co
 - A section headed **This week** (`SectionHeading`), with the week's progress under it in body text: "3 of 12 done", or "Nothing planned".
 - A `Card raised={false}` holding this week's seven `DayRow`s (the home's week start, today marked as `DayRow` already does with `bg-kitchen` and `aria-current="date"`), each a link to `/week`.
 - Below the card, a `ButtonLink variant="secondary"` "See the week" to `/week`.
+- The strip's job tiles are plain pictures, not Move to… buttons: moving jobs belongs on Week, and the whole row is already a link.
 - Always the current week (no previous / next here; that's what Week is for). Same data as Week's current week (`useWeek` at offset 0, one agenda request), fetched only when the strip is shown.
 - States: loading ("Getting the week…" in a `role="status"` line, the card's space reserved so nothing jumps), error (one line and Try again, inside the card), empty (seven "Nothing planned" rows).
 - Ticking a job on Today updates the strip at once (same cache), so its day's count moves.
@@ -280,6 +281,8 @@ Each screen: phones as now, then 640px, 1024px and 1440px. "As now" means the co
 | 640px  | As phones, in the 592px column (`DayRow`s have room for more job tiles per line, nothing else changes).                                                                                                                                                                                                                                                  |
 | 1024px | **Split** frame. Header across the top with previous / next at its end. Main column: the days card, then Coming up under it (as on phones). Side column: a **hint** while no job is open ("Choose a job to see when it's due, who does it and how.", with a small `ArtFrame` at most 12rem wide; the same hint as Room), or Job detail when one is open. |
 | 1440px | Same; main column 696px, so each `DayRow` shows its job tiles on one line for a typical day.                                                                                                                                                                                                                                                             |
+
+The days' job tiles stay 44px buttons that open Move to… (a 32rem sheet) at every width; dragging them to another day on laptops is #261, an extra on top of the button, never instead of it.
 
 Coming up stays in the main column because its rows open the panel: if it sat in the side column, opening a job would hide the list being worked through.
 
