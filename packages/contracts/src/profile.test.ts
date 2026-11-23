@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { deleteAccountRequestSchema, profileSchema, updateProfileRequestSchema } from './profile';
+import {
+  deleteAccountRequestSchema,
+  profileSchema,
+  refreshEmailRequestSchema,
+  updateProfileRequestSchema,
+} from './profile';
 import { describeContract, fieldErrorsFor } from './test-support';
 
 describeContract('profileSchema', profileSchema, {
@@ -54,5 +59,16 @@ describe('deleteAccountRequestSchema', () => {
         ],
       }),
     ).toEqual({ ownedHomes: 'Choose once for each home' });
+  });
+});
+
+describe('refreshEmailRequestSchema', () => {
+  it('takes no body, or an empty one', () => {
+    expect(refreshEmailRequestSchema.safeParse(undefined).success).toBe(true);
+    expect(refreshEmailRequestSchema.safeParse({}).success).toBe(true);
+  });
+
+  it('refuses an email sent by the client, which only Cognito may say', () => {
+    expect(refreshEmailRequestSchema.safeParse({ email: 'alex@example.com' }).success).toBe(false);
   });
 });

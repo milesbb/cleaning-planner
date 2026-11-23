@@ -57,6 +57,26 @@ describe('profile repository (DynamoDB Local)', () => {
     });
   });
 
+  it('changes the email on the profile only', async () => {
+    await expect(profiles.updateEmail('user-sam', 'sam@new.example.com')).resolves.toMatchObject({
+      name: 'Sammy',
+      email: 'sam@new.example.com',
+    });
+    const { Item } = await table.client.send(
+      new GetCommand({
+        TableName: table.name,
+        Key: { pk: Keys.household('home-flat'), sk: Keys.member('user-sam') },
+      }),
+    );
+    expect(Item).not.toHaveProperty('email');
+  });
+
+  it('cannot change the email of a profile that was never created', async () => {
+    await expect(profiles.updateEmail('user-nobody', 'nobody@example.com')).rejects.toThrow(
+      'Open the app again to set up your profile',
+    );
+  });
+
   it('cannot update a profile that was never created', async () => {
     await expect(profiles.updateProfile('user-nobody', { name: 'Nobody' })).rejects.toThrow(
       'Open the app again to set up your profile',
@@ -114,6 +134,9 @@ describe('profile repository limits and failures', () => {
       name: 'ResourceNotFoundException',
     });
     await expect(broken.updateProfile('user-sam', { name: 'Sam' })).rejects.toMatchObject({
+      name: 'ResourceNotFoundException',
+    });
+    await expect(broken.updateEmail('user-sam', 'sam@example.com')).rejects.toMatchObject({
       name: 'ResourceNotFoundException',
     });
   });

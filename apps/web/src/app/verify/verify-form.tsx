@@ -17,7 +17,7 @@ import type { Submission } from '@/components/account/use-submission';
 import { Button } from '@/components/ui/button';
 import { CodeInput } from '@/components/ui/code-input';
 import { TextField } from '@/components/ui/text-field';
-import type { AccountAuthError } from '@/lib/auth/account-auth';
+import type { AccountAuthError } from '@/lib/auth/account-auth-error';
 import { useAccountAuth } from '@/lib/auth/account-auth-provider';
 import { codeError } from '@/lib/auth/account-validation';
 import { forgetPendingEmail } from '@/lib/auth/pending-email';

@@ -21,7 +21,7 @@ function notUsed(): Promise<never> {
 }
 
 const UNUSED_SERVICES: AppServices = {
-  profiles: { getMyProfile: notUsed, updateMyProfile: notUsed },
+  profiles: { getMyProfile: notUsed, updateMyProfile: notUsed, refreshMyEmail: notUsed },
   households: {
     createHome: notUsed,
     listHomes: notUsed,
@@ -43,7 +43,15 @@ const UNUSED_SERVICES: AppServices = {
   progress: { completeJob: notUsed, undoLatest: notUsed, snoozeJob: notUsed },
   history: { listHistory: notUsed },
   agenda: { getAgenda: notUsed, listProgress: notUsed },
+  activity: { listActivity: notUsed },
   accounts: { deleteAccount: notUsed },
+  reminders: {
+    getReminders: notUsed,
+    saveReminders: notUsed,
+    sendTestReminder: notUsed,
+    removeSchedules: notUsed,
+  },
+  pushDevices: { addDevice: notUsed, removeDevice: notUsed },
   memberships: { findMembership: notUsed },
 };
 

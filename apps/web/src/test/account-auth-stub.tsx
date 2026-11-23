@@ -17,6 +17,10 @@ export function stubAccountAuth(overrides: Partial<AccountAuth> = {}): AccountAu
     mightBeSignedIn: vi.fn(() => false),
     signOut: vi.fn(() => Promise.resolve()),
     changePassword: vi.fn(() => Promise.resolve('changed' as const)),
+    recheckPassword: vi.fn(() => Promise.resolve()),
+    requestEmailChange: vi.fn(() => Promise.resolve('confirmCode' as const)),
+    confirmEmailChange: vi.fn(() => Promise.resolve()),
+    resendEmailChangeCode: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

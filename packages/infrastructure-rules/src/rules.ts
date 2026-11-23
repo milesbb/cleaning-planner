@@ -8,6 +8,11 @@ import {
   routesLeavePreflightsToCors,
 } from './api-rules';
 import { isRecord } from './cloudformation-template';
+import {
+  functionsLogToGroupsWithRetention,
+  functionsManageOnlyTheProjectsSchedules,
+  schedulerRolesOnlyInvokeNotify,
+} from './reminder-rules';
 import type {
   CloudFormationTemplate,
   Properties,
@@ -160,4 +165,8 @@ export const INFRASTRUCTURE_RULES: Record<string, Rule> = {
   'every function has a timeout of at most 30 seconds': functionsHaveTimeouts,
   'functions reach Cognito only with the caller’s own token, never their role':
     functionsCannotManageSignIns,
+  'the Scheduler role can only invoke notify': schedulerRolesOnlyInvokeNotify,
+  "functions manage only the project's schedules and pass only this stack's roles":
+    functionsManageOnlyTheProjectsSchedules,
+  'every function logs to a log group with a retention period': functionsLogToGroupsWithRetention,
 };

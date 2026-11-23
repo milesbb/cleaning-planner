@@ -6,9 +6,8 @@ const version = process.env.CODEBUILD_RESOLVED_SOURCE_VERSION ?? 'local';
 
 await rm('dist', { recursive: true, force: true });
 
-await build({
-  entryPoints: ['src/lambda.ts'],
-  outfile: 'dist/lambda.js',
+// The two Lambda functions: the API and notify (reminders).
+const lambdaBundle = {
   bundle: true,
   platform: 'node',
   target: 'node24',
@@ -16,8 +15,16 @@ await build({
   sourcemap: true,
   minify: true,
   legalComments: 'none',
+};
+
+await build({
+  ...lambdaBundle,
+  entryPoints: ['src/lambda.ts'],
+  outfile: 'dist/lambda.js',
   define: { 'process.env.APP_VERSION': JSON.stringify(version) },
 });
+
+await build({ ...lambdaBundle, entryPoints: ['src/notify.ts'], outfile: 'dist/notify.js' });
 
 await build({
   entryPoints: ['src/health-check.ts'],

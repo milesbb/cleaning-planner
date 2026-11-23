@@ -1,6 +1,7 @@
 import type { CompletionRecord } from '@cleaning-planner/contracts/completion';
 import type { Member } from '@cleaning-planner/contracts/household';
 import type { Job } from '@cleaning-planner/contracts/job';
+import type { Room } from '@cleaning-planner/contracts/room';
 import { addInterval, compareDates } from '@cleaning-planner/schedule/calendar-date';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { describeSchedule } from '@cleaning-planner/schedule/describe-schedule';
@@ -21,8 +22,11 @@ export interface JobBasics {
   jobId: string;
   name: string;
   icon: JobIconKey;
+  roomId: string;
   roomName: string;
   roomType: RoomType;
+  roomChoices: RoomChoice[];
+  effortMinutes: number;
   roomHref: string;
   nextDue: CalendarDate | null;
   when: string;
@@ -34,10 +38,16 @@ export interface JobBasics {
   assignment: Assignment;
   assigneeChoices: AssigneeChoice[];
   lastDone: string;
+  lastDoneOn: CalendarDate | null;
   version: number;
 }
 
 export type JobDetails = JobBasics & JobAdvice;
+
+interface RoomChoice {
+  value: string;
+  label: string;
+}
 
 export interface SnoozeChoice {
   label: string;
@@ -79,6 +89,12 @@ function lastDoneText(sources: RoomSources, completion: CompletionRecord | null)
   return completionText(sources.members, sources.myUserId, completion);
 }
 
+function roomChoicesOf(rooms: readonly Room[]): RoomChoice[] {
+  return [...rooms]
+    .sort((first, second) => first.order - second.order)
+    .map((room) => ({ value: room.id, label: room.name }));
+}
+
 function lateness(nextDue: CalendarDate | null, today: CalendarDate): { lateBy?: string } {
   return nextDue !== null && compareDates(nextDue, today) < 0
     ? { lateBy: lateByText(nextDue, today) }
@@ -95,8 +111,11 @@ export function jobDetailsOf(sources: RoomSources, jobId: string): JobBasics | n
     jobId: job.id,
     name: job.name,
     icon: job.icon,
+    roomId: room.id,
     roomName: room.name,
     roomType: room.type,
+    roomChoices: roomChoicesOf(sources.rooms),
+    effortMinutes: job.effortMinutes,
     roomHref: `/room?id=${encodeURIComponent(room.id)}`,
     nextDue,
     when: whenText(job, nextDue, sources.today),
@@ -108,6 +127,7 @@ export function jobDetailsOf(sources: RoomSources, jobId: string): JobBasics | n
     assignment: job.assignment,
     assigneeChoices: assigneeChoices(sources.members, sources.myUserId),
     lastDone: lastDoneText(sources, latest ?? null),
+    lastDoneOn: latest?.completedOn ?? null,
     version: job.version,
   };
 }

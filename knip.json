@@ -2,8 +2,11 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     "apps/api": {
-      "entry": ["src/lambda.ts", "src/health-check.ts"],
+      "entry": ["src/lambda.ts", "src/notify.ts", "src/health-check.ts"],
       "ignoreDependencies": ["@types/aws-lambda"]
+    },
+    "apps/web": {
+      "entry": ["src/service-worker/service-worker.ts"]
     }
   }
 }

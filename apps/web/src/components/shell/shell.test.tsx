@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { onlineManager } from '@tanstack/react-query';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -77,6 +78,19 @@ describe('AppShell', () => {
       screen.getByRole('heading', { name: 'Home' }),
     );
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
+  });
+
+  it('says above the page when the app is offline', () => {
+    onlineManager.setOnline(false);
+    render(
+      <AppShell activeTab="home">
+        <h1>Home</h1>
+      </AppShell>,
+    );
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('status'));
+    act(() => {
+      onlineManager.setOnline(true);
+    });
   });
 });
 

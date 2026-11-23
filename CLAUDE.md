@@ -26,6 +26,10 @@ Never: commit or push directly to `development` or `production`; open a PR into 
 
 The repository is **public**: never commit secrets, personal data or account identifiers (push protection will reject secrets). CodeQL must report no error-level or high-severity issues for a PR to merge; fix the code, never dismiss an alert without the user agreeing.
 
+## Parallel sessions — non-negotiable rules
+
+Several sessions may work at once, each on one GitHub issue in its own worktree. **Before working on any issue, read [`docs/PARALLEL-WORK.md`](docs/PARALLEL-WORK.md).** In short: run `npm run work:board`; only work on an issue labelled `status: in progress` for you (claim one from START NOW with `npm run work:board -- claim`); stay inside its `lane:` labels; never open a release PR unless you are the coordinating session.
+
 ## What this is
 
 Household cleaning planner, shipped as a **website (PWA), an iOS app and an Android app from one codebase**: `apps/web` is a Next.js static export, and `apps/mobile` wraps that build with Capacitor. Every screen must work at every size, from a 320px phone to a 1920px desktop. Users see what needs cleaning today, this week and later, with recommended frequencies they can adjust, and get reminders (Web Push, optional email). People sign up with email and password and share one or more homes ("households") with the people they live with.
@@ -41,10 +45,11 @@ packages/
   schedule/       Pure TypeScript recurrence engine + task library (shared by web, api and reminders)
   contracts/      zod request/response schemas shared by the API and the web app
   infrastructure-rules/  Vitest suite that checks infrastructure/template.yml against the rules below
+  work-board/     `npm run work:board`: the issue board and claims for parallel sessions
 infrastructure/
   template.yml    SAM/CloudFormation: API, DynamoDB, budget, self-updating CodePipeline
   buildspec.yml   CodeBuild steps run by the pipeline
-docs/             PLAN.md and decision records
+docs/             PLAN.md, IMPLEMENTATION.md and PARALLEL-WORK.md
 ```
 
 Each app/package has its own `CLAUDE.md` with local rules. Read it before working there.
@@ -78,7 +83,7 @@ Each app/package has its own `CLAUDE.md` with local rules. Read it before workin
 - **Every IAM role must carry `PermissionsBoundary: workload-permissions-boundary`** (Lambda functions get it from `Globals`). The boundary is defined in the separate `aws-claude-access` repo; never remove it. Keep resource names prefixed with the stack name (`cleaning-planner…`), because the boundary only allows resources with that prefix.
 - Your own AWS access (the `claude` profile) is view-only plus starting/retrying the pipeline. Deploys happen by merging a release PR into `production` (or `aws codepipeline start-pipeline-execution` to re-run); never try to deploy with `sam deploy` or change IAM yourself.
 - Set `RetentionInDays` on every log group.
-- Template changes must pass `cfn-lint` (run in both PR and release checks) and `packages/infrastructure-rules` (part of `npm test`), which fails if a role or function loses the permissions boundary, a log group has no retention, a name doesn't start with the stack name, a `*FullAccess` policy appears, a function gets Cognito permissions, a route uses `ANY` or `OPTIONS` (which stops API Gateway answering browser preflights), or a VPC, NAT Gateway or RDS resource is added. When you add a rule here, add it there with a fixture that breaks it.
+- Template changes must pass `cfn-lint` (run in both PR and release checks) and `packages/infrastructure-rules` (part of `npm test`), which fails if a role or function loses the permissions boundary, a log group has no retention (or a function has no log group of its own), the Scheduler role can do anything but invoke `notify`, a function can manage schedules outside the stack's prefix or pass roles the stack doesn't name, a name doesn't start with the stack name, a `*FullAccess` policy appears, a function gets Cognito permissions, a route uses `ANY` or `OPTIONS` (which stops API Gateway answering browser preflights), or a VPC, NAT Gateway or RDS resource is added. When you add a rule here, add it there with a fixture that breaks it.
 
 ---
 

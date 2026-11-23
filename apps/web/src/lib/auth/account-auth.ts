@@ -1,73 +1,8 @@
 // Passwords go from the browser straight to Cognito (SRP), never to our API.
 
-export type AccountAuthFailureKind =
-  | 'emailTaken'
-  | 'weakPassword'
-  | 'wrongCode'
-  | 'expiredCode'
-  | 'wrongDetails'
-  | 'wrongCurrentPassword'
-  | 'tooManyAttempts'
-  | 'offline'
-  | 'unexpected';
-
-const MESSAGES: Record<AccountAuthFailureKind, string> = {
-  emailTaken:
-    'There’s already an account for this email. Log in, or reset your password if you’ve forgotten it.',
-  weakPassword: 'Use at least 12 characters.',
-  wrongCode: 'That code doesn’t match. Check the email and try again.',
-  expiredCode: 'That code has expired. Send a new code and try again.',
-  wrongDetails: 'That email and password don’t match. Check for typos, or reset your password.',
-  wrongCurrentPassword: 'That isn’t your current password. Check for typos, or reset it.',
-  tooManyAttempts: 'Too many tries for now. Wait a few minutes, then try again.',
-  offline: 'Can’t reach Cleaning Planner. Check your connection and try again.',
-  unexpected: 'Something went wrong. Try again.',
-};
-
-export class AccountAuthError extends Error {
-  readonly kind: AccountAuthFailureKind;
-
-  constructor(kind: AccountAuthFailureKind) {
-    super(MESSAGES[kind]);
-    this.name = 'AccountAuthError';
-    this.kind = kind;
-  }
-}
-
-const KIND_BY_COGNITO_ERROR: Record<string, AccountAuthFailureKind> = {
-  UsernameExistsException: 'emailTaken',
-  AliasExistsException: 'emailTaken',
-  InvalidPasswordException: 'weakPassword',
-  CodeMismatchException: 'wrongCode',
-  ExpiredCodeException: 'expiredCode',
-  NotAuthorizedException: 'wrongDetails',
-  UserNotFoundException: 'wrongDetails',
-  TooManyRequestsException: 'tooManyAttempts',
-  LimitExceededException: 'tooManyAttempts',
-  TooManyFailedAttemptsException: 'tooManyAttempts',
-  NetworkError: 'offline',
-};
-
-const TOO_MANY_ATTEMPTS_MESSAGE = /attempts exceeded/i;
-
-function nameOf(error: unknown): string {
-  return error instanceof Error ? error.name : '';
-}
-
-function failureOf(error: unknown): AccountAuthError {
-  if (error instanceof Error && TOO_MANY_ATTEMPTS_MESSAGE.test(error.message)) {
-    return new AccountAuthError('tooManyAttempts');
-  }
-  return new AccountAuthError(KIND_BY_COGNITO_ERROR[nameOf(error)] ?? 'unexpected');
-}
-
-async function translated<Result>(attempt: () => Promise<Result>): Promise<Result> {
-  try {
-    return await attempt();
-  } catch (error) {
-    throw failureOf(error);
-  }
-}
+import { AccountAuthError, failureOf, nameOf, translated } from './account-auth-error';
+import { createEmailChange } from './email-change';
+import type { EmailChange, EmailChangeCognito } from './email-change';
 
 interface SignUpStep {
   nextStep: { signUpStep: string };
@@ -77,7 +12,7 @@ interface SignInStep {
   nextStep: { signInStep: string };
 }
 
-export interface CognitoFunctions {
+export interface CognitoFunctions extends EmailChangeCognito {
   signUp: (input: {
     username: string;
     password: string;
@@ -120,7 +55,7 @@ type SignInOutcome = 'signedIn' | 'confirmEmail';
 type PasswordChangeOutcome = 'changed' | 'logIn';
 type ConfirmOutcome = 'signedIn' | 'logIn';
 
-export interface AccountAuth {
+export interface AccountAuth extends EmailChange {
   signUp: (account: NewAccount) => Promise<void>;
   confirmSignUp: (email: string, code: string) => Promise<ConfirmOutcome>;
   resendSignUpCode: (email: string) => Promise<void>;
@@ -134,6 +69,7 @@ export interface AccountAuth {
   // 'logIn' when other devices were logged out and this one couldn't log
   // straight back in with the new password.
   changePassword: (change: PasswordChange) => Promise<PasswordChangeOutcome>;
+  recheckPassword: (email: string, password: string) => Promise<void>;
 }
 
 const CONFIRM_SIGN_UP = 'CONFIRM_SIGN_UP';
@@ -254,6 +190,25 @@ async function changePasswordWith(
   }
 }
 
+// Amplify won't start a second sign-in while one is active, so the only way
+// to check the password is to sign out and back in with it. A wrong password
+// leaves this device signed out; the screen lets the person try again.
+async function recheckPasswordWith(
+  cognito: CognitoFunctions,
+  email: string,
+  password: string,
+): Promise<void> {
+  await translated(() => cognito.signOut());
+  let outcome: SignInOutcome;
+  try {
+    outcome = await signInWith(cognito, email, password);
+  } catch (error) {
+    const isWrongPassword = error instanceof AccountAuthError && error.kind === 'wrongDetails';
+    throw isWrongPassword ? new AccountAuthError('wrongCurrentPassword') : error;
+  }
+  if (outcome !== 'signedIn') throw new AccountAuthError('unexpected');
+}
+
 const MIGHT_BE_SIGNED_IN = (): boolean => true;
 
 export function createAccountAuth(
@@ -283,5 +238,7 @@ export function createAccountAuth(
     mightBeSignedIn: hasStoredSession,
     signOut: () => translated(() => cognito.signOut()),
     changePassword: (change) => changePasswordWith(cognito, change),
+    recheckPassword: (email, password) => recheckPasswordWith(cognito, email, password),
+    ...createEmailChange(cognito),
   };
 }

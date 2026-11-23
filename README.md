@@ -39,8 +39,9 @@ Expected AWS cost: **about $0–1 a month** (breakdown in [docs/PLAN.md §7](doc
 apps/web            Next.js PWA
 apps/api            Express API for Lambda (controllers → service → data)
 packages/schedule   Scheduling engine (pure TypeScript, 95% coverage gate)
+packages/work-board The issue board for parallel sessions (npm run work:board)
 infrastructure/     CloudFormation template (app + pipeline) and CodeBuild buildspec
-docs/               Plan and decision records
+docs/               Plan, implementation order and the parallel-work guide
 .github/            PR check workflows and Dependabot
 CLAUDE.md           Claude Code context and rules (plus one per app/package)
 ```
@@ -65,6 +66,7 @@ Check the API: `curl http://localhost:4000/v1/health`.
 | `npm run lint`                                               | ESLint across all workspaces                                                                                                                                                                     |
 | `npm run typecheck`                                          | `tsc --noEmit` across all workspaces                                                                                                                                                             |
 | `npm test`                                                   | Unit tests (Vitest) across all workspaces                                                                                                                                                        |
+| `npm run work:board`                                         | What can start, what is in flight and what is blocked; also claims issues for parallel sessions ([docs/PARALLEL-WORK.md](docs/PARALLEL-WORK.md))                                                 |
 | `npm run test:integration --workspace=@cleaning-planner/api` | API repository tests against DynamoDB Local: start it with `docker run -p 8000:8000 amazon/dynamodb-local` and set `DYNAMODB_ENDPOINT=http://localhost:8000` (CI runs it as a service container) |
 | `npm run test:e2e`                                           | Playwright e2e on desktop, Android and iPhone projects                                                                                                                                           |
 | `npm run test:smoke`                                         | Invoke the built Lambda bundle with an API Gateway event (run `npm run build` first)                                                                                                             |
@@ -74,7 +76,7 @@ Check the API: `curl http://localhost:4000/v1/health`.
 | `npm run test:mutation`                                      | Mutation-test the schedule engine with Stryker (fails below 85%)                                                                                                                                 |
 | `npm run test:lighthouse`                                    | Lighthouse scores for the built web app (run `npm run build` first; needs Chrome)                                                                                                                |
 
-First run of e2e tests: `npx playwright install chromium webkit` from `apps/web`.
+First run of e2e tests: `npx playwright install chromium webkit` from `apps/web`. Playwright serves the site on port 3000; set `E2E_PORT` (a whole number from 1024 to 65535) to use another, so e2e runs in two worktrees don't collide.
 
 ## Branches and workflow
 
@@ -104,7 +106,7 @@ feature/… ──PR──► development ──release PR──► production �
 | Workflow             | Runs on                                                      | Jobs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `core-checks.yml`    | Called by both checks below                                  | Format, lint & typecheck · unit tests with coverage gates · `cfn-lint`                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `pr-checks.yml`      | PRs into `development`                                       | Format, lint & typecheck · unit tests with coverage gates · `cfn-lint` → **PR checks passed**                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `pr-checks.yml`      | PRs into `development`                                       | Format, lint & typecheck · unit tests with coverage gates · `cfn-lint` · JavaScript budget (when the website's code changed) → **PR checks passed**                                                                                                                                                                                                                                                                                                                                               |
 | `release-checks.yml` | PRs into `production` (or run manually from the Actions tab) | Source branch is `development` · format, lint & typecheck · unit tests · production builds + Lambda smoke test · Playwright e2e on desktop/Android/iPhone · `cfn-lint` · `npm audit` of production deps · **Knip** (dead code/deps) · **jscpd** (duplication ≤ 3%) · **Stryker** mutation testing of the schedule engine (≥ 85%) · **Lighthouse** (accessibility ≥ 95, best practices ≥ 95, SEO ≥ 90) · **Semgrep** SAST · **Gitleaks** secrets scan · **actionlint** → **Release checks passed** |
 
 **Security (GitHub, free because the repo is public)**
@@ -158,6 +160,8 @@ Build logs: CodeBuild → `cleaning-planner-build` (both projects log there). De
    ```powershell
    aws cloudformation describe-stacks --stack-name cleaning-planner --region ap-southeast-2 --query "Stacks[0].Outputs"
    ```
+
+Reminders also read two SecureStrings that are set up by hand with reminders (#65): the Web Push private key at `/cleaning-planner/vapid-private-key` and the Firebase service-account key at `/cleaning-planner/fcm-service-account`. The stack deploys without them; `notify` reads them only when it runs. The VAPID public key isn't secret: set it as the `VapidPublicKey` default in `infrastructure/template.yml` (notify won't start while it's empty), and in Vercel as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
 
 The budget alert is **account-wide** and defaults to $5/month. If the account already runs other projects, raise `MonthlyBudgetUsd` in the template.
 

@@ -1,159 +1,15 @@
 import type { Page } from '@playwright/test';
-import { fakeApi, fakeCognito, openPage } from './fake-backend';
-import { asObject, fakeHousehold } from './fake-household';
+import { fakeCognito, openPage } from './fake-backend';
+import { fakeActivity } from './fake-activity';
+import { fakeAgenda } from './fake-agenda';
+import { fakeCompletions } from './fake-completions';
+import { fakeHousehold } from './fake-household';
+import { fakeJobs } from './fake-jobs';
+import { fakeProgress } from './fake-progress';
+import { fakeRooms } from './fake-rooms';
 
 // A signed-in Alex with one home, "Our flat", whose agenda remembers what was
-// ticked off. Dates follow the real clock in UTC, the home's time zone.
-
-const HOME = '/v1/households/home-1';
-const DAY_MS = 86_400_000;
-
-function calendarDay(offsetDays: number): string {
-  return new Date(Date.now() + offsetDays * DAY_MS).toISOString().slice(0, 10);
-}
-
-const ROOMS = [
-  { id: 'room-kitchen', type: 'kitchen', name: 'Kitchen', order: 0, appliances: [], version: 1 },
-  {
-    id: 'room-living',
-    type: 'livingRoom',
-    name: 'Living room',
-    order: 1,
-    appliances: [],
-    version: 1,
-  },
-];
-
-function job(id: string, roomId: string, name: string, icon: string): Record<string, unknown> {
-  return {
-    id,
-    roomId,
-    libraryId: id === 'job-oven' ? 'kitchen.oven' : null,
-    name,
-    icon,
-    schedule: { type: 'floating', every: { value: 1, unit: 'week' } },
-    startDate: calendarDay(-30),
-    assignment: { kind: 'anyone' },
-    snooze: null,
-    effortMinutes: 10,
-    version: 1,
-  };
-}
-
-const JOBS = [
-  job('job-oven', 'room-kitchen', 'Clean the oven', 'oven'),
-  job('job-vacuum', 'room-living', 'Vacuum the living room', 'vacuum'),
-  job('job-hob', 'room-kitchen', 'Wipe the hob', 'spray'),
-];
-
-interface DueItem {
-  jobId: string;
-  dueDate: string;
-  status: string;
-  assignee: null;
-}
-
-function due(jobId: string, offsetDays: number, status: string): DueItem {
-  return { jobId, dueDate: calendarDay(offsetDays), status, assignee: null };
-}
-
-function daysBetween(from: string, to: string): string[] {
-  const days: string[] = [];
-  for (let time = Date.parse(from); time <= Date.parse(to); time += DAY_MS) {
-    days.push(new Date(time).toISOString().slice(0, 10));
-  }
-  return days;
-}
-
-function dueItemsFor(doneJobIds: ReadonlySet<string>): DueItem[] {
-  return [
-    due('job-oven', -2, 'late'),
-    due('job-vacuum', 0, 'today'),
-    due('job-hob', 0, 'today'),
-  ].filter((item) => !doneJobIds.has(item.jobId));
-}
-
-// The agenda for the days asked for: the oven is late (due two days ago), the
-// vacuum and hob are due today, and anything ticked off is done today.
-function agendaFor(url: string, doneJobIds: ReadonlySet<string>): object {
-  const query = new URL(url).searchParams;
-  const dueItems = dueItemsFor(doneJobIds);
-  return {
-    late: dueItems.filter((item) => item.status === 'late'),
-    days: daysBetween(query.get('from') ?? calendarDay(0), query.get('to') ?? calendarDay(1)).map(
-      (date) => ({
-        date,
-        due: dueItems.filter((item) => item.dueDate === date),
-        done:
-          date === calendarDay(0)
-            ? [...doneJobIds].map((jobId) => ({
-                jobId,
-                completedOn: date,
-                completedBy: 'user-alex',
-              }))
-            : [],
-      }),
-    ),
-  };
-}
-
-function jobIdIn(url: string): string {
-  return /jobs\/([^/?]+)/.exec(url)?.[1] ?? '';
-}
-
-// Jobs can be added, renamed and removed; a snooze is accepted but changes nothing.
-async function fakeJobs(page: Page): Promise<void> {
-  const jobs = JOBS.map((saved) => ({ ...saved }));
-  await fakeApi(page, `${HOME}/jobs`, () => ({ body: jobs }), { method: 'GET' });
-  await fakeApi(
-    page,
-    `${HOME}/jobs`,
-    (request) => {
-      const added: Record<string, unknown> = {
-        id: `job-${String(jobs.length + 1)}`,
-        libraryId: null,
-        startDate: calendarDay(0),
-        snooze: null,
-        version: 1,
-        ...asObject(request.postDataJSON()),
-      };
-      jobs.push(added);
-      return { status: 201, body: added };
-    },
-    { method: 'POST' },
-  );
-  await fakeApi(
-    page,
-    `${HOME}/jobs/*`,
-    (request) => {
-      const saved = jobs.find((candidate) => candidate.id === jobIdIn(request.url()));
-      if (saved === undefined) return { status: 404, body: { error: { code: 'notFound' } } };
-      Object.assign(saved, asObject(request.postDataJSON()), {
-        version: Number(saved.version) + 1,
-      });
-      return { body: saved };
-    },
-    { method: 'PATCH' },
-  );
-  await fakeApi(
-    page,
-    `${HOME}/jobs/*`,
-    (request) => {
-      const index = jobs.findIndex((candidate) => candidate.id === jobIdIn(request.url()));
-      if (index >= 0) jobs.splice(index, 1);
-      return { status: 204, body: undefined };
-    },
-    { method: 'DELETE' },
-  );
-  await fakeApi(page, `${HOME}/jobs/*/snooze`, (request) => ({
-    body: {
-      jobId: jobIdIn(request.url()),
-      nextDueDate: calendarDay(3),
-      snooze: null,
-      latestCompletion: null,
-    },
-  }));
-}
+// ticked off. Each resource has its own fake; a new endpoint adds one here.
 
 interface FakeHomeOptions {
   failTicks?: boolean;
@@ -168,68 +24,12 @@ async function fakeHome(
 ): Promise<void> {
   const doneJobIds = new Set<string>();
   await fakeHousehold(page, { isOwner });
-  await fakeJobs(page);
-  await fakeApi(page, `${HOME}/agenda*`, (request) => ({
-    body: agendaFor(request.url(), doneJobIds),
-  }));
-  const rooms: object[] = [...ROOMS];
-  await fakeApi(page, `${HOME}/rooms`, () => ({ body: rooms }), { method: 'GET' });
-  await fakeApi(
-    page,
-    `${HOME}/rooms`,
-    (request) => {
-      const room = {
-        id: `room-${String(rooms.length + 1)}`,
-        order: rooms.length,
-        appliances: [],
-        version: 1,
-        ...asObject(request.postDataJSON()),
-      };
-      rooms.push(room);
-      return { status: 201, body: room };
-    },
-    { method: 'POST' },
-  );
-  await fakeApi(page, `${HOME}/progress`, () => ({
-    body: dueItemsFor(doneJobIds).map((item) => ({
-      jobId: item.jobId,
-      nextDueDate: item.dueDate,
-      snooze: null,
-      latestCompletion: null,
-    })),
-  }));
-  await fakeApi(
-    page,
-    `${HOME}/jobs/*/completions`,
-    (request) => {
-      if (failTicks) {
-        return { status: 500, body: { error: { code: 'internal', message: 'Broke' } } };
-      }
-      const jobId = jobIdIn(request.url());
-      doneJobIds.add(jobId);
-      return {
-        status: 201,
-        body: { jobId, nextDueDate: calendarDay(7), snooze: null, latestCompletion: null },
-      };
-    },
-    { method: 'POST' },
-  );
-  await fakeApi(
-    page,
-    `${HOME}/jobs/*/completions`,
-    (request) => {
-      const jobId = jobIdIn(request.url());
-      const doneToday = {
-        jobId,
-        outcome: 'done',
-        completedOn: calendarDay(0),
-        completedBy: 'user-alex',
-        doneAt: new Date().toISOString(),
-      };
-      return { body: doneJobIds.has(jobId) ? [doneToday] : [] };
-    },
-    { method: 'GET' },
-  );
+  const jobs = await fakeJobs(page);
+  await fakeAgenda(page, doneJobIds);
+  await fakeRooms(page, jobs);
+  await fakeProgress(page, doneJobIds);
+  await fakeCompletions(page, doneJobIds, failTicks);
+  await fakeActivity(page, doneJobIds, jobs);
 }
 
 export async function logInToHome(page: Page, options: FakeHomeOptions = {}): Promise<void> {

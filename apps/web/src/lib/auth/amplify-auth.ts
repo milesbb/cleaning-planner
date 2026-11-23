@@ -103,6 +103,10 @@ export function cognitoFunctionsFrom(
     fetchAuthSession: async () => (hasStoredSession() ? (await loadAuth()).fetchAuthSession() : {}),
     signOut: async (input) => (await loadAuth()).signOut(input),
     updatePassword: async (input) => (await loadAuth()).updatePassword(input),
+    updateUserAttribute: async (input) => (await loadAuth()).updateUserAttribute(input),
+    confirmUserAttribute: async (input) => (await loadAuth()).confirmUserAttribute(input),
+    sendUserAttributeVerificationCode: async (input) =>
+      (await loadAuth()).sendUserAttributeVerificationCode(input),
   };
 }
 

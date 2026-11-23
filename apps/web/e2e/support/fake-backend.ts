@@ -19,7 +19,10 @@ type CognitoOperation =
   | 'ConfirmForgotPassword'
   | 'RevokeToken'
   | 'ChangePassword'
-  | 'GlobalSignOut';
+  | 'GlobalSignOut'
+  | 'UpdateUserAttributes'
+  | 'VerifyUserAttribute'
+  | 'GetUserAttributeVerificationCode';
 
 export type CognitoAnswers = Partial<Record<CognitoOperation, FakeAnswer>>;
 
@@ -63,6 +66,12 @@ const PASSWORD_VERIFIER = {
   },
 };
 
+const EMAIL_CODE_SENT = {
+  AttributeName: 'email',
+  DeliveryMedium: 'EMAIL',
+  Destination: 'a***@n***',
+};
+
 export function cognitoError(type: string, message = type): FakeAnswer {
   return { status: 400, body: { __type: type, message } };
 }
@@ -78,6 +87,9 @@ const DEFAULT_ANSWERS: Record<CognitoOperation, FakeAnswer> = {
   RevokeToken: { body: {} },
   ChangePassword: { body: {} },
   GlobalSignOut: { body: {} },
+  UpdateUserAttributes: { body: { CodeDeliveryDetailsList: [EMAIL_CODE_SENT] } },
+  VerifyUserAttribute: { body: {} },
+  GetUserAttributeVerificationCode: { body: { CodeDeliveryDetails: EMAIL_CODE_SENT } },
 };
 
 function fulfil(route: Route, { status = 200, body }: FakeAnswer): Promise<void> {
@@ -157,6 +169,10 @@ export async function fakeApi(
       body: JSON.stringify(body),
     });
   });
+}
+
+export function asObject(value: unknown): object {
+  return typeof value === 'object' && value !== null ? value : {};
 }
 
 // Load a page and wait for its scripts, so typing isn't wiped when React hydrates.

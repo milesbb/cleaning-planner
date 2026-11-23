@@ -22,6 +22,22 @@ Parameters:
     Type: Number
     Default: 5
     Description: Account-wide monthly cost alert threshold in USD
+  VapidPrivateKeyParameter:
+    Type: String
+    Default: /cleaning-planner/vapid-private-key
+    Description: SSM SecureString with the Web Push (VAPID) private key, read by notify when it runs
+  VapidPublicKey:
+    Type: String
+    Default: ''
+    Description: The Web Push (VAPID) public key, the pair of the private key in SSM. It's public, so it lives here; notify refuses to start while it's empty
+  VapidSubject:
+    Type: String
+    Default: https://cleaning-planner-coral.vercel.app
+    Description: How push services can reach us about our reminders (the website, or a mailto address)
+  FcmServiceAccountParameter:
+    Type: String
+    Default: /cleaning-planner/fcm-service-account
+    Description: SSM SecureString with the Firebase service-account key for app push, read by notify when it runs
 
 Globals:
   Function:
@@ -182,9 +198,32 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref DataTable
+          REMINDER_SCHEDULE_GROUP: !Ref ReminderScheduleGroup
+          REMINDER_SCHEDULE_PREFIX: !Sub '${AWS::StackName}-'
+          REMINDER_SCHEDULER_ROLE_ARN: !GetAtt ReminderSchedulerRole.Arn
+          NOTIFY_FUNCTION_ARN: !GetAtt NotifyFunction.Arn
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DataTable
+        # Each person's reminders are schedules named <stack>-<userId>-daily|weekly.
+        - Statement:
+            - Effect: Allow
+              Action:
+                - scheduler:CreateSchedule
+                - scheduler:UpdateSchedule
+                - scheduler:DeleteSchedule
+                - scheduler:GetSchedule
+              Resource: !Sub 'arn:${AWS::Partition}:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/${ReminderScheduleGroup}/${AWS::StackName}-*'
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: !GetAtt ReminderSchedulerRole.Arn
+              Condition:
+                StringEquals:
+                  iam:PassedToService: scheduler.amazonaws.com
+            # A test reminder goes straight to notify (POST /v1/me/reminders/test).
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !GetAtt NotifyFunction.Arn
       Events:
         Health:
           Type: HttpApi
@@ -250,12 +289,83 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /v1/invites/{proxy+}
             Method: POST
+        RemindersPut:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/me/reminders
+            Method: PUT
 
   ApiLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-api'
       RetentionInDays: 30
+
+  # Sends a person's daily or weekly reminder when their schedule fires. The
+  # handler, notify.mjs in the apps/api bundle, arrives with #63.
+  NotifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-notify'
+      CodeUri: ../apps/api/dist
+      Handler: notify.handler
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DataTable
+          VAPID_PRIVATE_KEY_PARAMETER: !Ref VapidPrivateKeyParameter
+          VAPID_PUBLIC_KEY: !Ref VapidPublicKey
+          VAPID_SUBJECT: !Ref VapidSubject
+          FCM_SERVICE_ACCOUNT_PARAMETER: !Ref FcmServiceAccountParameter
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DataTable
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${VapidPrivateKeyParameter}'
+                - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${FcmServiceAccountParameter}'
+            # While SES is in its sandbox, sending is checked against the
+            # recipient's identity too, so this can't name just our sender.
+            - Effect: Allow
+              Action: ses:SendEmail
+              Resource: !Sub 'arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
+
+  NotifyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-notify'
+      RetentionInDays: 30
+
+  ReminderScheduleGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-reminders'
+
+  ReminderSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/workload-permissions-boundary'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: invoke-notify
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt NotifyFunction.Arn
 
   MonthlyBudget:
     Type: AWS::Budgets::Budget

@@ -42,6 +42,7 @@ function fakes(): { dependencies: AccountDependencies; calls: string[] } {
         deleteHousehold: vi.fn(record('deleteHousehold')),
         removeMember: vi.fn(record('removeMember')),
       },
+      reminders: { removeSchedules: vi.fn(record('removeSchedules')) },
       profiles: { deleteProfile: vi.fn(record('deleteProfile')) },
       identity: { deleteIdentity: vi.fn(record('deleteIdentity')) },
     },
@@ -59,6 +60,7 @@ describe('deleting an account', () => {
       'removeMember home-shared user-sam',
       'deleteHousehold home-solo',
       'removeMember home-theirs user-sam',
+      'removeSchedules user-sam',
       'deleteProfile user-sam',
       `deleteIdentity ${TOKEN}`,
     ]);

@@ -63,8 +63,20 @@ describe('jobDetailsOf', () => {
       whoFor: 'Anyone',
       assignment: { kind: 'anyone' },
       lastDone: 'Not done yet',
+      lastDoneOn: null,
       version: 1,
     });
+  });
+
+  it('says how long it takes and which rooms it could move to, in the home’s order', () => {
+    const details = detailsOf();
+    expect(details.effortMinutes).toBe(30);
+    expect(details.roomId).toBe('room-kitchen');
+    expect(details.roomChoices).toEqual([
+      { value: 'room-kitchen', label: 'Kitchen' },
+      { value: 'room-living', label: 'Living room' },
+      { value: 'room-bed', label: 'Bedroom' },
+    ]);
   });
 
   it.each([
@@ -106,7 +118,9 @@ describe('jobDetailsOf', () => {
       completedBy,
       doneAt: '2026-11-20T18:00:00.000Z',
     };
-    expect(detailsOf(oven(), progress({ latestCompletion })).lastDone).toBe(lastDone);
+    const details = detailsOf(oven(), progress({ latestCompletion }));
+    expect(details.lastDone).toBe(lastDone);
+    expect(details.lastDoneOn).toBe('2026-11-20');
   });
 });
 
