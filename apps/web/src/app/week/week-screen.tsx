@@ -14,6 +14,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { IconButton } from '@/components/ui/icon-button';
 import { formatShortDate } from '@/lib/format-date';
+import { ComingUpSection } from './coming-up-section';
 import { useWeek } from './use-week';
 import type { WeekState } from './use-week';
 
@@ -75,6 +76,9 @@ function WeekContent({ week }: { week: ReadyWeek }): ReactNode {
           ))}
         </ol>
       </Card>
+      {week.offset === 0 ? (
+        <ComingUpSection householdId={week.currentHomeId} week={week.range} />
+      ) : null}
     </>
   );
 }
