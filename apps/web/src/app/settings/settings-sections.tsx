@@ -4,17 +4,21 @@ import type { HouseholdSummary, Member } from '@cleaning-planner/contracts/house
 import type { Profile } from '@cleaning-planner/contracts/profile';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
-import Link from 'next/link';
-import { FormAlert, TEXT_ACTION_CLASSES } from '@/components/account/account-screen';
+import { FormAlert } from '@/components/account/account-screen';
 import { Avatar } from '@/components/ui/avatar';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { PeopleList } from './people-list';
-import { ProfileSheet } from './profile-sheet';
 import { useSignOut } from './use-settings-actions';
 
-function SettingsSection({ title, children }: { title: string; children: ReactNode }): ReactNode {
+export function SettingsSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}): ReactNode {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2.5">
@@ -24,23 +28,26 @@ function SettingsSection({ title, children }: { title: string; children: ReactNo
   );
 }
 
+export function ProfileSummary({ profile }: { profile: Profile }): ReactNode {
+  return (
+    <div className="flex items-center gap-3">
+      <Avatar name={profile.name} colour={profile.colour} size="large" />
+      <div className="flex min-w-0 flex-col">
+        <p className="text-lg font-bold break-words">{profile.name}</p>
+        <p className="break-all">{profile.email}</p>
+      </div>
+    </div>
+  );
+}
+
 export function YouSection({ profile }: { profile: Profile }): ReactNode {
   return (
     <SettingsSection title="You">
-      <Card raised={false} className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <Avatar name={profile.name} colour={profile.colour} size="large" />
-          <div className="flex min-w-0 flex-col">
-            <p className="text-lg font-bold break-words">{profile.name}</p>
-            <p className="break-all">{profile.email}</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-x-4">
-          <ProfileSheet profile={profile} />
-          <Link href="/settings/account/password" className={TEXT_ACTION_CLASSES}>
-            Change password
-          </Link>
-        </div>
+      <Card raised={false} className="flex flex-col gap-4">
+        <ProfileSummary profile={profile} />
+        <ButtonLink href="/settings/account" variant="secondary">
+          Your account
+        </ButtonLink>
       </Card>
     </SettingsSection>
   );

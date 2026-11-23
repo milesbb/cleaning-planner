@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { AccountAuthError } from '@/lib/auth/account-auth';
+import { AccountAuthError } from '@/lib/auth/account-auth-error';
 import type { CognitoFunctions } from '@/lib/auth/account-auth';
 
 // A stand-in for Amplify's Cognito calls, for testing createAccountAuth.
@@ -25,6 +25,14 @@ export function stubCognito(overrides: Partial<CognitoFunctions> = {}): CognitoF
     fetchAuthSession: vi.fn(() => Promise.resolve({ tokens: { accessToken: {} } })),
     signOut: vi.fn(() => Promise.resolve()),
     updatePassword: vi.fn(() => Promise.resolve()),
+    updateUserAttribute: vi.fn(() =>
+      Promise.resolve({
+        isUpdated: false,
+        nextStep: { updateAttributeStep: 'CONFIRM_ATTRIBUTE_WITH_CODE' },
+      }),
+    ),
+    confirmUserAttribute: vi.fn(() => Promise.resolve()),
+    sendUserAttributeVerificationCode: vi.fn(() => Promise.resolve({})),
     ...overrides,
   };
 }
