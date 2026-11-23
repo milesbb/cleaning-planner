@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { DayRow } from '@/components/jobs/day-row';
+import { MoreIcon, SkipIcon, SnoozeIcon } from '@/components/icons/interface-icons';
 import { JobRow } from '@/components/jobs/job-row';
+import { SwipeActions } from '@/components/jobs/swipe-actions';
+import { IconButton } from '@/components/ui/icon-button';
 import type { JobRowStatus } from '@/components/jobs/job-row';
 import { RoomTile } from '@/components/jobs/room-tile';
 import { DemoSection } from './demo-section';
@@ -31,20 +34,35 @@ function useDemoJobStatus(): JobRowStatus {
   };
 }
 
+// On touch, swipe it left for Snooze a day and Skip; More offers the same.
+function SwipeableJobRowDemo(): ReactNode {
+  return (
+    <SwipeActions
+      actions={[
+        { label: 'Snooze a day', icon: <SnoozeIcon size={20} />, onSelect: () => undefined },
+        { label: 'Skip', icon: <SkipIcon size={20} />, onSelect: () => undefined },
+      ]}
+    >
+      <JobRow
+        name="Clean dishwasher filter"
+        room="kitchen"
+        icon="dishwasher"
+        meta="Kitchen · Alex · swipe left on touch"
+        href={DEMO_JOB_HREF}
+        assignee={{ name: 'Alex', colour: 'pink' }}
+        more={<IconButton label="More for Clean dishwasher filter" icon={<MoreIcon />} />}
+        status={{ kind: 'due', lateBy: '2 days late', onDone: () => undefined }}
+      />
+    </SwipeActions>
+  );
+}
+
 function JobRowsDemo(): ReactNode {
   const vacuumStatus = useDemoJobStatus();
   return (
     <ul className="flex flex-col gap-2.5">
       <li>
-        <JobRow
-          name="Clean dishwasher filter"
-          room="kitchen"
-          icon="dishwasher"
-          meta="Kitchen · Alex"
-          href={DEMO_JOB_HREF}
-          assignee={{ name: 'Alex', colour: 'pink' }}
-          status={{ kind: 'due', lateBy: '2 days late', onDone: () => undefined }}
-        />
+        <SwipeableJobRowDemo />
       </li>
       <li>
         <JobRow

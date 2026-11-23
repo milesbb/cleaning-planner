@@ -15,6 +15,7 @@ import type { JobProgress, ProgressContext } from './use-job-progress';
 const HOME = '/v1/households/home-1';
 const DONE_HOB = `POST ${HOME}/jobs/job-hob/completions`;
 const UNDO_HOB = `DELETE ${HOME}/jobs/job-hob/completions/latest`;
+const SNOOZE_HOB = `POST ${HOME}/jobs/job-hob/snooze`;
 const SAVED = {
   jobId: 'job-hob',
   nextDueDate: '2026-11-25',
@@ -35,6 +36,7 @@ function savingClient(): FakeApiClient {
   return clientAnswering({
     [DONE_HOB]: () => Promise.resolve(SAVED),
     [UNDO_HOB]: () => Promise.resolve(SAVED),
+    [SNOOZE_HOB]: () => Promise.resolve(SAVED),
   });
 }
 
@@ -111,5 +113,23 @@ describe('useJobProgress when the app closes while offline', () => {
     await waitFor(() => {
       expect(client.calls).toEqual([DONE_HOB, UNDO_HOB]);
     });
+  });
+
+  it('sends a skip and a snooze to tomorrow once back online', async () => {
+    const storage = await tapOfflineThenClose((progress) => {
+      progress.skip('job-hob');
+      progress.snoozeADay('job-hob');
+    });
+    const client = savingClient();
+    openApp(client, storage);
+    act(() => {
+      onlineManager.setOnline(true);
+    });
+    await waitFor(() => {
+      expect(client.calls).toEqual([DONE_HOB, SNOOZE_HOB]);
+    });
+    expect(client.bodies[0]).toMatchObject({ outcome: 'skipped', completedOn: '2026-11-24' });
+    expect(client.bodies[1]).toMatchObject({ until: '2026-11-25' });
+    expect(client.bodies[1]).toHaveProperty('idempotencyKey');
   });
 });
