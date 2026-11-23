@@ -1,5 +1,6 @@
 import type { AgendaResponse } from '@cleaning-planner/contracts/agenda';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
+import { withJobMoved } from '@/app/week/move-job';
 
 // The agenda as it will look once the server agrees, so a tick shows at once.
 
@@ -50,4 +51,22 @@ export function withJobUndone(
   };
   const late = isLate ? [...agenda.late, wasDue] : agenda.late;
   return { late, days: agenda.days.map(restoreDue) };
+}
+
+export function withJobSkipped(agenda: AgendaResponse, jobId: string): AgendaResponse {
+  return {
+    late: withoutJob(agenda.late, jobId),
+    days: agenda.days.map((day) => ({ ...day, due: withoutJob(day.due, jobId) })),
+  };
+}
+
+// A snooze from Today moves the job, wherever it's due, to the day it's put off until.
+export function withJobSnoozed(
+  agenda: AgendaResponse,
+  jobId: string,
+  until: CalendarDate,
+): AgendaResponse {
+  const dueItem = findDueItem(agenda, jobId);
+  if (dueItem === null) return agenda;
+  return withJobMoved(agenda, { jobId, from: dueItem.dueDate, until });
 }

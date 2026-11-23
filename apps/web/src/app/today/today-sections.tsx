@@ -6,6 +6,7 @@ import { ArtFrame } from '@/components/art/art-frame';
 import { JobRow } from '@/components/jobs/job-row';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { jobHref } from '@/lib/home/job-href';
+import { DueJobRow } from './due-job-row';
 import type { DoneJob, LateJob, TodayJob } from './today-view';
 import type { JobProgress } from './use-job-progress';
 
@@ -38,22 +39,7 @@ export function DueList({ title, jobs, progress }: DueListProps): ReactNode {
   return (
     <JobList title={title}>
       {jobs.map((job) => (
-        <JobRow
-          key={job.jobId}
-          name={job.name}
-          room={job.room}
-          icon={job.icon}
-          meta={job.meta}
-          href={jobHref(job.jobId)}
-          {...assigneeProps(job)}
-          status={{
-            kind: 'due',
-            ...('lateBy' in job ? { lateBy: job.lateBy } : {}),
-            onDone: () => {
-              progress.markDone(job.jobId);
-            },
-          }}
-        />
+        <DueJobRow key={job.jobId} job={job} progress={progress} />
       ))}
     </JobList>
   );
