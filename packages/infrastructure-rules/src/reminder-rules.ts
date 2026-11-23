@@ -64,7 +64,9 @@ function servicesTrustedBy(role: Properties): unknown[] {
 
 export function schedulerRolesOnlyInvokeNotify(template: CloudFormationTemplate): string[] {
   return resourcesOfType(template, 'AWS::IAM::Role')
-    .filter(([, role]) => servicesTrustedBy(role.properties).includes(SCHEDULER_SERVICE))
+    .filter(([, role]) =>
+      servicesTrustedBy(role.properties).some((service) => service === SCHEDULER_SERVICE),
+    )
     .flatMap(([roleId, role]) => schedulerRoleProblems(roleId, role.properties));
 }
 
