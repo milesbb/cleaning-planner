@@ -5,9 +5,12 @@ import type { ApiFailureKind } from './api-client';
 const MAX_RETRIES = 2;
 const RETRYABLE_FAILURES: readonly ApiFailureKind[] = ['offline', 'timeout', 'unavailable'];
 
+export function isTransientFailure(error: unknown): boolean {
+  return error instanceof ApiRequestError && RETRYABLE_FAILURES.includes(error.kind);
+}
+
 export function shouldRetry(failureCount: number, error: unknown): boolean {
-  if (!(error instanceof ApiRequestError)) return false;
-  return RETRYABLE_FAILURES.includes(error.kind) && failureCount < MAX_RETRIES;
+  return isTransientFailure(error) && failureCount < MAX_RETRIES;
 }
 
 interface OptimisticContext<Data> {
