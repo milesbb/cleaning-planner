@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { fakeApi } from './support/fake-backend';
 import { logInToHome } from './support/fake-home';
 import { calendarDay } from './support/fake-home-state';
 
@@ -48,6 +49,43 @@ test.describe('Job detail', () => {
     await whoDoesIt.getByRole('radio', { name: 'Sam' }).click();
     await whoDoesIt.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByRole('region', { name: 'Who does it' })).toContainText('Sam');
+  });
+
+  test('changes how long a job takes and moves it to another room', async ({ page }) => {
+    await logInToHome(page);
+    await page.goto('/job?id=job-oven');
+    await page.getByRole('button', { name: 'Change how long it takes' }).click();
+    const howLong = page.getByRole('dialog', { name: 'How long it takes' });
+    await howLong.getByRole('button', { name: 'More minutes' }).click();
+    await howLong.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('region', { name: 'How long it takes' })).toContainText(
+      'About 15 minutes',
+    );
+
+    await page.getByRole('button', { name: 'Move to another room' }).click();
+    const move = page.getByRole('dialog', { name: 'Move to another room' });
+    await move.getByRole('combobox', { name: 'Room' }).selectOption({ label: 'Living room' });
+    await move.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('region', { name: 'Room' })).toContainText('Living room');
+  });
+
+  test('keeps the sheet open when a change cannot be saved', async ({ page }) => {
+    await logInToHome(page);
+    await fakeApi(
+      page,
+      '/v1/households/home-1/jobs/*',
+      {
+        status: 409,
+        body: { error: { code: 'conflict', message: 'Someone else changed this job' } },
+      },
+      { method: 'PATCH' },
+    );
+    await page.goto('/job?id=job-oven');
+    await page.getByRole('button', { name: 'Change how long it takes' }).click();
+    const howLong = page.getByRole('dialog', { name: 'How long it takes' });
+    await howLong.getByRole('button', { name: 'Fewer minutes' }).click();
+    await howLong.getByRole('button', { name: 'Save' }).click();
+    await expect(howLong.getByRole('alert')).toHaveText('Someone else changed this job');
   });
 
   test('snoozes a job to a later day', async ({ page }) => {
