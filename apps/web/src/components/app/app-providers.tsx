@@ -17,6 +17,7 @@ import {
   storedSessionCheck,
 } from '@/lib/auth/amplify-auth';
 import { signInPathFor } from '@/lib/navigation/start-route';
+import { useServiceWorker } from '@/lib/pwa/use-service-worker';
 
 // Built in at build time from the NEXT_PUBLIC_ variables (Vercel, or the e2e build).
 const authSettings = readAuthSettings({
@@ -52,6 +53,7 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps): ReactNode {
   const router = useRouter();
+  useServiceWorker();
   const sendToSignIn = useCallback(() => {
     router.replace(signInPathFor(`${window.location.pathname}${window.location.search}`));
   }, [router]);

@@ -17,6 +17,9 @@ export default defineConfig({
     baseURL: LOCAL_SERVER_URL,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
+    // Specs fake the backend with page.route, which WebKit can't apply to a page a service
+    // worker controls. Only the offline spec turns the worker on.
+    serviceWorkers: 'block',
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] }, testIgnore: VIEWPORT_SPECS },
