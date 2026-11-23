@@ -5,6 +5,9 @@ const SERVICE_WORKER_ENTRY = 'src/service-worker/service-worker.ts';
 const SERVICE_WORKER_FILE = 'sw.js';
 const BUNDLED_SOURCE_FILE = 'sw.source.js';
 const HASHED_BUILD_FILES = /^_next\/static\//;
+// iOS fetches these only when the app is added to the home screen, so caching
+// them would only make every install download them.
+const SPLASH_SCREENS = 'icons/splash-*.png';
 
 export function bundledSourcePath(outDirectory: string): string {
   return `${outDirectory}/${BUNDLED_SOURCE_FILE}`;
@@ -32,7 +35,7 @@ export function precacheSettings(
     swDest: `${outDirectory}/${SERVICE_WORKER_FILE}`,
     globDirectory: outDirectory,
     globPatterns: ['**/*.{html,txt,js,css,woff2,png,svg,ico,webmanifest}'],
-    globIgnores: [SERVICE_WORKER_FILE, BUNDLED_SOURCE_FILE],
+    globIgnores: [SERVICE_WORKER_FILE, BUNDLED_SOURCE_FILE, SPLASH_SCREENS],
     dontCacheBustURLsMatching: HASHED_BUILD_FILES,
   };
 }

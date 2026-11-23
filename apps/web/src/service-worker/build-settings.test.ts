@@ -33,6 +33,10 @@ describe('precacheSettings', () => {
     expect(settings.globIgnores).toEqual(expect.arrayContaining(['sw.js', 'sw.source.js']));
   });
 
+  it('leaves out the iOS splash screens, which iOS only fetches when the app is installed', () => {
+    expect(settings.globIgnores).toEqual(expect.arrayContaining(['icons/splash-*.png']));
+  });
+
   it('trusts the hash in a built file name instead of adding its own', () => {
     expect(settings.dontCacheBustURLsMatching?.test('_next/static/chunks/main-a1b2.js')).toBe(true);
     expect(settings.dontCacheBustURLsMatching?.test('today/index.html')).toBe(false);
