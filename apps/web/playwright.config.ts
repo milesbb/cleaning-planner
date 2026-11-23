@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 import { E2E_ENVIRONMENT } from './e2e/support/test-environment';
+import { e2ePort } from './scripts/e2e-port';
 
-const LOCAL_SERVER_PORT = 3000;
+const LOCAL_SERVER_PORT = e2ePort(process.env.E2E_PORT);
 const SERVER_START_TIMEOUT_MS = 120_000;
 const LOCAL_SERVER_URL = `http://localhost:${String(LOCAL_SERVER_PORT)}`;
 const isCI = Boolean(process.env.CI);
@@ -28,7 +29,7 @@ export default defineConfig({
     url: LOCAL_SERVER_URL,
     reuseExistingServer: !isCI,
     timeout: SERVER_START_TIMEOUT_MS,
-    env: { ...E2E_ENVIRONMENT },
+    env: { ...E2E_ENVIRONMENT, PORT: String(LOCAL_SERVER_PORT) },
     stdout: 'pipe',
     stderr: 'pipe',
   },
