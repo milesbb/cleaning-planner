@@ -1,6 +1,6 @@
-import { en } from 'zod/locales';
-import { z } from 'zod/mini';
+import en from 'zod/v4/locales/en.js';
+import * as zodApi from './zod-api';
 
-z.config(en());
+zodApi.config(en());
 
-export { z };
+export { zodApi as z };

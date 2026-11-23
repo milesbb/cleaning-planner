@@ -1,28 +1,54 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
+import type { ApiClient } from '@/lib/api/api-client';
+import { ApiProvider } from '@/lib/api/api-provider';
+import { AccountAuthProvider } from '@/lib/auth/account-auth-provider';
+import { stubAccountAuth } from '@/test/account-auth-stub';
 import HomePage from './page';
+
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: (): typeof router => router }));
+
+const NO_CALLS: ApiClient = { request: () => Promise.reject(new Error('not called')) };
+
+function renderStart(isSignedIn: boolean, mightBeSignedIn = isSignedIn): void {
+  const auth = stubAccountAuth({
+    isSignedIn: () => Promise.resolve(isSignedIn),
+    mightBeSignedIn: () => mightBeSignedIn,
+  });
+  render(
+    <AccountAuthProvider auth={auth}>
+      <ApiProvider client={NO_CALLS} onSignedOut={vi.fn()}>
+        <HomePage />
+      </ApiProvider>
+    </AccountAuthProvider>,
+  );
+}
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('HomePage', () => {
   it('has no accessibility violations', async () => {
-    const { container } = render(<HomePage />);
-    expect(await axe(container)).toHaveNoViolations();
+    renderStart(false);
+    expect(await axe(document.body)).toHaveNoViolations();
   });
 
-  it('shows the Today heading', () => {
-    render(<HomePage />);
-    expect(screen.getByRole('heading', { level: 1, name: 'Today' })).toBeInTheDocument();
+  it('shows Welcome at once to anyone with no session, without asking Cognito', () => {
+    renderStart(false);
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Know what needs cleaning, and when.' }),
+    ).toBeInTheDocument();
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it('explains that there are no tasks yet', () => {
-    render(<HomePage />);
-    expect(screen.getByText(/no cleaning tasks yet/i)).toBeInTheDocument();
-  });
-
-  it('shows an example task with its next due date from the schedule engine', () => {
-    render(<HomePage />);
-    const exampleTask = screen.getByRole('region', { name: 'Example task' });
-    expect(exampleTask).toHaveTextContent('Washing machine maintenance wash');
-    expect(exampleTask).toHaveTextContent('Next due 1 December 2026');
+  it('checks a stored session, and sends someone whose session ended to Welcome', async () => {
+    renderStart(false, true);
+    expect(screen.getByRole('status')).toHaveTextContent('Getting your homes ready');
+    await waitFor(() => {
+      expect(router.replace).toHaveBeenCalledWith('/welcome');
+    });
   });
 });

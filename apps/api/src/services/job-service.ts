@@ -1,4 +1,5 @@
-import type { CreateJobRequest, Job, UpdateJobRequest } from '@cleaning-planner/contracts/job';
+import type { Job, UpdateJobRequest } from '@cleaning-planner/contracts/job';
+import type { CreateJobRequest } from '@cleaning-planner/contracts/job-request';
 import { calendarDateInTimeZone } from '@cleaning-planner/schedule/time-zone';
 import type { MembershipReader } from '../middlewares/membership';
 import { Errors } from '../utils/errors';

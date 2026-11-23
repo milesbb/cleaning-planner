@@ -7,7 +7,8 @@ import {
   snoozeJobRequestSchema,
   undoCompletionRequestSchema,
 } from './completion';
-import { createJobRequestSchema, jobSchema, updateJobRequestSchema } from './job';
+import { jobSchema, updateJobRequestSchema } from './job';
+import { createJobRequestSchema } from './job-request';
 import { describeContract, fieldErrorsFor } from './test-support';
 import type { z } from './zod';
 
@@ -98,6 +99,20 @@ describeContract('jobProgressSchema', jobProgressSchema, {
 describe('job contracts', () => {
   it('give the schedule engine what it needs to work out due dates', () => {
     expectTypeOf<z.infer<typeof completionSchema>>().toExtend<Completion>();
+  });
+
+  it('keep a saved job whose library entry was renamed or retired', () => {
+    const savedJob = {
+      ...NEW_JOB,
+      id: 'job-1',
+      startDate: '2026-11-23',
+      snooze: null,
+      version: 1,
+    };
+    expect(jobSchema.safeParse({ ...savedJob, libraryId: 'kitchen.retired-job' }).success).toBe(
+      true,
+    );
+    expect(jobSchema.safeParse({ ...savedJob, libraryId: 'Not an id' }).success).toBe(false);
   });
 
   it('only accept jobs that exist in the library', () => {

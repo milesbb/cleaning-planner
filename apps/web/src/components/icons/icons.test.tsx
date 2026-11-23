@@ -1,4 +1,4 @@
-import { JOB_ICON_KEYS } from '@cleaning-planner/schedule/library/job-library';
+import { JOB_ICON_KEYS } from '@cleaning-planner/schedule/library/keys';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';

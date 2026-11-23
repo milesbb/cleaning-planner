@@ -1,4 +1,5 @@
-import { createJobRequestSchema, updateJobRequestSchema } from '@cleaning-planner/contracts/job';
+import { updateJobRequestSchema } from '@cleaning-planner/contracts/job';
+import { createJobRequestSchema } from '@cleaning-planner/contracts/job-request';
 import { recordIdSchema } from '@cleaning-planner/contracts/primitives';
 import { Router } from 'express';
 import type { Request } from 'express';

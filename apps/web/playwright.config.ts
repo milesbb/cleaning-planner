@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_ENVIRONMENT } from './e2e/support/test-environment';
 
 const LOCAL_SERVER_PORT = 3000;
 const SERVER_START_TIMEOUT_MS = 120_000;
@@ -27,6 +28,7 @@ export default defineConfig({
     url: LOCAL_SERVER_URL,
     reuseExistingServer: !isCI,
     timeout: SERVER_START_TIMEOUT_MS,
+    env: { ...E2E_ENVIRONMENT },
     stdout: 'pipe',
     stderr: 'pipe',
   },

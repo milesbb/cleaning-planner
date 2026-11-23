@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Atkinson_Hyperlegible, Bricolage_Grotesque } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { AppProviders } from '@/components/app/app-providers';
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, ThemeColors } from '@/lib/app-identity';
 import './globals.css';
 
@@ -40,7 +41,9 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps): ReactNode {
   return (
     <html lang="en-GB" className={`${displayFont.variable} ${bodyFont.variable}`}>
-      <body className="bg-paper text-ink antialiased">{children}</body>
+      <body className="bg-paper text-ink antialiased">
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

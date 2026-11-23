@@ -9,52 +9,8 @@ import {
   OFFICE_JOBS,
   OUTDOOR_JOBS,
 } from './rooms';
-import type { HomeFeature, JobIconKey, LibraryJob, RecommendedRange, RoomType } from './types';
+import type { HomeFeature, LibraryJob, RecommendedRange, RoomType } from './types';
 import { WHOLE_HOME_JOBS } from './whole-home';
-
-export const ROOM_TYPES: readonly RoomType[] = [
-  'kitchen',
-  'laundry',
-  'bathroom',
-  'bedroom',
-  'livingRoom',
-  'hallway',
-  'office',
-  'outdoor',
-  'wholeHome',
-];
-
-export const HOME_FEATURES: readonly HomeFeature[] = [
-  'dishwasher',
-  'washingMachine',
-  'tumbleDryer',
-  'oven',
-  'extractorHood',
-  'microwave',
-  'kettle',
-  'carpet',
-  'hardFloor',
-];
-
-export const JOB_ICON_KEYS: readonly JobIconKey[] = [
-  'dishwasher',
-  'washer',
-  'vacuum',
-  'mop',
-  'bed',
-  'kettle',
-  'oven',
-  'fridge',
-  'toilet',
-  'shower',
-  'sofa',
-  'windows',
-  'bins',
-  'spray',
-  'duster',
-  'smokeAlarm',
-  'microwave',
-];
 
 export const JOB_LIBRARY: readonly LibraryJob[] = [
   ...KITCHEN_JOBS,

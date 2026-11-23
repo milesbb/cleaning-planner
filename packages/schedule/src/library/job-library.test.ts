@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { approximateDays } from '../interval';
-import {
-  findLibraryJob,
-  HOME_FEATURES,
-  JOB_ICON_KEYS,
-  JOB_LIBRARY,
-  recommendationText,
-  ROOM_TYPES,
-  suggestJobs,
-} from './job-library';
+import { findLibraryJob, JOB_LIBRARY, recommendationText, suggestJobs } from './job-library';
+import { HOME_FEATURES, JOB_ICON_KEYS, ROOM_TYPES } from './keys';
 import type { LibraryJob } from './types';
 
 function defaultIntervalDays(job: LibraryJob): number {

@@ -1,4 +1,4 @@
-import { JOB_ICON_KEYS } from '@cleaning-planner/schedule/library/job-library';
+import { JOB_ICON_KEYS } from '@cleaning-planner/schedule/library/keys';
 import { describe, expect, it } from 'vitest';
 import { ROOM_APPEARANCE, countOf } from './rooms';
 

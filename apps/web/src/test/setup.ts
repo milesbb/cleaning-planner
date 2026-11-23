@@ -32,3 +32,12 @@ expect.extend({
 afterEach(() => {
   cleanup();
 });
+
+// jsdom has no ResizeObserver; Radix measures the hidden input it adds when a
+// switch sits inside a form.
+class NoopResizeObserver {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+if (!('ResizeObserver' in globalThis)) globalThis.ResizeObserver = NoopResizeObserver;

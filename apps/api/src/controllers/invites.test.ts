@@ -17,6 +17,7 @@ const PREVIEW = {
   invitedByName: 'Sam',
   memberCount: 1,
   expiresAt: '2026-11-30T09:00:00.000Z',
+  isMember: false,
 };
 
 function inviteService(): InviteService {
