@@ -115,7 +115,7 @@ feature/… ──PR──► development ──release PR──► production �
 
 - **CodeQL** (`.github/workflows/codeql.yml`, `security-extended` queries) scans JavaScript/TypeScript and the workflow files on every PR, every push to `development`/`production`, and weekly. It runs without path filters because the rulesets need a result for every PR. Both rulesets **block merges** when CodeQL reports an error-level issue or a high/critical security alert.
 - **Secret scanning with push protection** rejects pushes that contain credentials.
-- **Dependabot** security alerts and automatic security-fix PRs, plus weekly version updates into `development`. Major upgrades of TypeScript, ESLint, `@eslint/js` and `@types/node` are skipped until the toolchain supports them (see `.github/dependabot.yml`).
+- **Dependabot** security alerts and automatic security-fix PRs, plus weekly version updates into `development`: all minor and patch updates arrive together as one PR a week per ecosystem (npm, GitHub Actions), while each major update and each security fix gets its own PR. Major upgrades of TypeScript, ESLint, `@eslint/js` and `@types/node` are skipped until the toolchain supports them (see `.github/dependabot.yml`).
 
 **Backend deploys: AWS CodePipeline** (defined in `infrastructure/template.yml`, same pattern as playlist-transfer-backend)
 
