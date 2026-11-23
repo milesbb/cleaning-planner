@@ -19,6 +19,7 @@ function fakeAuth(overrides: Partial<AmplifyAuth> = {}): AmplifyAuth {
     resetPassword: vi.fn(),
     confirmResetPassword: vi.fn(),
     fetchAuthSession: vi.fn(() => Promise.resolve({})),
+    signOut: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }
@@ -91,6 +92,12 @@ describe('cognitoFunctionsFrom', () => {
       username: 'sam@example.com',
       password: 'lemon kettle sunday',
     });
+  });
+
+  it('signs out through Amplify', async () => {
+    const signOut = vi.fn(() => Promise.resolve());
+    await cognitoFunctionsFrom(() => Promise.resolve(fakeAuth({ signOut }))).signOut();
+    expect(signOut).toHaveBeenCalled();
   });
 });
 
