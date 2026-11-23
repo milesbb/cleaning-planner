@@ -19,6 +19,7 @@ interface SegmentedControlProps<Value extends string> {
   value: Value;
   onValueChange: (value: Value) => void;
   className?: string;
+  optionsClassName?: string;
 }
 
 export function SegmentedControl<Value extends string>({
@@ -27,6 +28,7 @@ export function SegmentedControl<Value extends string>({
   value,
   onValueChange,
   className,
+  optionsClassName,
 }: SegmentedControlProps<Value>): ReactNode {
   const labelId = useId();
   const chooseOption = (chosenValue: string): void => {
@@ -43,7 +45,10 @@ export function SegmentedControl<Value extends string>({
         value={value}
         onValueChange={chooseOption}
         orientation="horizontal"
-        className="flex flex-wrap gap-1 rounded-control border-2 border-ink bg-card p-1"
+        className={cn(
+          'flex flex-wrap gap-1 rounded-control border-2 border-ink bg-card p-1',
+          optionsClassName,
+        )}
       >
         {options.map((option) => (
           <SegmentOption key={option.value} option={option} />

@@ -6,6 +6,7 @@ import { ApiRequestError } from '@/lib/api/api-client';
 import { clientAnswering, renderWithApi } from '@/test/fake-api-client';
 import type { FakeAnswers, FakeApiClient } from '@/test/fake-api-client';
 import { HOME_PATH, homeAnswers } from '@/test/fake-home-answers';
+import { fakeScreenOf, restoreScreen } from '@/test/fake-screen';
 import { suggestedRoomName } from './add-room-sheet';
 import { HomeScreen } from './home-screen';
 
@@ -40,6 +41,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.clearAllMocks();
   window.localStorage.clear();
+  restoreScreen();
 });
 
 describe('HomeScreen', () => {
@@ -122,6 +124,21 @@ describe('HomeScreen', () => {
     });
     expect(await screen.findByRole('alert')).toHaveTextContent('You’re not in that home any more');
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+  });
+
+  it('puts Recently in a column beside the rooms on a laptop, also while reordering', async () => {
+    fakeScreenOf(true);
+    openHome();
+    const activity = await screen.findByRole('region', { name: 'Activity' });
+    expect(within(activity).getByRole('heading', { name: 'Recently' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Reorder rooms' }));
+    expect(screen.getByRole('region', { name: 'Activity' })).toBeInTheDocument();
+  });
+
+  it('keeps Recently under the rooms on phones', async () => {
+    openHome();
+    const activity = await screen.findByRole('region', { name: 'Activity' });
+    expect(within(activity).getByRole('heading', { name: 'Recently' })).toBeInTheDocument();
   });
 });
 

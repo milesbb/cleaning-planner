@@ -7,7 +7,18 @@ import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { ChooseAJobHint } from '@/components/shell/choose-a-job-hint';
 import { HomeSwitcher } from '@/components/shell/home-switcher';
 import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { DemoSection } from './demo-section';
+
+const ROOM_TYPES = [
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'laundry', label: 'Laundry' },
+  { value: 'office', label: 'Office' },
+] as const;
+
+type RoomTypeChoice = (typeof ROOM_TYPES)[number]['value'];
 
 const HOMES = [
   { id: 'home-1', name: 'Our flat' },
@@ -30,6 +41,7 @@ export function ArtDemo(): ReactNode {
 
 function WideSheetDemo(): ReactNode {
   const [isWideSheetOpen, setIsWideSheetOpen] = useState(false);
+  const [roomType, setRoomType] = useState<RoomTypeChoice>('kitchen');
   return (
     <BottomSheet
       title="Add a room"
@@ -39,6 +51,13 @@ function WideSheetDemo(): ReactNode {
       onOpenChange={setIsWideSheetOpen}
       trigger={<Button variant="secondary">Open a wide sheet</Button>}
     >
+      <SegmentedControl
+        label="Room"
+        options={ROOM_TYPES}
+        optionsClassName="md:grid md:grid-cols-3"
+        value={roomType}
+        onValueChange={setRoomType}
+      />
       <Button
         onClick={() => {
           setIsWideSheetOpen(false);
