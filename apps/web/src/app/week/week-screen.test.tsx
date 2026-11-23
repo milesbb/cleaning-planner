@@ -18,6 +18,7 @@ const HOME = '/v1/households/home-1';
 const THIS_WEEK = `GET ${HOME}/agenda?from=2026-11-23&to=2026-11-29`;
 const NEXT_WEEK = `GET ${HOME}/agenda?from=2026-11-30&to=2026-12-06`;
 const LAST_WEEK = `GET ${HOME}/agenda?from=2026-11-16&to=2026-11-22`;
+const COMING_UP = `GET ${HOME}/agenda?from=2026-11-30&to=2026-12-27`;
 const NEVER = (): Promise<never> => new Promise(() => undefined);
 
 function day(date: string, due: object[] = [], done: object[] = []): object {
@@ -31,6 +32,25 @@ function emptyWeek(from: number, month = '11'): object {
   });
   return { late: [], days };
 }
+
+function comingUpAgenda(dueOn: Record<string, string[]> = {}): object {
+  const days = Array.from({ length: 28 }, (_, index) => {
+    const date = new Date(Date.UTC(2026, 10, 30 + index)).toISOString().slice(0, 10);
+    const due = (dueOn[date] ?? []).map((jobId) => ({
+      jobId,
+      dueDate: date,
+      status: 'later',
+      assignee: null,
+    }));
+    return day(date, due);
+  });
+  return { late: [], days };
+}
+
+const COMING_UP_AGENDA = comingUpAgenda({
+  '2026-12-01': ['job-oven'],
+  '2026-12-09': ['job-bed'],
+});
 
 const THIS_WEEK_AGENDA = {
   late: [],
@@ -68,6 +88,7 @@ function weekAnswers(): FakeAnswers {
     [THIS_WEEK]: () => Promise.resolve(THIS_WEEK_AGENDA),
     [NEXT_WEEK]: () => Promise.resolve(emptyWeek(30)),
     [LAST_WEEK]: () => Promise.resolve(emptyWeek(16)),
+    [COMING_UP]: () => Promise.resolve(COMING_UP_AGENDA),
   };
 }
 
@@ -98,6 +119,7 @@ describe('WeekScreen', () => {
   it('has no accessibility violations', async () => {
     const { container } = renderWithApi(<WeekScreen />, clientAnswering(weekAnswers()));
     await screen.findByRole('heading', { name: 'This week', level: 1 });
+    await screen.findByRole('link', { name: /Clean the oven/ });
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -172,5 +194,63 @@ describe('WeekScreen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('You’re not in that home any more');
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByRole('heading', { name: 'This week', level: 1 })).toBeInTheDocument();
+  });
+  it('shows what is coming up in the next four weeks, grouped by week', async () => {
+    openWeek();
+    const comingUp = await screen.findByRole('region', { name: 'Coming up' });
+    const weeks = await within(comingUp).findAllByRole('heading', { level: 3 });
+    expect(weeks.map((heading) => heading.textContent)).toEqual([
+      'Week of 30 November',
+      'Week of 7 December',
+      'Week of 14 December',
+      'Week of 21 December',
+    ]);
+    const oven = within(comingUp).getByRole('link', { name: /Clean the oven/ });
+    expect(oven).toHaveAttribute('href', '/job?id=job-oven');
+    expect(oven).toHaveTextContent('Tuesday 1 December');
+    expect(within(comingUp).getByRole('region', { name: 'Week of 14 December' })).toHaveTextContent(
+      'Nothing due.',
+    );
+  });
+
+  it('says when nothing is coming up', async () => {
+    openWeek({ ...weekAnswers(), [COMING_UP]: () => Promise.resolve(comingUpAgenda()) });
+    const comingUp = await screen.findByRole('region', { name: 'Coming up' });
+    expect(
+      await within(comingUp).findByText('Nothing due in the next four weeks.'),
+    ).toBeInTheDocument();
+  });
+
+  it('says it is looking further ahead while coming up loads', async () => {
+    openWeek({ ...weekAnswers(), [COMING_UP]: NEVER });
+    const comingUp = await screen.findByRole('region', { name: 'Coming up' });
+    expect(within(comingUp).getByRole('status')).toHaveTextContent('Looking further ahead');
+  });
+
+  it('explains when coming up cannot be loaded, and tries again', async () => {
+    let attempts = 0;
+    openWeek({
+      ...weekAnswers(),
+      [COMING_UP]: () => {
+        attempts += 1;
+        return attempts === 1
+          ? Promise.reject(new ApiRequestError('rejected', 'Ask for fewer days'))
+          : Promise.resolve(COMING_UP_AGENDA);
+      },
+    });
+    const comingUp = await screen.findByRole('region', { name: 'Coming up' });
+    expect(await within(comingUp).findByRole('alert')).toHaveTextContent('Ask for fewer days');
+    await userEvent.click(within(comingUp).getByRole('button', { name: 'Try again' }));
+    expect(
+      await within(comingUp).findByRole('link', { name: /Clean the oven/ }),
+    ).toBeInTheDocument();
+  });
+
+  it('only looks ahead from this week', async () => {
+    openWeek();
+    await screen.findByRole('region', { name: 'Coming up' });
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    await screen.findByRole('heading', { name: 'Next week', level: 1 });
+    expect(screen.queryByRole('region', { name: 'Coming up' })).not.toBeInTheDocument();
   });
 });

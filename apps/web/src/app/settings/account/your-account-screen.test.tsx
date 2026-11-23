@@ -175,6 +175,14 @@ describe('YourAccountScreen', () => {
     expect(within(homes).getByRole('link', { name: 'Start or join a home' })).toBeInTheDocument();
   });
 
+  it('links to deleting your account', async () => {
+    openYourAccount();
+    expect(await screen.findByRole('link', { name: 'Delete account' })).toHaveAttribute(
+      'href',
+      '/settings/account/delete',
+    );
+  });
+
   it('signs out', async () => {
     const auth = SIGNED_IN();
     openYourAccount(twoHomes(), auth);

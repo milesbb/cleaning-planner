@@ -69,6 +69,7 @@ export interface AccountAuth extends EmailChange {
   // 'logIn' when other devices were logged out and this one couldn't log
   // straight back in with the new password.
   changePassword: (change: PasswordChange) => Promise<PasswordChangeOutcome>;
+  recheckPassword: (email: string, password: string) => Promise<void>;
 }
 
 const CONFIRM_SIGN_UP = 'CONFIRM_SIGN_UP';
@@ -189,6 +190,25 @@ async function changePasswordWith(
   }
 }
 
+// Amplify won't start a second sign-in while one is active, so the only way
+// to check the password is to sign out and back in with it. A wrong password
+// leaves this device signed out; the screen lets the person try again.
+async function recheckPasswordWith(
+  cognito: CognitoFunctions,
+  email: string,
+  password: string,
+): Promise<void> {
+  await translated(() => cognito.signOut());
+  let outcome: SignInOutcome;
+  try {
+    outcome = await signInWith(cognito, email, password);
+  } catch (error) {
+    const isWrongPassword = error instanceof AccountAuthError && error.kind === 'wrongDetails';
+    throw isWrongPassword ? new AccountAuthError('wrongCurrentPassword') : error;
+  }
+  if (outcome !== 'signedIn') throw new AccountAuthError('unexpected');
+}
+
 const MIGHT_BE_SIGNED_IN = (): boolean => true;
 
 export function createAccountAuth(
@@ -218,6 +238,7 @@ export function createAccountAuth(
     mightBeSignedIn: hasStoredSession,
     signOut: () => translated(() => cognito.signOut()),
     changePassword: (change) => changePasswordWith(cognito, change),
+    recheckPassword: (email, password) => recheckPasswordWith(cognito, email, password),
     ...createEmailChange(cognito),
   };
 }

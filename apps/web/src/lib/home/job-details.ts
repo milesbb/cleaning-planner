@@ -34,6 +34,7 @@ export interface JobBasics {
   assignment: Assignment;
   assigneeChoices: AssigneeChoice[];
   lastDone: string;
+  lastDoneOn: CalendarDate | null;
   version: number;
 }
 
@@ -108,6 +109,7 @@ export function jobDetailsOf(sources: RoomSources, jobId: string): JobBasics | n
     assignment: job.assignment,
     assigneeChoices: assigneeChoices(sources.members, sources.myUserId),
     lastDone: lastDoneText(sources, latest ?? null),
+    lastDoneOn: latest?.completedOn ?? null,
     version: job.version,
   };
 }

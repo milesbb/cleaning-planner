@@ -72,3 +72,40 @@ describe('changing your password', () => {
     expect(failure.kind).toBe('tooManyAttempts');
   });
 });
+
+describe('re-checking your password', () => {
+  it('signs out and back in with the typed password', async () => {
+    const cognito = stubCognito();
+    await createAccountAuth(cognito).recheckPassword('sam@example.com', 'lemon kettle sunday');
+    expect(cognito.signOut).toHaveBeenCalledWith();
+    expect(cognito.signIn).toHaveBeenCalledWith({
+      username: 'sam@example.com',
+      password: 'lemon kettle sunday',
+    });
+  });
+
+  it('says when the password is wrong, leaving this device signed out', async () => {
+    const cognito = stubCognito({
+      signIn: vi.fn(() => Promise.reject(cognitoError('NotAuthorizedException'))),
+    });
+    const failure = await failureOf(
+      createAccountAuth(cognito).recheckPassword('sam@example.com', 'lemon kettle'),
+    );
+    expect(failure).toMatchObject({
+      kind: 'wrongCurrentPassword',
+      message: 'That isn’t your current password. Check for typos, or reset it.',
+    });
+  });
+
+  it('fails when the sign-in needs anything more', async () => {
+    const cognito = stubCognito({
+      signIn: vi.fn(() =>
+        Promise.resolve({ isSignedIn: false, nextStep: { signInStep: 'CONFIRM_SIGN_UP' } }),
+      ),
+    });
+    const failure = await failureOf(
+      createAccountAuth(cognito).recheckPassword('sam@example.com', 'lemon kettle sunday'),
+    );
+    expect(failure.kind).toBe('unexpected');
+  });
+});
