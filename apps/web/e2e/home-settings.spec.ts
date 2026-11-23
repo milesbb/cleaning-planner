@@ -40,4 +40,27 @@ test.describe('Home settings', () => {
       page.getByRole('region', { name: 'Invite someone' }).getByRole('alert'),
     ).toContainText('Too many invites');
   });
+
+  test('lets the owner rename the home, remove someone, then delete the home', async ({ page }) => {
+    await logInToHome(page, { isOwner: true });
+    await page.goto('/settings/home');
+    await page.getByRole('button', { name: 'Change home details' }).click();
+    const details = page.getByRole('dialog', { name: 'Home details' });
+    await details.getByRole('textbox', { name: 'Name' }).fill('The flat');
+    await details.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('heading', { name: 'The flat', level: 1 })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Manage Sam' }).click();
+    const manage = page.getByRole('dialog', { name: 'Sam' });
+    await manage.getByRole('button', { name: 'Remove Sam' }).click();
+    await manage.getByRole('button', { name: 'Yes, remove Sam' }).click();
+    await expect(page.getByRole('list', { name: 'People' })).not.toContainText('Sam');
+
+    await page.getByRole('button', { name: 'Delete this home' }).click();
+    await page
+      .getByRole('dialog', { name: 'Delete The flat?' })
+      .getByRole('button', { name: 'Delete home' })
+      .click();
+    await page.waitForURL(/\/homes\/new\/?$/);
+  });
 });

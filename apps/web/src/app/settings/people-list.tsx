@@ -6,10 +6,12 @@ import { Badge } from '@/components/ui/badge';
 interface PeopleListProps {
   members: readonly Member[];
   myUserId: string;
+  // Something to do about one person, such as the owner's Manage.
+  actionFor?: (member: Member) => ReactNode;
 }
 
 // Everyone in a home, you marked "(you)" and the owner marked.
-export function PeopleList({ members, myUserId }: PeopleListProps): ReactNode {
+export function PeopleList({ members, myUserId, actionFor }: PeopleListProps): ReactNode {
   return (
     <ul aria-label="People" className="flex flex-col gap-3">
       {members.map((member) => (
@@ -19,6 +21,7 @@ export function PeopleList({ members, myUserId }: PeopleListProps): ReactNode {
             {member.userId === myUserId ? `${member.name} (you)` : member.name}
           </span>
           {member.role === 'owner' ? <Badge tone="owner">Owner</Badge> : null}
+          {actionFor === undefined ? null : <span className="ml-auto">{actionFor(member)}</span>}
         </li>
       ))}
     </ul>
