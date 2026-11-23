@@ -9,7 +9,7 @@ import {
   useStartAHomeWhenHomeless,
 } from '@/components/shell/screen-states';
 import { ButtonLink } from '@/components/ui/button';
-import { jobDetailsOf } from '@/lib/home/job-details';
+import { completionText, jobDetailsOf } from '@/lib/home/job-details';
 import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { useRecordId } from '@/lib/use-record-id';
@@ -42,7 +42,13 @@ function JobContent({ home, jobId }: { home: ReadyHome; jobId: string }): ReactN
       />
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
         <JobDueCard details={details} address={address} today={home.sources.today} />
-        <JobAbout details={details} address={address} />
+        <JobAbout
+          details={details}
+          address={address}
+          describeCompletion={(completion) =>
+            completionText(home.sources.members, home.sources.myUserId, completion)
+          }
+        />
       </div>
       <JobManagement details={details} address={address} />
     </>

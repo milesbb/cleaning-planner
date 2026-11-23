@@ -1,4 +1,5 @@
 import type { CompletionRecord } from '@cleaning-planner/contracts/completion';
+import type { Member } from '@cleaning-planner/contracts/household';
 import type { Job } from '@cleaning-planner/contracts/job';
 import { addInterval, compareDates } from '@cleaning-planner/schedule/calendar-date';
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
@@ -67,11 +68,20 @@ function whenText(job: Job, nextDue: CalendarDate | null, today: CalendarDate): 
   return `Next due ${formatShortDate(nextDue)}`;
 }
 
+// "Done by Sam on 20 November".
+export function completionText(
+  members: readonly Member[],
+  myUserId: string,
+  completion: CompletionRecord,
+): string {
+  const verb = completion.outcome === 'done' ? 'Done' : 'Skipped';
+  const person = personLabel(members, myUserId, completion.completedBy);
+  return `${verb} by ${person} on ${formatShortDate(completion.completedOn)}`;
+}
+
 function lastDoneText(sources: RoomSources, completion: CompletionRecord | null): string {
   if (completion === null) return 'Not done yet';
-  const verb = completion.outcome === 'done' ? 'Done' : 'Skipped';
-  const person = personLabel(sources.members, sources.myUserId, completion.completedBy);
-  return `${verb} by ${person} on ${formatShortDate(completion.completedOn)}`;
+  return completionText(sources.members, sources.myUserId, completion);
 }
 
 type Advice = Pick<

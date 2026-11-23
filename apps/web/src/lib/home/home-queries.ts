@@ -8,8 +8,8 @@ import {
   memberSchema,
 } from '@cleaning-planner/contracts/household';
 import type { Household, HouseholdSummary, Member } from '@cleaning-planner/contracts/household';
-import { jobProgressSchema } from '@cleaning-planner/contracts/completion';
-import type { JobProgress } from '@cleaning-planner/contracts/completion';
+import { completionSchema, jobProgressSchema } from '@cleaning-planner/contracts/completion';
+import type { CompletionRecord, JobProgress } from '@cleaning-planner/contracts/completion';
 import { jobSchema } from '@cleaning-planner/contracts/job';
 import type { Job } from '@cleaning-planner/contracts/job';
 import { profileSchema } from '@cleaning-planner/contracts/profile';
@@ -84,6 +84,18 @@ export function useJobs(householdId: string | null): UseQueryResult<Job[]> {
 
 export function useProgress(householdId: string | null): UseQueryResult<JobProgress[]> {
   return useHomeRead(householdId, 'progress', z.array(jobProgressSchema));
+}
+
+// A job's done and skipped days, newest first.
+export function useJobHistory(
+  householdId: string,
+  jobId: string,
+): UseQueryResult<CompletionRecord[]> {
+  return useApiQuery(['home', householdId, 'history', jobId], {
+    method: 'GET',
+    path: `${homePath(householdId)}/jobs/${encodeURIComponent(jobId)}/completions`,
+    response: z.array(completionSchema),
+  });
 }
 
 export function useAgenda(

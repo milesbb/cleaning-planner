@@ -65,7 +65,7 @@ describe('JobScreen', () => {
     expect(screen.getByText('2 days late')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'How often' })).toHaveTextContent('Weekly');
     expect(screen.getByRole('region', { name: 'Who does it' })).toHaveTextContent('Anyone');
-    expect(screen.getByRole('region', { name: 'Last done' })).toHaveTextContent('Not done yet');
+    expect(screen.getByRole('region', { name: 'History' })).toHaveTextContent('Not done yet');
     expect(screen.getByRole('link', { name: 'Back to Kitchen' })).toHaveAttribute(
       'href',
       '/room?id=room-kitchen',

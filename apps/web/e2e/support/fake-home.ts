@@ -200,15 +200,38 @@ async function fakeHome(page: Page, { failTicks = false } = {}): Promise<void> {
       latestCompletion: null,
     })),
   }));
-  await fakeApi(page, `${HOME}/jobs/*/completions`, (request) => {
-    if (failTicks) return { status: 500, body: { error: { code: 'internal', message: 'Broke' } } };
-    const jobId = /jobs\/([^/]+)\/completions/.exec(request.url())?.[1] ?? '';
-    doneJobIds.add(jobId);
-    return {
-      status: 201,
-      body: { jobId, nextDueDate: calendarDay(7), snooze: null, latestCompletion: null },
-    };
-  });
+  await fakeApi(
+    page,
+    `${HOME}/jobs/*/completions`,
+    (request) => {
+      if (failTicks) {
+        return { status: 500, body: { error: { code: 'internal', message: 'Broke' } } };
+      }
+      const jobId = jobIdIn(request.url());
+      doneJobIds.add(jobId);
+      return {
+        status: 201,
+        body: { jobId, nextDueDate: calendarDay(7), snooze: null, latestCompletion: null },
+      };
+    },
+    { method: 'POST' },
+  );
+  await fakeApi(
+    page,
+    `${HOME}/jobs/*/completions`,
+    (request) => {
+      const jobId = jobIdIn(request.url());
+      const doneToday = {
+        jobId,
+        outcome: 'done',
+        completedOn: calendarDay(0),
+        completedBy: 'user-alex',
+        doneAt: new Date().toISOString(),
+      };
+      return { body: doneJobIds.has(jobId) ? [doneToday] : [] };
+    },
+    { method: 'GET' },
+  );
 }
 
 export async function logInToHome(
