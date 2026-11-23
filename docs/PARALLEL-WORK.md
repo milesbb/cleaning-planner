@@ -96,7 +96,9 @@ The owner can also open a session themselves and say "pick up the next issue": t
 5. **PR** into `development` with `Closes #<issue>` in the body, then `npm run work:board -- review <issue>`.
 6. **Merge** when PR checks pass: rebase onto `development` first if it moved, squash-merge, author email `10620446+milesbb@users.noreply.github.com`.
    - Wait for checks with `gh pr checks <pr> --watch` run in the background (it ends when they do), not a polling loop. Every check must pass, Vercel included (it reports `state`, not `conclusion`).
-   - If Vercel fails only because of its daily build limit, leave the PR in review and work on another issue; when the limit resets, push an empty commit to rebuild it.
+   - If Vercel fails only because of its daily build limit ("Deployment rate limited"):
+     - **The PR changes nothing under `apps/web`:** merge it once every other check passes (the owner agreed this on 23 November 2026). Say so in the PR.
+     - **The PR changes `apps/web`:** leave it in review and work on another issue; when the limit resets, push an empty commit to rebuild it, then merge when everything passes.
 7. **Hand back.** `npm run work:board -- --sync-labels`.
 8. **Keep going.** Claim the next issue from START NOW and go back to step 2, without asking. Prefer issues that unblock others. Only when START NOW has nothing you can claim: notify the owner (a push notification if you have the tool) and end your turn with the PRs you merged, asking what to work on next.
 
