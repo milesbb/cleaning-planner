@@ -4,12 +4,12 @@ import type { HomeFeature } from '@cleaning-planner/schedule/library/types';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { AccountForm } from '@/components/account/account-screen';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { applianceChoicesFor } from '@/lib/jobs/appliances';
 import type { ApplianceChoice } from '@/lib/jobs/appliances';
 import { useHomeSetup } from '@/lib/setup/home-setup-draft';
+import { ChoicesContinueButton } from '../setup-screen';
 
 interface FeatureGroup {
   title: string;
@@ -61,9 +61,9 @@ export function AppliancesForm(): ReactNode {
         router.push('/setup/reminders');
         return true;
       }}
-      actions={<Button type="submit">Continue</Button>}
+      actions={<ChoicesContinueButton />}
     >
-      <div className="flex flex-col gap-5">
+      <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-3">
         {FEATURE_GROUPS.map((group) => (
           <FeatureSwitches
             key={group.title}
