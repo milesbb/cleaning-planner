@@ -8,3 +8,8 @@ testAtEveryViewport('Setup: appliances', '/setup/appliances');
 testAtEveryViewport('Setup: reminders', '/setup/reminders');
 testAtEveryViewport('Today', '/today', { prepare: logInToHome, readyText: 'Clean the oven' });
 testAtEveryViewport('This week', '/week', { prepare: logInToHome, readyText: 'Nothing planned' });
+testAtEveryViewport('Home', '/home', { prepare: logInToHome, readyText: 'Living room' });
+testAtEveryViewport('Room', '/room?id=room-kitchen', {
+  prepare: logInToHome,
+  readyText: 'Clean the oven',
+});

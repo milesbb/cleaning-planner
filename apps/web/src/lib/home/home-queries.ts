@@ -8,6 +8,8 @@ import {
   memberSchema,
 } from '@cleaning-planner/contracts/household';
 import type { Household, HouseholdSummary, Member } from '@cleaning-planner/contracts/household';
+import { jobProgressSchema } from '@cleaning-planner/contracts/completion';
+import type { JobProgress } from '@cleaning-planner/contracts/completion';
 import { jobSchema } from '@cleaning-planner/contracts/job';
 import type { Job } from '@cleaning-planner/contracts/job';
 import { profileSchema } from '@cleaning-planner/contracts/profile';
@@ -78,6 +80,10 @@ export function useRooms(householdId: string | null): UseQueryResult<Room[]> {
 
 export function useJobs(householdId: string | null): UseQueryResult<Job[]> {
   return useHomeRead(householdId, 'jobs', z.array(jobSchema));
+}
+
+export function useProgress(householdId: string | null): UseQueryResult<JobProgress[]> {
+  return useHomeRead(householdId, 'progress', z.array(jobProgressSchema));
 }
 
 export function useAgenda(

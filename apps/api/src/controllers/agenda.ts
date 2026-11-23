@@ -13,3 +13,11 @@ export function agendaRouter(agenda: AgendaService, memberships: MembershipReade
   });
   return router;
 }
+
+export function progressRouter(agenda: AgendaService, memberships: MembershipReader): Router {
+  const router = Router({ mergeParams: true });
+  router.get('/', requireMember(memberships), async (_request, response) => {
+    response.json(await agenda.listProgress(membershipOf(response).householdId));
+  });
+  return router;
+}
