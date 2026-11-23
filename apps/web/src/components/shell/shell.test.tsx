@@ -243,6 +243,14 @@ describe('PageHeader', () => {
     expect(screen.getByText('Sunday 22 November')).toBeInTheDocument();
   });
 
+  it('lets focus come back to the page heading, outside the tab order', () => {
+    render(<PageHeader title="Today" />);
+    const heading = screen.getByRole('heading', { level: 1, name: 'Today' });
+    heading.focus();
+    expect(heading).toHaveFocus();
+    expect(heading).toHaveAttribute('tabindex', '-1');
+  });
+
   it('has a labelled back link', () => {
     render(<PageHeader title="Kitchen" leading={<BackLink href="/home" label="Back to Home" />} />);
     expect(screen.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/home');

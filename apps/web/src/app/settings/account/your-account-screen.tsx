@@ -14,7 +14,12 @@ import { Card } from '@/components/ui/card';
 import { useMe } from '@/lib/home/home-queries';
 import { useCurrentHome } from '@/lib/home/use-current-home';
 import { ProfileSheet } from '../profile-sheet';
-import { ProfileSummary, SettingsSection, SignOutButton } from '../settings-sections';
+import {
+  ProfileSummary,
+  SettingsColumns,
+  SettingsSection,
+  SignOutButton,
+} from '../settings-sections';
 import { YourHomesSection } from './your-homes-section';
 
 type AccountState =
@@ -82,14 +87,14 @@ export function YourAccountScreen(): ReactNode {
             title="Your account"
             leading={<BackLink href="/settings" label="Back to Settings" />}
           />
-          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
+          <SettingsColumns>
             <YourDetailsSection profile={account.profile} />
             <YourHomesSection
               homes={account.homes}
               currentHomeId={account.currentHomeId}
               onOpenHome={account.openHome}
             />
-          </div>
+          </SettingsColumns>
           <SignOutButton />
           <ButtonLink href="/settings/account/delete" variant="danger">
             Delete account

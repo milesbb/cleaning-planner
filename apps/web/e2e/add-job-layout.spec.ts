@@ -1,23 +1,12 @@
 import { expect, test } from '@playwright/test';
-import type { Locator, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { boxOf } from './support/element-box';
+import type { Box } from './support/element-box';
 import { logInToHome } from './support/fake-home';
 
 const ADD_JOB_PATH = '/room/add?id=room-kitchen';
 const LAPTOP = { width: 1024, height: 800 };
 const SEARCH_MAXIMUM_WIDTH = 512;
-
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-async function boxOf(locator: Locator): Promise<Box> {
-  const box = await locator.boundingBox();
-  if (box === null) throw new Error('Element is not visible');
-  return box;
-}
 
 async function firstTwoLibraryJobs(page: Page): Promise<[Box, Box]> {
   const jobs = page.getByRole('list', { name: 'Jobs from the library' }).getByRole('listitem');

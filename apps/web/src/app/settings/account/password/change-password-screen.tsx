@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { useAccountAuth } from '@/lib/auth/account-auth-provider';
 import { existingPasswordError, newPasswordError } from '@/lib/auth/account-validation';
 import { useMe } from '@/lib/home/home-queries';
+import { FormColumn } from '../../settings-sections';
 
 const MINIMUM_PASSWORD_LENGTH = 12;
 const LOG_IN_AGAIN = `/sign-in?next=${encodeURIComponent('/settings')}`;
@@ -139,7 +140,9 @@ export function ChangePasswordScreen(): ReactNode {
             title="Change password"
             leading={<BackLink href="/settings" label="Back to Settings" />}
           />
-          <ChangePasswordForm email={me.data.email} />
+          <FormColumn>
+            <ChangePasswordForm email={me.data.email} />
+          </FormColumn>
         </>
       )}
     </AppShell>

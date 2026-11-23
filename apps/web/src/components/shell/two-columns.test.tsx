@@ -1,4 +1,4 @@
-import { act, render, renderHook, screen } from '@testing-library/react';
+import { render, renderHook, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { AppShell } from './app-shell';
@@ -7,50 +7,13 @@ import { ChooseAJobHint } from './choose-a-job-hint';
 import { TwoColumns } from './two-columns';
 import { LAPTOP_MEDIA_QUERY, useIsLaptop } from './use-is-laptop';
 
-type ChangeListener = () => void;
+vi.mock('next/navigation', () => ({
+  useRouter: (): object => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: (): string => '/today',
+}));
+import { fakeScreenOf, restoreScreen } from '@/test/fake-screen';
 
-interface FakeScreen {
-  resize: (isLaptop: boolean) => void;
-}
-
-const defaultMatchMedia = Object.getOwnPropertyDescriptor(window, 'matchMedia');
-
-function fakeScreenOf(isLaptop: boolean): FakeScreen {
-  let matches = isLaptop;
-  const listeners = new Set<ChangeListener>();
-  Object.defineProperty(window, 'matchMedia', {
-    configurable: true,
-    writable: true,
-    value: (query: string) => ({
-      get matches(): boolean {
-        return query === LAPTOP_MEDIA_QUERY && matches;
-      },
-      media: query,
-      addEventListener: (_: string, listener: ChangeListener): void => {
-        listeners.add(listener);
-      },
-      removeEventListener: (_: string, listener: ChangeListener): void => {
-        listeners.delete(listener);
-      },
-    }),
-  });
-  return {
-    resize: (isNowLaptop: boolean): void => {
-      matches = isNowLaptop;
-      act(() => {
-        listeners.forEach((listener) => {
-          listener();
-        });
-      });
-    },
-  };
-}
-
-afterEach(() => {
-  if (defaultMatchMedia !== undefined) {
-    Object.defineProperty(window, 'matchMedia', defaultMatchMedia);
-  }
-});
+afterEach(restoreScreen);
 
 describe('TwoColumns', () => {
   it('has no accessibility violations', async () => {

@@ -86,6 +86,7 @@ function AddRoomFields({ form, addRoom, onSubmit }: AddRoomFieldsProps): ReactNo
       <SegmentedControl<SetupRoomType>
         label="Room"
         options={ROOM_CHOICES}
+        optionsClassName="md:grid md:grid-cols-3"
         value={form.type}
         onValueChange={form.chooseType}
       />
@@ -126,6 +127,7 @@ export function AddRoomSheet({ householdId, roomNames, ...opening }: AddRoomShee
     <BottomSheet
       title="Add a room"
       description="We’ll add the usual jobs for it. You can change them later."
+      size="wide"
       {...opening}
     >
       <AddRoomFields form={form} addRoom={addRoom} onSubmit={submit} />

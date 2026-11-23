@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense, lazy } from 'react';
 import type { ReactNode } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons/interface-icons';
 import { AppShell } from '@/components/shell/app-shell';
@@ -10,12 +11,18 @@ import {
   ScreenProblem,
   useStartAHomeWhenHomeless,
 } from '@/components/shell/screen-states';
+import { TwoColumns } from '@/components/shell/two-columns';
 import { IconButton } from '@/components/ui/icon-button';
 import { formatShortDate } from '@/lib/format-date';
 import { ComingUpSection } from './coming-up-section';
 import { useWeek } from './use-week';
 import { WeekDays } from './week-days';
 import type { WeekState } from './use-week';
+
+// Laptops only, so phones never download it.
+const ChooseAJobHint = lazy(async () => ({
+  default: (await import('@/components/shell/choose-a-job-hint')).ChooseAJobHint,
+}));
 
 type ReadyWeek = Extract<WeekState, { kind: 'ready' }>;
 
@@ -46,6 +53,22 @@ function WeekNavigation({ week }: { week: ReadyWeek }): ReactNode {
   );
 }
 
+function WeekLists({ week }: { week: ReadyWeek }): ReactNode {
+  return (
+    <>
+      <WeekDays
+        householdId={week.currentHomeId}
+        today={week.today}
+        range={week.range}
+        view={week.view}
+      />
+      {week.offset === 0 ? (
+        <ComingUpSection householdId={week.currentHomeId} week={week.range} />
+      ) : null}
+    </>
+  );
+}
+
 function WeekContent({ week }: { week: ReadyWeek }): ReactNode {
   return (
     <>
@@ -61,15 +84,16 @@ function WeekContent({ week }: { week: ReadyWeek }): ReactNode {
         }
         action={<WeekNavigation week={week} />}
       />
-      <WeekDays
-        householdId={week.currentHomeId}
-        today={week.today}
-        range={week.range}
-        view={week.view}
+      <TwoColumns
+        main={<WeekLists week={week} />}
+        side={
+          <Suspense fallback={null}>
+            <ChooseAJobHint />
+          </Suspense>
+        }
+        sideLabel="Job details"
+        sideBelowLaptop="hidden"
       />
-      {week.offset === 0 ? (
-        <ComingUpSection householdId={week.currentHomeId} week={week.range} />
-      ) : null}
     </>
   );
 }
@@ -79,7 +103,7 @@ export function WeekScreen(): ReactNode {
   const hasNoHome = week.kind === 'noHome';
   useStartAHomeWhenHomeless(hasNoHome);
   return (
-    <AppShell activeTab="week">
+    <AppShell activeTab="week" layout="split">
       {week.kind === 'ready' && <WeekContent week={week} />}
       {week.kind === 'failed' && (
         <ScreenProblem title="This week" message={week.message} retry={week.retry} />

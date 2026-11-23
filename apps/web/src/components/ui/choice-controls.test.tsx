@@ -94,6 +94,22 @@ describe('SegmentedControl', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'Monthly' }));
     expect(onChange).toHaveBeenCalledWith('monthly');
   });
+
+  it('lays its options out with the classes given, such as columns on wider screens', () => {
+    render(
+      <SegmentedControl
+        label="How often"
+        options={FREQUENCY_OPTIONS}
+        value="weekly"
+        onValueChange={vi.fn()}
+        optionsClassName="md:grid md:grid-cols-3"
+      />,
+    );
+    expect(screen.getByRole('radiogroup', { name: 'How often' })).toHaveClass(
+      'md:grid',
+      'md:grid-cols-3',
+    );
+  });
 });
 
 describe('Switch', () => {

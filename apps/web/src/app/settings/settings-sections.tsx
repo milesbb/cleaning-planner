@@ -28,6 +28,17 @@ export function SettingsSection({
   );
 }
 
+// docs/LAYOUTS.md §4.9: two columns from 768px, aligned to the top.
+export function SettingsColumns({ children }: { children: ReactNode }): ReactNode {
+  return (
+    <div className="flex flex-col gap-6 md:grid md:grid-cols-2 md:items-start">{children}</div>
+  );
+}
+
+export function FormColumn({ children }: { children: ReactNode }): ReactNode {
+  return <div className="flex w-full max-w-lg flex-col gap-4">{children}</div>;
+}
+
 export function ProfileSummary({ profile }: { profile: Profile }): ReactNode {
   return (
     <div className="flex items-center gap-3">

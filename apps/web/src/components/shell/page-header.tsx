@@ -43,7 +43,10 @@ export function PageHeader({ title, subtitle, leading, action }: PageHeaderProps
         </div>
       ) : null}
       <div className="flex flex-col gap-0.5">
-        <h1 className="font-display text-[2.375rem] leading-[2.75rem] font-extrabold tracking-[-0.0625rem] break-words sm:text-[2.875rem] sm:leading-[3.125rem]">
+        <h1
+          tabIndex={-1}
+          className="font-display focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink text-[2.375rem] leading-[2.75rem] font-extrabold tracking-[-0.0625rem] break-words sm:text-[2.875rem] sm:leading-[3.125rem]"
+        >
           {title}
         </h1>
         {subtitle === undefined ? null : <p className="text-[0.9375rem]">{subtitle}</p>}

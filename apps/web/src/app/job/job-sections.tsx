@@ -133,12 +133,12 @@ function ProgressButtons({
     progress.record(change);
   };
   return (
-    <div className="flex flex-col gap-3">
+    <div className="@container flex flex-col gap-3">
       <Button disabled={progress.isPending} onClick={record({ kind: 'done', today })}>
         Mark as done
       </Button>
       <DoneEarlierChoice lastDoneOn={lastDoneOn} today={today} progress={progress} />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
+      <div className="grid gap-3 @md:grid-cols-2">
         <Button
           variant="secondary"
           disabled={progress.isPending}
@@ -234,12 +234,15 @@ export function JobAbout({ details, address, describeCompletion }: JobAboutProps
   );
 }
 
+// `onRemoved` replaces going back to the room, as Job detail's side panel does.
 export function JobManagement({
   details,
   address,
+  onRemoved,
 }: {
   details: JobDetails;
   address: JobAddress;
+  onRemoved?: () => void;
 }): ReactNode {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -257,7 +260,9 @@ export function JobManagement({
             Remove job
           </Button>
         )}
-        sheet={(opening) => <RemoveJobSheet {...opening} details={details} address={address} />}
+        sheet={(opening) => (
+          <RemoveJobSheet {...opening} details={details} address={address} onRemoved={onRemoved} />
+        )}
       />
     </div>
   );

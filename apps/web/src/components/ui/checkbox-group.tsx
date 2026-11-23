@@ -23,6 +23,7 @@ interface CheckboxGroupProps<Value extends string> {
   onValuesChange: (values: Value[]) => void;
   error?: string | undefined;
   className?: string;
+  optionsClassName?: string;
 }
 
 // The real checkbox covers the whole option (invisibly), so the tap target is
@@ -69,6 +70,7 @@ export function CheckboxGroup<Value extends string>({
   onValuesChange,
   error,
   className,
+  optionsClassName,
 }: CheckboxGroupProps<Value>): ReactNode {
   const groupId = useId();
   const toggle = (value: Value, isChecked: boolean): void => {
@@ -83,7 +85,7 @@ export function CheckboxGroup<Value extends string>({
       className={cn(FIELD_CLASSES, className)}
     >
       <legend className={cn(FIELD_LABEL_CLASSES, 'mb-1.5')}>{label}</legend>
-      <div className="flex flex-wrap gap-2">
+      <div className={cn('flex flex-wrap gap-2', optionsClassName)}>
         {options.map((option) => (
           <CheckboxChip
             key={option.value}

@@ -5,6 +5,7 @@ import { AppShell } from '@/components/shell/app-shell';
 import { BackLink, PageHeader } from '@/components/shell/page-header';
 import { ScreenLoading, ScreenProblem } from '@/components/shell/screen-states';
 import { useMe } from '@/lib/home/home-queries';
+import { FormColumn } from '../../settings-sections';
 import { ChangedStep, CodeStep, NewEmailStep, SaveFailedStep } from './email-change-steps';
 import { useEmailChange } from './use-email-change';
 
@@ -43,7 +44,9 @@ export function ChangeEmailScreen(): ReactNode {
             title="Change email"
             leading={<BackLink href="/settings/account" label="Back to Your account" />}
           />
-          <ChangeEmailFlow currentEmail={me.data.email} />
+          <FormColumn>
+            <ChangeEmailFlow currentEmail={me.data.email} />
+          </FormColumn>
         </>
       )}
     </AppShell>

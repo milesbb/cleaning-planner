@@ -96,4 +96,18 @@ describe('CheckboxGroup', () => {
       'Pick at least one day',
     );
   });
+
+  it('lays its options out with the classes given, such as columns on wider screens', () => {
+    render(
+      <CheckboxGroup
+        label="Days"
+        options={DAYS}
+        values={[]}
+        onValuesChange={vi.fn()}
+        optionsClassName="md:grid md:grid-cols-2"
+      />,
+    );
+    const firstOption = screen.getByRole('checkbox', { name: 'Monday' }).closest('label');
+    expect(firstOption?.parentElement).toHaveClass('md:grid', 'md:grid-cols-2');
+  });
 });
