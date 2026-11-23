@@ -12,4 +12,15 @@ describe('infrastructure/template.yml', () => {
   it.each(Object.entries(INFRASTRUCTURE_RULES))('follows the rule: %s', (_, rule) => {
     expect(rule(template)).toEqual([]);
   });
+
+  it('has what reminders need: notify, a schedule group and a role Scheduler can assume', () => {
+    const resourceTypes = Object.fromEntries(
+      Object.entries(template.resources).map(([logicalId, resource]) => [logicalId, resource.type]),
+    );
+    expect(resourceTypes).toMatchObject({
+      NotifyFunction: 'AWS::Serverless::Function',
+      ReminderScheduleGroup: 'AWS::Scheduler::ScheduleGroup',
+      ReminderSchedulerRole: 'AWS::IAM::Role',
+    });
+  });
 });

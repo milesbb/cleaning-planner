@@ -161,6 +161,8 @@ Build logs: CodeBuild → `cleaning-planner-build` (both projects log there). De
    aws cloudformation describe-stacks --stack-name cleaning-planner --region ap-southeast-2 --query "Stacks[0].Outputs"
    ```
 
+Reminders also read two SecureStrings that are set up by hand with reminders (#65): the Web Push private key at `/cleaning-planner/vapid-private-key` and the Firebase service-account key at `/cleaning-planner/fcm-service-account`. The stack deploys without them; `notify` reads them only when it runs.
+
 The budget alert is **account-wide** and defaults to $5/month. If the account already runs other projects, raise `MonthlyBudgetUsd` in the template.
 
 ### 2. Vercel (web app)

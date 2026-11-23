@@ -1,4 +1,4 @@
-import { isRecord } from './cloudformation-template';
+import { isRecord, recordAt, resourcesOfType } from './cloudformation-template';
 import type {
   CloudFormationTemplate,
   Properties,
@@ -17,21 +17,6 @@ const TIGHTLY_THROTTLED_ROUTES = [
 ];
 const METHODS_THAT_CATCH_PREFLIGHTS = ['ANY', 'OPTIONS'];
 const MAXIMUM_TIMEOUT_SECONDS = 30;
-
-function resourcesOfType(
-  template: CloudFormationTemplate,
-  resourceType: string,
-): [string, TemplateResource][] {
-  return Object.entries(template.resources).filter(
-    ([, resource]) => resource.type === resourceType,
-  );
-}
-
-function recordAt(properties: Properties, ...path: string[]): Properties {
-  let current: unknown = properties;
-  for (const key of path) current = isRecord(current) ? current[key] : undefined;
-  return isRecord(current) ? current : {};
-}
 
 function publicRouteProblems(functionId: string, resource: TemplateResource): string[] {
   return apiRoutesOf(resource)
