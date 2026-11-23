@@ -4,7 +4,7 @@ import { describeContract, fieldErrorsFor } from './test-support';
 
 const P256DH =
   'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM';
-const AUTH = 'tBHItJI5svbpez7KI4CCXg';
+const AUTH = 'test-auth-secret';
 
 const WEB_PUSH = {
   kind: 'webPush',

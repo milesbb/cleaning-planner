@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { addInterval, compareDates, isCalendarDate, parseCalendarDate } from './calendar-date';
+import {
+  addInterval,
+  compareDates,
+  daysBetween,
+  isCalendarDate,
+  parseCalendarDate,
+} from './calendar-date';
 
 describe('isCalendarDate', () => {
   it.each(['2026-01-01', '2024-02-29', '2026-12-31'])('accepts %s', (value) => {
@@ -89,5 +95,20 @@ describe('compareDates', () => {
 
   it('returns 0 for equal dates', () => {
     expect(compareDates(parseCalendarDate('2026-05-05'), parseCalendarDate('2026-05-05'))).toBe(0);
+  });
+});
+
+describe('daysBetween', () => {
+  it.each([
+    ['2026-11-24', '2026-11-24', 0],
+    ['2026-11-24', '2026-11-25', 1],
+    ['2026-11-25', '2026-11-24', -1],
+    ['2026-12-31', '2027-01-01', 1],
+    ['2028-02-28', '2028-03-01', 2],
+    ['2027-02-28', '2027-03-01', 1],
+    ['2026-03-28', '2026-03-30', 2],
+    ['2026-10-24', '2026-10-26', 2],
+  ])('counts whole days from %s to %s', (from, to, days) => {
+    expect(daysBetween(parseCalendarDate(from), parseCalendarDate(to))).toBe(days);
   });
 });
