@@ -19,6 +19,7 @@ export interface JobAddress {
 
 export type ProgressChange =
   | { kind: 'done'; today: CalendarDate }
+  | { kind: 'doneEarlier'; on: CalendarDate }
   | { kind: 'skipped'; today: CalendarDate }
   | { kind: 'snooze'; until: CalendarDate };
 
@@ -50,10 +51,14 @@ function progressRequest(address: JobAddress, request: ProgressRequest): ApiRequ
       response: jobProgressSchema,
     };
   }
+  const completion =
+    request.kind === 'doneEarlier'
+      ? { outcome: 'done', completedOn: request.on }
+      : { outcome: request.kind, completedOn: request.today };
   return {
     method: 'POST',
     path: `${jobPath(address)}/completions`,
-    body: { outcome: request.kind, completedOn: request.today, idempotencyKey },
+    body: { ...completion, idempotencyKey },
     response: jobProgressSchema,
   };
 }

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { logInToHome } from './support/fake-home';
+import { calendarDay } from './support/fake-home-state';
 
 test.describe('Job detail', () => {
   test('opens a job from Today, marks it done, renames it and removes it', async ({ page }) => {
@@ -58,6 +59,32 @@ test.describe('Job detail', () => {
       .getByRole('button', { name: /In 3 days/ })
       .click();
     await expect(page.getByRole('status')).toContainText('Snoozed until');
+  });
+
+  test('marks a job done on an earlier day', async ({ page }) => {
+    await logInToHome(page);
+    await page.goto('/job?id=job-hob');
+    await page.getByRole('button', { name: 'Done on another day…' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Done on another day' });
+    const saved = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().endsWith('/completions'),
+    );
+    await sheet.getByRole('button', { name: /Yesterday/ }).click();
+    expect((await saved).postDataJSON()).toMatchObject({
+      outcome: 'done',
+      completedOn: calendarDay(-1),
+    });
+    await expect(page.getByRole('status')).toContainText('Marked as done on');
+  });
+
+  test('turns down today as an earlier day', async ({ page }) => {
+    await logInToHome(page);
+    await page.goto('/job?id=job-hob');
+    await page.getByRole('button', { name: 'Done on another day…' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Done on another day' });
+    await sheet.getByLabel('Another day').fill(calendarDay(0));
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(sheet.getByText('Pick a day before today, or use Mark as done')).toBeVisible();
   });
 
   test('explains when marking a job done fails', async ({ page }) => {

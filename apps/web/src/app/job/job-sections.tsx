@@ -11,7 +11,9 @@ import { Card } from '@/components/ui/card';
 import { formatShortDate } from '@/lib/format-date';
 import type { JobDetails } from '@/lib/home/job-details';
 import { ROOM_APPEARANCE } from '@/lib/rooms';
+import { earlierDayRange } from '@/lib/home/job-done-earlier';
 import { AssigneeSheet } from './assignee-sheet';
+import { DoneEarlierSheet } from './done-earlier-sheet';
 import { JobFact } from './job-fact';
 import { JobHistory } from './job-history';
 import { RemoveJobSheet } from './remove-job-sheet';
@@ -23,6 +25,7 @@ import type { JobAddress, ProgressActions, ProgressChange } from './use-job-acti
 
 function savedText(change: ProgressChange): string {
   if (change.kind === 'done') return 'Marked as done';
+  if (change.kind === 'doneEarlier') return `Marked as done on ${formatShortDate(change.on)}`;
   if (change.kind === 'skipped') return 'Skipped this time';
   return `Snoozed until ${formatShortDate(change.until)}`;
 }
@@ -51,11 +54,36 @@ function DueSummary({ details }: { details: JobDetails }): ReactNode {
 
 interface ProgressButtonsProps {
   nextDue: CalendarDate | null;
+  lastDoneOn: CalendarDate | null;
   today: CalendarDate;
   progress: ProgressActions;
 }
 
-function ProgressButtons({ nextDue, today, progress }: ProgressButtonsProps): ReactNode {
+function DoneEarlierChoice({
+  lastDoneOn,
+  today,
+  progress,
+}: Omit<ProgressButtonsProps, 'nextDue'>): ReactNode {
+  const range = earlierDayRange(today, lastDoneOn);
+  if (range === null) return null;
+  return (
+    <DoneEarlierSheet
+      today={today}
+      range={range}
+      isBusy={progress.isPending}
+      onDone={(on) => {
+        progress.record({ kind: 'doneEarlier', on });
+      }}
+    />
+  );
+}
+
+function ProgressButtons({
+  nextDue,
+  lastDoneOn,
+  today,
+  progress,
+}: ProgressButtonsProps): ReactNode {
   const record = (change: ProgressChange) => (): void => {
     progress.record(change);
   };
@@ -64,6 +92,7 @@ function ProgressButtons({ nextDue, today, progress }: ProgressButtonsProps): Re
       <Button disabled={progress.isPending} onClick={record({ kind: 'done', today })}>
         Mark as done
       </Button>
+      <DoneEarlierChoice lastDoneOn={lastDoneOn} today={today} progress={progress} />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
         <Button
           variant="secondary"
@@ -92,7 +121,12 @@ export function JobDueCard({ details, address, today }: JobDueCardProps): ReactN
   return (
     <Card className="flex flex-col gap-4">
       <DueSummary details={details} />
-      <ProgressButtons nextDue={details.nextDue} today={today} progress={progress} />
+      <ProgressButtons
+        nextDue={details.nextDue}
+        lastDoneOn={details.lastDoneOn}
+        today={today}
+        progress={progress}
+      />
       {progress.error === null ? null : <FormAlert>{progress.error.message}</FormAlert>}
       {progress.saved === null ? null : <FormStatus>{savedText(progress.saved)}</FormStatus>}
     </Card>
