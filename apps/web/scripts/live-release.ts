@@ -9,6 +9,7 @@ const CONNECT_SOURCES = /connect-src ([^;]+)/;
 // a test keeps the two the same).
 export const BACKEND_PATHS = [
   'apps/api/**',
+  'packages/contracts/**',
   'packages/schedule/**',
   'infrastructure/**',
   'package.json',

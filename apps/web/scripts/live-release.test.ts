@@ -74,6 +74,7 @@ describe('releaseTouchesBackend', () => {
 
   it.each([
     'apps/api/src/app.ts',
+    'packages/contracts/src/profile.ts',
     'packages/schedule/src/next-due.ts',
     'infrastructure/template.yml',
     'package-lock.json',
