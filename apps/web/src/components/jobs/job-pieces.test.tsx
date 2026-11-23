@@ -264,6 +264,43 @@ describe('DayRow', () => {
     expect(screen.queryByText(/about/)).not.toBeInTheDocument();
   });
 
+  it('lets a job that can move be tapped, at a full-size target', async () => {
+    const onMove = vi.fn();
+    render(
+      <DayRow
+        weekday="Fri"
+        dayOfMonth={20}
+        jobs={[{ name: 'Clean the hob', icon: 'oven', state: 'toDo', effortMinutes: 15, onMove }]}
+      />,
+    );
+    const job = screen.getByRole('button', { name: 'Move Clean the hob, to do' });
+    expect(job).toHaveClass('size-11');
+    await userEvent.click(job);
+    expect(onMove).toHaveBeenCalled();
+  });
+
+  it('never puts a job button inside a row that is a link', () => {
+    render(
+      <DayRow
+        weekday="Sun"
+        dayOfMonth={22}
+        isToday
+        href="/today"
+        jobs={[
+          {
+            name: 'Clean the hob',
+            icon: 'oven',
+            state: 'toDo',
+            effortMinutes: 15,
+            onMove: vi.fn(),
+          },
+        ]}
+      />,
+    );
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Clean the hob, to do' })).toBeInTheDocument();
+  });
+
   it('says when nothing is planned', () => {
     render(<DayRow weekday="Sat" dayOfMonth={21} jobs={[]} />);
     expect(screen.getByText('Nothing planned')).toBeInTheDocument();
