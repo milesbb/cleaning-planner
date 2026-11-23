@@ -155,7 +155,7 @@ describe('RoomTile', () => {
     render(
       <RoomTile room="kitchen" name="Kitchen" jobCount={8} lateCount={1} href="/room?id=room-1" />,
     );
-    const link = screen.getByRole('link', { name: 'Kitchen 8 jobs 1 late' });
+    const link = screen.getByRole('link', { name: 'Kitchen 8 jobs 7 of 8 up to date 1 late' });
     expect(link).toHaveAttribute('href', '/room?id=room-1');
   });
 
@@ -163,8 +163,29 @@ describe('RoomTile', () => {
     render(
       <RoomTile room="laundry" name="Laundry" jobCount={1} lateCount={0} href="/room?id=room-2" />,
     );
-    expect(screen.getByRole('link', { name: 'Laundry 1 job' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Laundry 1 job 1 of 1 up to date' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/late/)).not.toBeInTheDocument();
+  });
+});
+
+describe('RoomTile up to date', () => {
+  it('draws the share of jobs that are not late in the room’s colour', () => {
+    render(
+      <RoomTile room="kitchen" name="Kitchen" jobCount={8} lateCount={2} href="/room?id=room-1" />,
+    );
+    const ring = screen.getByTestId('up-to-date-ring');
+    expect(ring).toHaveAttribute('data-share', '0.75');
+    expect(ring.querySelector('.stroke-kitchen')).not.toBeNull();
+  });
+
+  it('keeps the ring’s space for a room with no jobs, without saying anything about it', () => {
+    render(
+      <RoomTile room="bedroom" name="Bedroom" jobCount={0} lateCount={0} href="/room?id=room-3" />,
+    );
+    expect(screen.getByRole('link', { name: 'Bedroom 0 jobs' })).toBeInTheDocument();
+    expect(screen.getByTestId('up-to-date-ring')).toHaveAttribute('data-share', '0');
   });
 });
 
