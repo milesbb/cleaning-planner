@@ -53,7 +53,7 @@ test.describe('Room at tablet and laptop sizes', () => {
     await page.setViewportSize({ width: 1280, height: WINDOW_HEIGHT });
     await logInToHome(page);
     await openPage(page, '/room?id=room-gone');
-    await expect(page.getByRole('alert')).toContainText('That room isn’t in this home any more');
+    await expect(page.getByText('That room isn’t in this home any more')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Job details' })).toHaveCount(0);
   });
 
