@@ -41,3 +41,11 @@ class NoopResizeObserver {
   disconnect(): void {}
 }
 if (!('ResizeObserver' in globalThis)) globalThis.ResizeObserver = NoopResizeObserver;
+
+// jsdom has no working matchMedia; by default no media query matches (a
+// browser tab, not an installed app). Tests that need a match redefine it.
+Object.defineProperty(window, 'matchMedia', {
+  configurable: true,
+  writable: true,
+  value: (query: string) => ({ matches: false, media: query }),
+});

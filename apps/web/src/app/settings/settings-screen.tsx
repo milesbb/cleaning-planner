@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/shell/page-header';
 import { ScreenLoading, ScreenProblem } from '@/components/shell/screen-states';
 import { useMe, useMembers } from '@/lib/home/home-queries';
 import { useCurrentHome } from '@/lib/home/use-current-home';
+import { InstallAppSection } from './install-app-section';
 import { HomePeopleSection, SignOutButton, YouSection } from './settings-sections';
 
 interface CurrentHomePeople {
@@ -63,6 +64,7 @@ export function SettingsScreen(): ReactNode {
               />
             )}
           </div>
+          <InstallAppSection />
           <SignOutButton />
         </>
       )}

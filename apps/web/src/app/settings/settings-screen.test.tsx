@@ -68,6 +68,11 @@ describe('SettingsScreen', () => {
     );
   });
 
+  it('says how to use it like an app', async () => {
+    openSettings();
+    expect(await screen.findByRole('region', { name: 'Use it like an app' })).toBeInTheDocument();
+  });
+
   it('signs out, forgets this device’s home and goes to the welcome screen', async () => {
     rememberCurrentHome('home-1');
     const auth = SIGNED_IN();
