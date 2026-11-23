@@ -13,3 +13,7 @@ testAtEveryViewport('Room', '/room?id=room-kitchen', {
   prepare: logInToHome,
   readyText: 'Clean the oven',
 });
+testAtEveryViewport('Job detail', '/job?id=job-oven', {
+  prepare: logInToHome,
+  readyText: 'How to do it',
+});

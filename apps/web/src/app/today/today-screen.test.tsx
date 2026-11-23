@@ -92,6 +92,18 @@ describe('TodayScreen', () => {
     expect(screen.getByRole('button', { name: /Our flat/ })).toBeInTheDocument();
   });
 
+  it('opens each due and upcoming job on its own screen', async () => {
+    openToday();
+    await screen.findByText('Tuesday 24 November · about 50 min');
+    expect(within(section('Late')).getByRole('link', { name: /Clean the oven/ })).toHaveAttribute(
+      'href',
+      '/job?id=job-oven',
+    );
+    expect(
+      within(section('Tomorrow')).getByRole('link', { name: /Change the bed/ }),
+    ).toHaveAttribute('href', '/job?id=job-bed');
+  });
+
   it('ticks a job off at once, before the server answers', async () => {
     const client = openToday({ ...homeAnswers(), [DONE_HOB]: NEVER });
     await userEvent.click(await screen.findByRole('button', { name: 'Mark Wipe the hob as done' }));

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { ArtFrame } from '@/components/art/art-frame';
 import { JobRow } from '@/components/jobs/job-row';
 import { SectionHeading } from '@/components/ui/section-heading';
+import { jobHref } from '@/lib/home/job-href';
 import type { DoneJob, LateJob, TodayJob } from './today-view';
 import type { JobProgress } from './use-job-progress';
 
@@ -43,6 +44,7 @@ export function DueList({ title, jobs, progress }: DueListProps): ReactNode {
           room={job.room}
           icon={job.icon}
           meta={job.meta}
+          href={jobHref(job.jobId)}
           {...assigneeProps(job)}
           status={{
             kind: 'due',
@@ -98,6 +100,7 @@ export function TomorrowList({ jobs }: { jobs: readonly TodayJob[] }): ReactNode
           room={job.room}
           icon={job.icon}
           meta={job.meta}
+          href={jobHref(job.jobId)}
           {...assigneeProps(job)}
           status={{ kind: 'upcoming' }}
         />
