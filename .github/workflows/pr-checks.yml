@@ -29,7 +29,7 @@ jobs:
       - name: Does this PR change the website's JavaScript?
         id: scope
         run: |
-          changed_files="$(git diff --name-only HEAD^1 HEAD)"
+          changed_files="$(git diff --name-only HEAD^1 HEAD | grep -v '\.md$' || true)"
           echo "$changed_files"
           if grep -Eq '^(apps/web/|packages/(schedule|contracts)/|package(-lock)?\.json$)' <<<"$changed_files"; then
             echo "affected=true" >> "$GITHUB_OUTPUT"
