@@ -30,7 +30,7 @@ describe('This week on a laptop', () => {
 
   it('has no accessibility violations', async () => {
     const { container } = renderWithApi(<WeekScreen />, clientAnswering(weekAnswers()));
-    await screen.findByRole('heading', { name: 'Coming up' });
+    await screen.findByText(HINT);
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -38,7 +38,7 @@ describe('This week on a laptop', () => {
     openWeek();
     const comingUp = await screen.findByRole('heading', { name: 'Coming up' });
     const details = screen.getByRole('region', { name: 'Job details' });
-    expect(within(details).getByText(HINT)).toBeInTheDocument();
+    expect(await within(details).findByText(HINT)).toBeInTheDocument();
     expect(details).not.toContainElement(comingUp);
     expect(details).not.toContainElement(screen.getByRole('list', { name: 'Days' }));
   });
