@@ -43,6 +43,7 @@ function appWithCognito(): {
       handOver: step('handOver'),
     },
     households: { deleteHousehold: step('deleteHousehold'), removeMember: step('removeMember') },
+    reminders: { removeSchedules: step('removeSchedules') },
     profiles: { deleteProfile: step('deleteProfile') },
     identity: createCognitoAccountRemover(cognito),
   });
@@ -82,6 +83,7 @@ describe('DELETE /v1/me', () => {
       'handOver home-shared user-sam user-alex',
       'removeMember home-shared user-sam',
       'deleteHousehold home-solo',
+      'removeSchedules user-sam',
       'deleteProfile user-sam',
       'cognito DeleteUser',
     ]);

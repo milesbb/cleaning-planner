@@ -1,6 +1,7 @@
 export const HttpStatus = {
   ok: 200,
   created: 201,
+  accepted: 202,
   noContent: 204,
   badRequest: 400,
   unauthorised: 401,

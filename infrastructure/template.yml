@@ -212,6 +212,10 @@ Resources:
               Condition:
                 StringEquals:
                   iam:PassedToService: scheduler.amazonaws.com
+            # A test reminder goes straight to notify (POST /v1/me/reminders/test).
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !GetAtt NotifyFunction.Arn
       Events:
         Health:
           Type: HttpApi
@@ -277,6 +281,12 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /v1/invites/{proxy+}
             Method: POST
+        RemindersPut:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /v1/me/reminders
+            Method: PUT
 
   ApiLogGroup:
     Type: AWS::Logs::LogGroup

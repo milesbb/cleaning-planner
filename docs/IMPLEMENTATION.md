@@ -236,9 +236,11 @@ apps/api/src/
 
 | Item                    | pk               | sk                        | Holds                                                                                 |
 | ----------------------- | ---------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-| Profile                 | `USER#<userId>`  | `PROFILE`                 | name, email, person colour, reminder settings                                         |
+| Profile                 | `USER#<userId>`  | `PROFILE`                 | name, email, person colour                                                            |
+| Reminder settings       | `USER#<userId>`  | `REMINDERS`               | time zone, daily time, weekly day and time (each on or off), only my jobs, also email |
 | My homes                | `USER#<userId>`  | `HOUSEHOLD#<householdId>` | home name and my role (for the switcher, one query)                                   |
-| Push device             | `USER#<userId>`  | `PUSH#<deviceHash>`       | kind (`webPush` or `fcm`), endpoint and keys or FCM token, platform, label            |
+| Push device             | `USER#<userId>`  | `PUSH#<deviceHash>`       | kind (`webPush` or `fcm`), the subscription or FCM token and platform, added at       |
+| Device owner            | `DEVICE#<hash>`  | `OWNER`                   | who the device belongs to now: registering it moves it from the last person           |
 | Home                    | `HOUSEHOLD#<id>` | `META`                    | name, timezone, week start, owner                                                     |
 | Member                  | `HOUSEHOLD#<id>` | `MEMBER#<userId>`         | display name, colour, role                                                            |
 | Room                    | `HOUSEHOLD#<id>` | `ROOM#<roomId>`           | type, name, order, appliances                                                         |
@@ -252,6 +254,8 @@ apps/api/src/
 | Resource   | Endpoints                                                                                                                                                              |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Me         | `GET /v1/me`, `PATCH /v1/me`, `DELETE /v1/me`, `POST /v1/me/email` (picks up a changed email once Cognito has verified it)                                             |
+| Reminders  | `GET/PUT /v1/me/reminders` (saves the settings, then the person's daily and weekly schedules), `POST /v1/me/reminders/test` (202; at most 10 an hour)                  |
+| Devices    | `POST /v1/me/push-devices` (a Web Push subscription or an FCM token; 201 with its id), `DELETE /v1/me/push-devices/:deviceId`                                          |
 | Homes      | `GET /v1/households`, `POST /v1/households` (with rooms and appliances, creates jobs from the library), `GET/PATCH/DELETE /v1/households/:householdId`, `POST …/leave` |
 | Members    | `GET …/members`, `PATCH/DELETE …/members/:userId` (owner only)                                                                                                         |
 | Invites    | `POST …/invites`, `GET /v1/invites/:code` (preview), `POST /v1/invites/:code/accept`                                                                                   |

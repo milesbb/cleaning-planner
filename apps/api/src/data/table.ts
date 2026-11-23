@@ -35,6 +35,11 @@ export const Keys = {
   room: (roomId: string): string => `ROOM#${roomId}`,
   job: (jobId: string): string => `JOB#${jobId}`,
   homesOfUser: 'HOUSEHOLD#',
+  reminders: 'REMINDERS',
+  pushDevicePrefix: 'PUSH#',
+  pushDevice: (deviceId: string): string => `PUSH#${deviceId}`,
+  deviceClaim: (deviceId: string): string => `DEVICE#${deviceId}`,
+  deviceOwner: 'OWNER',
 } as const;
 
 export function createDynamoClient(endpoint: string | undefined): DynamoDBClient {
