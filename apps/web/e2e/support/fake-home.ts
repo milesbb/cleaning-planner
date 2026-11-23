@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { fakeCognito, openPage } from './fake-backend';
+import { fakeActivity } from './fake-activity';
 import { fakeAgenda } from './fake-agenda';
 import { fakeCompletions } from './fake-completions';
 import { fakeHousehold } from './fake-household';
@@ -28,6 +29,7 @@ async function fakeHome(
   await fakeRooms(page, jobs);
   await fakeProgress(page, doneJobIds);
   await fakeCompletions(page, doneJobIds, failTicks);
+  await fakeActivity(page, doneJobIds, jobs);
 }
 
 export async function logInToHome(page: Page, options: FakeHomeOptions = {}): Promise<void> {

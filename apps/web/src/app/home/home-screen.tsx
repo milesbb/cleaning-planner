@@ -17,6 +17,7 @@ import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { Button } from '@/components/ui/button';
 import { countOf } from '@/lib/rooms';
 import { AddRoomSheet } from './add-room-sheet';
+import { RecentActivity } from './recent-activity';
 import { ReorderRooms } from './reorder-rooms';
 
 type ReadyRooms = Extract<RoomSourcesState, { kind: 'ready' }>;
@@ -59,6 +60,17 @@ function RoomActions({ home, onReorder }: RoomActionsProps): ReactNode {
   );
 }
 
+function HomeOverview({ home, onReorder }: RoomActionsProps): ReactNode {
+  const { members, myUserId, today } = home.sources;
+  return (
+    <>
+      <RoomTiles home={home} />
+      <RoomActions home={home} onReorder={onReorder} />
+      <RecentActivity householdId={home.householdId} people={{ members, myUserId, today }} />
+    </>
+  );
+}
+
 function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
   const [isReordering, setIsReordering] = useState(false);
   const { rooms } = home.sources;
@@ -84,15 +96,12 @@ function HomeContent({ home }: { home: ReadyRooms }): ReactNode {
           }}
         />
       ) : (
-        <>
-          <RoomTiles home={home} />
-          <RoomActions
-            home={home}
-            onReorder={() => {
-              setIsReordering(true);
-            }}
-          />
-        </>
+        <HomeOverview
+          home={home}
+          onReorder={() => {
+            setIsReordering(true);
+          }}
+        />
       )}
     </>
   );
