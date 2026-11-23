@@ -1,26 +1,39 @@
-import { fetchAuthSession } from 'aws-amplify/auth';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { configureAuth, getAccessToken, readAuthSettings } from './amplify-auth';
-
-const configure = vi.hoisted(() => vi.fn());
-
-vi.mock('aws-amplify', () => ({ Amplify: { configure } }));
-vi.mock('aws-amplify/auth', () => ({ fetchAuthSession: vi.fn() }));
+import { describe, expect, it, vi } from 'vitest';
+import {
+  accessTokenFrom,
+  cognitoFunctionsFrom,
+  lazyAmplifyAuth,
+  readAuthSettings,
+} from './amplify-auth';
+import type { AmplifyAuth, AmplifyModules } from './amplify-auth';
 
 const SETTINGS = { userPoolId: 'ap-southeast-2_Example1', userPoolClientId: 'exampleclientid123' };
 
-beforeEach(() => {
-  configure.mockClear();
-});
+function fakeAuth(overrides: Partial<AmplifyAuth> = {}): AmplifyAuth {
+  return {
+    signUp: vi.fn(),
+    confirmSignUp: vi.fn(),
+    resendSignUpCode: vi.fn(),
+    signIn: vi.fn(),
+    resetPassword: vi.fn(),
+    confirmResetPassword: vi.fn(),
+    fetchAuthSession: vi.fn(() => Promise.resolve({})),
+    ...overrides,
+  };
+}
+
+function loaderFor(auth: AmplifyAuth): {
+  load: ReturnType<typeof vi.fn<() => Promise<AmplifyModules>>>;
+  configure: ReturnType<typeof vi.fn>;
+} {
+  const configure = vi.fn();
+  const load = vi.fn(() => Promise.resolve({ configure, auth }));
+  return { load, configure };
+}
 
 describe('readAuthSettings', () => {
   it('reads the user pool from the public settings', () => {
-    expect(
-      readAuthSettings({
-        userPoolId: SETTINGS.userPoolId,
-        userPoolClientId: SETTINGS.userPoolClientId,
-      }),
-    ).toEqual(SETTINGS);
+    expect(readAuthSettings(SETTINGS)).toEqual(SETTINGS);
   });
 
   it.each([
@@ -32,33 +45,72 @@ describe('readAuthSettings', () => {
   });
 });
 
-describe('configureAuth', () => {
-  it('configures Cognito sign-in only', () => {
-    configureAuth(SETTINGS);
-    expect(configure).toHaveBeenCalledWith({ Auth: { Cognito: SETTINGS } });
+describe('lazyAmplifyAuth', () => {
+  it('downloads nothing until sign-in is first needed', () => {
+    const { load } = loaderFor(fakeAuth());
+    lazyAmplifyAuth(SETTINGS, load);
+    expect(load).not.toHaveBeenCalled();
   });
 
-  it('does nothing without settings', () => {
-    configureAuth(null);
+  it('loads Amplify once and configures Cognito sign-in only', async () => {
+    const auth = fakeAuth();
+    const { load, configure } = loaderFor(auth);
+    const loadAuth = lazyAmplifyAuth(SETTINGS, load);
+    await expect(loadAuth()).resolves.toBe(auth);
+    await loadAuth();
+    expect(load).toHaveBeenCalledOnce();
+    expect(configure).toHaveBeenCalledExactlyOnceWith(SETTINGS);
+  });
+
+  it('configures nothing without settings', async () => {
+    const { load, configure } = loaderFor(fakeAuth());
+    await lazyAmplifyAuth(null, load)();
     expect(configure).not.toHaveBeenCalled();
+  });
+
+  it('tries the download again after it failed', async () => {
+    const auth = fakeAuth();
+    const configure = vi.fn();
+    const load = vi
+      .fn<() => Promise<AmplifyModules>>()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ configure, auth });
+    const loadAuth = lazyAmplifyAuth(SETTINGS, load);
+    await expect(loadAuth()).rejects.toThrow('offline');
+    await expect(loadAuth()).resolves.toBe(auth);
   });
 });
 
-describe('getAccessToken', () => {
-  it('returns the current access token', async () => {
-    vi.mocked(fetchAuthSession).mockResolvedValue({
-      tokens: { accessToken: { toString: () => 'the-access-token', payload: {} } },
+describe('cognitoFunctionsFrom', () => {
+  it('calls Amplify only once it has loaded', async () => {
+    const signIn = vi.fn(() => Promise.resolve({ nextStep: { signInStep: 'DONE' } }));
+    const cognito = cognitoFunctionsFrom(() => Promise.resolve(fakeAuth({ signIn })));
+    await cognito.signIn({ username: 'sam@example.com', password: 'lemon kettle sunday' });
+    expect(signIn).toHaveBeenCalledWith({
+      username: 'sam@example.com',
+      password: 'lemon kettle sunday',
     });
+  });
+});
+
+describe('accessTokenFrom', () => {
+  it('returns the current access token', async () => {
+    const fetchAuthSession = vi.fn(() =>
+      Promise.resolve({ tokens: { accessToken: { toString: () => 'the-access-token' } } }),
+    );
+    const getAccessToken = accessTokenFrom(() => Promise.resolve(fakeAuth({ fetchAuthSession })));
     await expect(getAccessToken()).resolves.toBe('the-access-token');
   });
 
   it('returns null when signed out', async () => {
-    vi.mocked(fetchAuthSession).mockResolvedValue({});
-    await expect(getAccessToken()).resolves.toBeNull();
+    await expect(accessTokenFrom(() => Promise.resolve(fakeAuth()))()).resolves.toBeNull();
   });
 
-  it('returns null when the session cannot be refreshed', async () => {
-    vi.mocked(fetchAuthSession).mockRejectedValue(new Error('Refresh token expired'));
-    await expect(getAccessToken()).resolves.toBeNull();
+  it('returns null when the session cannot be refreshed or Amplify cannot load', async () => {
+    const fetchAuthSession = vi.fn(() => Promise.reject(new Error('Refresh token expired')));
+    await expect(
+      accessTokenFrom(() => Promise.resolve(fakeAuth({ fetchAuthSession })))(),
+    ).resolves.toBeNull();
+    await expect(accessTokenFrom(() => Promise.reject(new Error('offline')))()).resolves.toBeNull();
   });
 });

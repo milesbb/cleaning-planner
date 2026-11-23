@@ -1,4 +1,4 @@
-import { HOME_FEATURES, ROOM_TYPES } from '@cleaning-planner/schedule/library/job-library';
+import { HOME_FEATURES, ROOM_TYPES } from '@cleaning-planner/schedule/library/keys';
 import { displayNameSchema, recordIdSchema, versionSchema } from './primitives';
 import { NOTHING_TO_CHANGE, hasAChange, hasNoRepeats } from './updates';
 import { z } from './zod';

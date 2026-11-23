@@ -1,13 +1,3 @@
-import {
-  confirmResetPassword,
-  confirmSignUp,
-  fetchAuthSession,
-  resendSignUpCode,
-  resetPassword,
-  signIn,
-  signUp,
-} from 'aws-amplify/auth';
-
 // Passwords go from the browser straight to Cognito (SRP), never to our API.
 
 export type AccountAuthFailureKind =
@@ -100,18 +90,8 @@ export interface CognitoFunctions {
     confirmationCode: string;
     newPassword: string;
   }) => Promise<unknown>;
-  fetchAuthSession: () => Promise<{ tokens?: unknown }>;
+  fetchAuthSession: () => Promise<{ tokens?: { accessToken: { toString: () => string } } }>;
 }
-
-const AMPLIFY: CognitoFunctions = {
-  signUp,
-  confirmSignUp,
-  resendSignUpCode,
-  signIn,
-  resetPassword,
-  confirmResetPassword,
-  fetchAuthSession,
-};
 
 interface NewAccount {
   name: string;
@@ -224,7 +204,7 @@ async function isSignedInWith(cognito: CognitoFunctions): Promise<boolean> {
   }
 }
 
-export function createAccountAuth(cognito: CognitoFunctions = AMPLIFY): AccountAuth {
+export function createAccountAuth(cognito: CognitoFunctions): AccountAuth {
   let waiting: WaitingSignIn | null = null;
   return {
     signUp: async (account): Promise<void> => {

@@ -1,5 +1,6 @@
 import type { Household } from '@cleaning-planner/contracts/household';
-import type { CreateJobRequest, Job } from '@cleaning-planner/contracts/job';
+import type { Job } from '@cleaning-planner/contracts/job';
+import type { CreateJobRequest } from '@cleaning-planner/contracts/job-request';
 import type { Room } from '@cleaning-planner/contracts/room';
 import { parseCalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { describe, expect, it, vi } from 'vitest';

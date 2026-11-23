@@ -53,7 +53,9 @@ test.describe('setting up a home', () => {
     await page.getByRole('link', { name: 'Back' }).click();
     await expect(page.getByLabel('Home name')).toHaveValue('Our flat');
     await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('heading', { name: 'What do you have at home?' })).toBeVisible();
     await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('heading', { name: 'When should we nudge you?' })).toBeVisible();
     await page.getByRole('radio', { name: 'Sunday' }).click();
     const createRequest = page.waitForRequest(
       (request) => request.method() === 'POST' && request.url().endsWith('/v1/households'),
@@ -85,7 +87,9 @@ test.describe('setting up a home', () => {
       { method: 'POST' },
     );
     await pickRooms(page);
+    await expect(page.getByRole('heading', { name: 'What do you have at home?' })).toBeVisible();
     await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('heading', { name: 'When should we nudge you?' })).toBeVisible();
     await page.getByRole('button', { name: 'Create home' }).click();
     await expect(page.getByRole('main').getByRole('alert')).toHaveText(
       'Something went wrong on our side. Try again in a moment.',

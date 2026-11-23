@@ -9,11 +9,16 @@ import { ApiProvider } from '@/lib/api/api-provider';
 import { createAppApiClient } from '@/lib/api/app-client';
 import { createAccountAuth } from '@/lib/auth/account-auth';
 import { AccountAuthProvider } from '@/lib/auth/account-auth-provider';
-import { configureAuth, readAuthSettings } from '@/lib/auth/amplify-auth';
+import {
+  accessTokenFrom,
+  cognitoFunctionsFrom,
+  lazyAmplifyAuth,
+  readAuthSettings,
+} from '@/lib/auth/amplify-auth';
 import { signInPathFor } from '@/lib/navigation/start-route';
 
 // Built in at build time from the NEXT_PUBLIC_ variables (Vercel, or the e2e build).
-configureAuth(
+const loadAmplifyAuth = lazyAmplifyAuth(
   readAuthSettings({
     userPoolId: process.env.NEXT_PUBLIC_USER_POOL_ID,
     userPoolClientId: process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID,
@@ -30,8 +35,9 @@ const NO_API: ApiClient = {
     ),
 };
 
-const accountAuth = createAccountAuth();
-const apiClient = createAppApiClient(process.env.NEXT_PUBLIC_API_URL) ?? NO_API;
+const accountAuth = createAccountAuth(cognitoFunctionsFrom(loadAmplifyAuth));
+const apiClient =
+  createAppApiClient(process.env.NEXT_PUBLIC_API_URL, accessTokenFrom(loadAmplifyAuth)) ?? NO_API;
 
 interface AppProvidersProps {
   children: ReactNode;
