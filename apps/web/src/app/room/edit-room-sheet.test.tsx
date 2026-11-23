@@ -212,7 +212,7 @@ describe('removing a room', () => {
     await openKitchen({ [`GET ${HOME_PATH}/jobs`]: () => Promise.resolve(jobs) });
     const sheet = await openEditSheet();
     await userEvent.click(within(sheet).getByRole('button', { name: 'Remove room' }));
-    expect(await within(sheet).findByText(new RegExp(`^${wording}`))).toBeInTheDocument();
+    expect(await within(sheet).findByText((text) => text.startsWith(wording))).toBeInTheDocument();
   });
 });
 

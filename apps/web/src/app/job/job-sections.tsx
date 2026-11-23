@@ -12,15 +12,19 @@ import { formatShortDate } from '@/lib/format-date';
 import type { JobDetails } from '@/lib/home/job-details';
 import { ROOM_APPEARANCE } from '@/lib/rooms';
 import { earlierDayRange } from '@/lib/home/job-done-earlier';
-import { AssigneeSheet } from './assignee-sheet';
-import { DoneEarlierSheet } from './done-earlier-sheet';
+import { LazySheet } from '@/lib/lazy-sheet';
 import { JobFact } from './job-fact';
 import { JobHistory } from './job-history';
+import {
+  AssigneeSheet,
+  DoneEarlierSheet,
+  RemoveJobSheet,
+  RenameJobSheet,
+  ScheduleSheet,
+  SnoozeSheet,
+  TextActionTrigger,
+} from './job-sheets';
 import { JobRoomFact, JobTimeFact } from './job-time-room';
-import { RemoveJobSheet } from './remove-job-sheet';
-import { RenameJobSheet } from './rename-job-sheet';
-import { ScheduleSheet } from './schedule-sheet';
-import { SnoozeSheet } from './snooze-sheet';
 import { useProgressChange } from './use-job-actions';
 import type { JobAddress, ProgressActions, ProgressChange } from './use-job-actions';
 
@@ -68,13 +72,53 @@ function DoneEarlierChoice({
   const range = earlierDayRange(today, lastDoneOn);
   if (range === null) return null;
   return (
-    <DoneEarlierSheet
-      today={today}
-      range={range}
-      isBusy={progress.isPending}
-      onDone={(on) => {
-        progress.record({ kind: 'doneEarlier', on });
-      }}
+    <LazySheet
+      trigger={(triggerProps) => (
+        <TextActionTrigger
+          label="Done on another day…"
+          triggerProps={triggerProps}
+          className="self-center"
+          disabled={progress.isPending}
+        />
+      )}
+      sheet={(opening) => (
+        <DoneEarlierSheet
+          {...opening}
+          today={today}
+          range={range}
+          onDone={(on) => {
+            progress.record({ kind: 'doneEarlier', on });
+          }}
+        />
+      )}
+    />
+  );
+}
+
+interface SnoozeChoiceProps {
+  nextDue: CalendarDate;
+  today: CalendarDate;
+  progress: ProgressActions;
+}
+
+function SnoozeChoice({ nextDue, today, progress }: SnoozeChoiceProps): ReactNode {
+  return (
+    <LazySheet
+      trigger={(triggerProps) => (
+        <Button variant="secondary" disabled={progress.isPending} {...triggerProps}>
+          Snooze
+        </Button>
+      )}
+      sheet={(opening) => (
+        <SnoozeSheet
+          {...opening}
+          nextDue={nextDue}
+          today={today}
+          onSnooze={(until) => {
+            progress.record({ kind: 'snooze', until });
+          }}
+        />
+      )}
     />
   );
 }
@@ -103,14 +147,7 @@ function ProgressButtons({
           Skip this time
         </Button>
         {nextDue === null ? null : (
-          <SnoozeSheet
-            nextDue={nextDue}
-            today={today}
-            isBusy={progress.isPending}
-            onSnooze={(until) => {
-              progress.record({ kind: 'snooze', until });
-            }}
-          />
+          <SnoozeChoice nextDue={nextDue} today={today} progress={progress} />
         )}
       </div>
     </div>
@@ -140,18 +177,42 @@ interface JobAboutProps {
   describeCompletion: (completion: CompletionRecord) => string;
 }
 
-export function JobAbout({ details, address, describeCompletion }: JobAboutProps): ReactNode {
+function ScheduleFacts({
+  details,
+  address,
+}: {
+  details: JobDetails;
+  address: JobAddress;
+}): ReactNode {
   return (
-    <div className="flex flex-col gap-5">
+    <>
       <JobFact title="How often">
         <p className="text-[1.0625rem] font-bold">{details.howOften}</p>
         {details.recommendation === null ? null : <p>{details.recommendation}</p>}
-        <ScheduleSheet details={details} address={address} />
+        <LazySheet
+          trigger={(triggerProps) => (
+            <TextActionTrigger label="Change how often" triggerProps={triggerProps} />
+          )}
+          sheet={(opening) => <ScheduleSheet {...opening} details={details} address={address} />}
+        />
       </JobFact>
       <JobFact title="Who does it">
         <p className="text-[1.0625rem]">{details.whoFor}</p>
-        <AssigneeSheet details={details} address={address} />
+        <LazySheet
+          trigger={(triggerProps) => (
+            <TextActionTrigger label="Change who does it" triggerProps={triggerProps} />
+          )}
+          sheet={(opening) => <AssigneeSheet {...opening} details={details} address={address} />}
+        />
       </JobFact>
+    </>
+  );
+}
+
+export function JobAbout({ details, address, describeCompletion }: JobAboutProps): ReactNode {
+  return (
+    <div className="flex flex-col gap-5">
+      <ScheduleFacts details={details} address={address} />
       <JobTimeFact details={details} address={address} />
       <JobRoomFact details={details} address={address} />
       <JobHistory address={address} lastDone={details.lastDone} describe={describeCompletion} />
@@ -182,8 +243,22 @@ export function JobManagement({
 }): ReactNode {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <RenameJobSheet details={details} address={address} />
-      <RemoveJobSheet details={details} address={address} />
+      <LazySheet
+        trigger={(triggerProps) => (
+          <Button variant="secondary" {...triggerProps}>
+            Rename
+          </Button>
+        )}
+        sheet={(opening) => <RenameJobSheet {...opening} details={details} address={address} />}
+      />
+      <LazySheet
+        trigger={(triggerProps) => (
+          <Button variant="danger" {...triggerProps}>
+            Remove job
+          </Button>
+        )}
+        sheet={(opening) => <RemoveJobSheet {...opening} details={details} address={address} />}
+      />
     </div>
   );
 }

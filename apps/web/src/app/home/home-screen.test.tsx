@@ -70,7 +70,7 @@ describe('HomeScreen', () => {
   it('adds a room and refreshes the home', async () => {
     const client = openHome({ ...homeAnswers(), [ADD_ROOM]: () => Promise.resolve(ADDED_ROOM) });
     await userEvent.click(await screen.findByRole('button', { name: 'Add a room' }));
-    const sheet = screen.getByRole('dialog', { name: 'Add a room' });
+    const sheet = await screen.findByRole('dialog', { name: 'Add a room' });
     expect(within(sheet).getByLabelText('Name')).toHaveValue('Bathroom');
     await userEvent.click(within(sheet).getByRole('button', { name: 'Add room' }));
     await waitFor(() => {

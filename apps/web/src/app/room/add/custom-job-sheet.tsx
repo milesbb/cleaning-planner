@@ -8,9 +8,9 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { AfterDoneFields } from '@/app/job/schedule-fields';
 import { FormAlert } from '@/components/account/account-screen';
-import { PlusIcon } from '@/components/icons/interface-icons';
 import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
+import type { SheetOpening } from '@/lib/lazy-sheet';
 import { TextField } from '@/components/ui/text-field';
 import { jobHref } from '@/lib/home/job-href';
 import { draftFrom, scheduleFrom } from '@/lib/home/schedule-draft';
@@ -20,18 +20,16 @@ import { useAddJob } from './use-add-job';
 const WEEKLY = draftFrom({ type: 'floating', every: { value: 1, unit: 'week' } });
 const USUAL_EFFORT_MINUTES = 15;
 
-interface CustomJobSheetProps {
+interface CustomJobSheetProps extends SheetOpening {
   householdId: string;
   roomId: string;
 }
 
 interface CustomJobForm {
-  isOpen: boolean;
   name: string;
   nameError: string | undefined;
   draft: ScheduleDraft;
   addJob: ReturnType<typeof useAddJob>;
-  openOrClose: (isOpening: boolean) => void;
   setName: (name: string) => void;
   changeDraft: (changes: Partial<ScheduleDraft>) => void;
   save: () => void;
@@ -41,21 +39,12 @@ interface CustomJobForm {
 // on Job detail to fine-tune.
 function useCustomJobForm({ householdId, roomId }: CustomJobSheetProps): CustomJobForm {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState<string | undefined>();
   const [draft, setDraft] = useState(WEEKLY);
   const addJob = useAddJob(householdId);
   return {
-    ...{ isOpen, name, nameError, draft, addJob, setName },
-    openOrClose: (isOpening): void => {
-      setIsOpen(isOpening);
-      if (!isOpening) return;
-      setName('');
-      setNameError(undefined);
-      setDraft(WEEKLY);
-      addJob.reset();
-    },
+    ...{ name, nameError, draft, addJob, setName },
     changeDraft: (changes): void => {
       setDraft((current) => ({ ...current, ...changes }));
     },
@@ -98,20 +87,16 @@ function CustomJobFields({ form }: { form: CustomJobForm }): ReactNode {
   );
 }
 
+// Loaded on first use (`LazySheet`), and fresh each time it opens.
 export function CustomJobSheet(props: CustomJobSheetProps): ReactNode {
   const form = useCustomJobForm(props);
   return (
     <BottomSheet
       title="Make your own job"
       description="You can change how often and who does it once it’s added."
-      open={form.isOpen}
-      onOpenChange={form.openOrClose}
-      trigger={
-        <Button variant="dashed">
-          <PlusIcon />
-          Make your own job
-        </Button>
-      }
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      returnFocusTo={props.returnFocusTo}
     >
       <form
         noValidate

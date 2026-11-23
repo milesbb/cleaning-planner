@@ -16,7 +16,7 @@ import { useRoomSources } from '@/lib/home/use-room-sources';
 import type { RoomSourcesState } from '@/lib/home/use-room-sources';
 import { Button } from '@/components/ui/button';
 import { countOf } from '@/lib/rooms';
-import { AddRoomSheet } from './add-room-sheet';
+import { AddRoomButton } from './add-room-button';
 import { RecentActivity } from './recent-activity';
 import { ReorderRooms } from './reorder-rooms';
 
@@ -50,7 +50,7 @@ function RoomActions({ home, onReorder }: RoomActionsProps): ReactNode {
   const { rooms } = home.sources;
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <AddRoomSheet householdId={home.householdId} roomNames={rooms.map((room) => room.name)} />
+      <AddRoomButton householdId={home.householdId} roomNames={rooms.map((room) => room.name)} />
       {rooms.length > 1 ? (
         <Button variant="secondary" onClick={onReorder}>
           Reorder rooms

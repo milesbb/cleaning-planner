@@ -3,11 +3,12 @@
 import { scheduleSchema } from '@cleaning-planner/contracts/schedule';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { FormAlert, TEXT_ACTION_CLASSES } from '@/components/account/account-screen';
+import { FormAlert } from '@/components/account/account-screen';
 import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import type { JobDetails } from '@/lib/home/job-details';
+import type { SheetOpening } from '@/lib/lazy-sheet';
 import { draftFrom, scheduleFrom } from '@/lib/home/schedule-draft';
 import type { RepeatKind, ScheduleDraft } from '@/lib/home/schedule-draft';
 import { AfterDoneFields, MonthDayFields, Recommendation, WeekdayFields } from './schedule-fields';
@@ -20,38 +21,27 @@ const REPEAT_CHOICES = [
   { value: 'monthDay', label: 'Once a month' },
 ] as const satisfies readonly { value: RepeatKind; label: string }[];
 
-interface ScheduleSheetProps {
+interface ScheduleSheetProps extends SheetOpening {
   details: JobDetails;
   address: JobAddress;
 }
 
 interface ScheduleForm {
-  isOpen: boolean;
   draft: ScheduleDraft;
   error: string | undefined;
   update: ReturnType<typeof useUpdateJob>;
-  openOrClose: (isOpening: boolean) => void;
   change: (changes: Partial<ScheduleDraft>) => void;
   save: () => void;
 }
 
-function useScheduleForm({ details, address }: ScheduleSheetProps): ScheduleForm {
-  const [isOpen, setIsOpen] = useState(false);
+function useScheduleForm({ details, address, onOpenChange }: ScheduleSheetProps): ScheduleForm {
   const [draft, setDraft] = useState(() => draftFrom(details.schedule));
   const [error, setError] = useState<string | undefined>();
   const update = useUpdateJob(address);
   return {
-    isOpen,
     draft,
     error,
     update,
-    openOrClose: (isOpening): void => {
-      setIsOpen(isOpening);
-      if (!isOpening) return;
-      setDraft(draftFrom(details.schedule));
-      setError(undefined);
-      update.reset();
-    },
     change: (changes): void => {
       setDraft((current) => ({ ...current, ...changes }));
     },
@@ -60,7 +50,7 @@ function useScheduleForm({ details, address }: ScheduleSheetProps): ScheduleForm
       setError(parsed.success ? undefined : parsed.error.issues[0]?.message);
       if (!parsed.success) return;
       const close = (): void => {
-        setIsOpen(false);
+        onOpenChange(false);
       };
       update.mutate({ schedule: parsed.data, version: details.version }, { onSuccess: close });
     },
@@ -104,6 +94,7 @@ function ScheduleFields({ form, details }: { form: ScheduleForm; details: JobDet
   );
 }
 
+// Loaded on first use (`LazySheet`), and fresh each time it opens.
 export function ScheduleSheet(props: ScheduleSheetProps): ReactNode {
   const form = useScheduleForm(props);
   return (
@@ -112,13 +103,9 @@ export function ScheduleSheet(props: ScheduleSheetProps): ReactNode {
       {...(props.details.recommendation === null
         ? {}
         : { description: props.details.recommendation })}
-      open={form.isOpen}
-      onOpenChange={form.openOrClose}
-      trigger={
-        <button type="button" className={`${TEXT_ACTION_CLASSES} self-start`}>
-          Change how often
-        </button>
-      }
+      open={props.open}
+      onOpenChange={props.onOpenChange}
+      returnFocusTo={props.returnFocusTo}
     >
       <form
         noValidate
