@@ -10,7 +10,7 @@ import { useRemoveRoom } from './use-room-actions';
 
 const FOR_EVERYONE = 'will be removed for everyone in this home. This can’t be undone.';
 
-export function removalWarning(roomName: string, jobCount: number): string {
+function removalWarning(roomName: string, jobCount: number): string {
   if (jobCount === 0) return `“${roomName}” ${FOR_EVERYONE}`;
   return `“${roomName}” and its ${countOf(jobCount, 'job')} ${FOR_EVERYONE}`;
 }
