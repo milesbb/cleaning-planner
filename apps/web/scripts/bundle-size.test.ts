@@ -17,6 +17,10 @@ describe('scriptSourcesIn', () => {
     expect(scriptSourcesIn(html)).toEqual(['/_next/a.js', '/_next/b.js']);
   });
 
+  it('finds script tags written in any case', () => {
+    expect(scriptSourcesIn('<SCRIPT SRC="/_next/a.js"></SCRIPT>')).toEqual(['/_next/a.js']);
+  });
+
   it('leaves out the legacy polyfills, which modern browsers never download', () => {
     const html =
       '<script src="/_next/polyfills.js" noModule=""></script><script src="/_next/a.js" async=""></script>';

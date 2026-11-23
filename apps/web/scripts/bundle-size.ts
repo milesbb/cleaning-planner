@@ -16,8 +16,8 @@ export interface Budget {
 export const BUDGET: Budget = { totalKilobytes: 220, routeSpecificKilobytes: 60 };
 
 const BYTES_PER_KILOBYTE = 1024;
-const SCRIPT_TAG_PATTERN = /<script\b[^>]*>/g;
-const SOURCE_PATTERN = /\ssrc="([^"]+)"/;
+const SCRIPT_TAG_PATTERN = /<script\b[^>]*>/gi;
+const SOURCE_PATTERN = /\ssrc="([^"]+)"/i;
 const LEGACY_ONLY_PATTERN = /\snomodule\b/i;
 
 // Scripts a modern browser downloads: `noModule` polyfills are for old browsers only.
