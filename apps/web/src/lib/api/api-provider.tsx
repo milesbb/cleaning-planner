@@ -17,6 +17,7 @@ import type { ApiClient, ApiRequest } from './api-client';
 import { shouldRetry } from './query-policy';
 import { queueRequests } from './queued-requests';
 import { RefusedChangeContext } from './refused-change';
+import { startOfflineIfTheBrowserIs } from './use-is-online';
 import { SAVED_FOR_MS, savedAnswers as createSavedAnswers } from './saved-answers';
 import type { SavedAnswers } from './saved-answers';
 
@@ -94,6 +95,7 @@ export function ApiProvider({
   // A 401 also forgets the saved answers, so the next person to sign in on this
   // device never sees them.
   const [queryClient] = useState(() => {
+    startOfflineIfTheBrowserIs();
     const newQueryClient = createQueryClient(() => {
       savedAnswers?.forget();
       onSignedOut();

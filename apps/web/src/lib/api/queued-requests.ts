@@ -2,7 +2,7 @@ import { jobProgressSchema } from '@cleaning-planner/contracts/completion';
 import type { QueryClient } from '@tanstack/react-query';
 import { ApiRequestError, NO_CONTENT } from './api-client';
 import type { ApiClient, ApiRequest } from './api-client';
-import { isTransientFailure } from './query-policy';
+import { isConnectionFailure, shouldRetry } from './query-policy';
 
 export const QUEUED_REQUEST_KEY = ['queued-request'];
 const QUEUE_SCOPE = { id: 'queued-requests' };
@@ -28,8 +28,10 @@ function apiRequestFor({ method, path, body, response }: QueuedRequest): ApiRequ
   return { method, path, body, response: RESPONSE_SCHEMAS[response] };
 }
 
-export function keepsTrying(_failureCount: number, error: unknown): boolean {
-  return isTransientFailure(error);
+// A lost connection is retried until it returns; a server error gets the usual
+// few tries, so the screen can put the change back and say so.
+export function keepsTrying(failureCount: number, error: unknown): boolean {
+  return isConnectionFailure(error) || shouldRetry(failureCount, error);
 }
 
 function refusedMessage(error: unknown): string {
