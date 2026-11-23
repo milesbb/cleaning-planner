@@ -3,18 +3,17 @@
 import type { CalendarDate } from '@cleaning-planner/schedule/calendar-date';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { TEXT_ACTION_CLASSES } from '@/components/account/account-screen';
 import { BottomSheet } from '@/components/shell/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { formatDayHeading } from '@/lib/format-date';
 import { checkEarlierDay, earlierDayChoices } from '@/lib/home/job-done-earlier';
 import type { EarlierDayRange } from '@/lib/home/job-done-earlier';
+import type { SheetOpening } from '@/lib/lazy-sheet';
 
-interface DoneEarlierSheetProps {
+interface DoneEarlierSheetProps extends SheetOpening {
   today: CalendarDate;
   range: EarlierDayRange;
-  isBusy: boolean;
   onDone: (day: CalendarDate) => void;
 }
 
@@ -85,28 +84,26 @@ function QuickChoices({
   );
 }
 
+// Loaded on first use (`LazySheet`), and fresh each time it opens.
 export function DoneEarlierSheet({
   today,
   range,
-  isBusy,
   onDone,
+  open,
+  onOpenChange,
+  returnFocusTo,
 }: DoneEarlierSheetProps): ReactNode {
-  const [isOpen, setIsOpen] = useState(false);
   const finish = (day: CalendarDate): void => {
-    setIsOpen(false);
+    onOpenChange(false);
     onDone(day);
   };
   return (
     <BottomSheet
       title="Done on another day"
       description="Its next due day counts from the day it was really done."
-      open={isOpen}
-      onOpenChange={setIsOpen}
-      trigger={
-        <button type="button" className={`${TEXT_ACTION_CLASSES} self-center`} disabled={isBusy}>
-          Done on another day…
-        </button>
-      }
+      open={open}
+      onOpenChange={onOpenChange}
+      returnFocusTo={returnFocusTo}
     >
       <QuickChoices today={today} range={range} onPicked={finish} />
       <AnotherDayForm range={range} onPicked={finish} />
