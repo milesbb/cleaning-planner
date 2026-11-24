@@ -69,13 +69,13 @@ describe('Setup: reminders', () => {
     expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '/setup/appliances');
   });
 
-  it('creates the home from every step’s choices, then opens Today', async () => {
+  it('creates the home from every step’s choices, then explains how the app works', async () => {
     const client = openReminders({ [CREATE_ROUTE]: () => Promise.resolve(CREATED) });
     await userEvent.click(screen.getByRole('radio', { name: /Evening, 6pm/ }));
     await userEvent.click(screen.getByRole('radio', { name: 'Sunday' }));
     await createHome();
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/today');
+      expect(router.replace).toHaveBeenCalledWith('/setup/done');
     });
     expect(client.calls).toEqual([CREATE_ROUTE]);
     const request = createHouseholdRequestSchema.parse(client.bodies[0]);

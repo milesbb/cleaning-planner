@@ -12,7 +12,7 @@ import type { HomeSetup } from '@/lib/setup/home-setup';
 import { forgetHomeSetup } from '@/lib/setup/home-setup-draft';
 import { rememberReminderTime } from '@/lib/setup/reminder-preference';
 
-// Creates the home with its rooms and ready-made jobs, then opens Today.
+// Creates the home with its rooms and ready-made jobs, then explains how the app works.
 export function useCreateHome(setup: HomeSetup): UseMutationResult<Household, Error, void> {
   const client = useApiClient();
   const queryClient = useQueryClient();
@@ -33,7 +33,7 @@ export function useCreateHome(setup: HomeSetup): UseMutationResult<Household, Er
       await queryClient.invalidateQueries({ queryKey: ['homes'] });
       rememberReminderTime(setup.reminderTime);
       forgetHomeSetup();
-      router.replace('/today');
+      router.replace('/setup/done');
     },
   });
 }
