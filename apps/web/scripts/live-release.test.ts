@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -6,6 +7,7 @@ import {
   BACKEND_PATHS,
   LIVE_SITE_URL,
   apiOriginFromPage,
+  backendPathspecs,
   expectedApiCommit,
   hasContentSecurityPolicy,
   liveRoutesFrom,
@@ -109,5 +111,26 @@ describe('expectedApiCommit', () => {
         lastBackendRelease: 'older-sha',
       }),
     ).toBe('older-sha');
+  });
+});
+
+describe('backendPathspecs', () => {
+  const repositoryRoot = resolve('../..');
+  const lastCommitTouching = (pathspecs: readonly string[], folder: string): string =>
+    execFileSync('git', ['log', '-1', '--format=%H', 'HEAD', '--', ...pathspecs], {
+      cwd: folder,
+      encoding: 'utf8',
+    }).trim();
+
+  it('finds the same backend commit from apps/web as from the top of the repository', () => {
+    const fromTheTop = lastCommitTouching(
+      BACKEND_PATHS.map((path) => path.replace(/\/\*\*$/, '')),
+      repositoryRoot,
+    );
+    expect(lastCommitTouching(backendPathspecs(), process.cwd())).toBe(fromTheTop);
+  });
+
+  it('never matches the website’s own package.json', () => {
+    expect(backendPathspecs()).not.toContain('package.json');
   });
 });
