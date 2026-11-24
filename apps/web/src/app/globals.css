@@ -91,3 +91,29 @@ body::after {
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='grain'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .15 0 0 0 0 .19 0 0 0 0 .17 0 0 0 .3 0'/></filter><rect width='180' height='180' filter='url(%23grain)'/></svg>");
 }
+
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--kitchen);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: var(--kitchen) transparent;
+  }
+}
