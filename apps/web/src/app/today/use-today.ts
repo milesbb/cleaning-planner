@@ -25,6 +25,7 @@ import { buildTodayView } from './today-view';
 import type { TodaySources, TodayView } from './today-view';
 import { useJobProgress } from './use-job-progress';
 import type { JobProgress, ProgressContext } from './use-job-progress';
+import { isHomeless } from '@/lib/home/is-homeless';
 
 export type TodayFilter = 'everyone' | 'justMe';
 
@@ -145,7 +146,7 @@ export function useToday(): TodayState {
   const progress = useJobProgress(progressContextFor(householdId, sources, filter));
   const failed = failedState(current, queries);
   if (failed !== null) return failed;
-  if (current.homes.data?.length === 0) return { kind: 'noHome' };
+  if (isHomeless(current.homes)) return { kind: 'noHome' };
   if (current.home === null || sources === null) return { kind: 'loading' };
   return {
     kind: 'ready',

@@ -30,7 +30,9 @@ export function useCreateHome(setup: HomeSetup): UseMutationResult<Household, Er
       }),
     onSuccess: async (household) => {
       rememberCurrentHome(household.id);
-      await queryClient.invalidateQueries({ queryKey: ['homes'] });
+      // 'all': the list Start or join saved isn't on screen now, and Today
+      // would otherwise open with it.
+      await queryClient.invalidateQueries({ queryKey: ['homes'], refetchType: 'all' });
       rememberReminderTime(setup.reminderTime);
       forgetHomeSetup();
       router.replace('/setup/done');

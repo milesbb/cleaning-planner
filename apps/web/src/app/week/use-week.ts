@@ -10,6 +10,7 @@ import { useAgenda, useHousehold, useJobs, useProgress } from '@/lib/home/home-q
 import { useCurrentHome } from '@/lib/home/use-current-home';
 import { buildWeekView, weekRange, weekTitle } from './week-view';
 import type { WeekRange, WeekView } from './week-view';
+import { isHomeless } from '@/lib/home/is-homeless';
 
 interface ReadyWeek {
   kind: 'ready';
@@ -104,7 +105,7 @@ export function useWeek(): WeekState {
   const { queries, week } = useWeekData(current.home?.id ?? null, { offset, showsMoves: true });
   const failure = failureOf([current.homes, ...queries]);
   if (failure !== null) return { kind: 'failed', ...failure };
-  if (current.homes.data?.length === 0) return { kind: 'noHome' };
+  if (isHomeless(current.homes)) return { kind: 'noHome' };
   if (current.home === null || week === null) return { kind: 'loading' };
   return {
     kind: 'ready',
