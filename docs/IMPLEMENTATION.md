@@ -44,6 +44,7 @@ Routes that refer to a specific record use a query parameter (`?id=`), because a
 | Setup     | Pick rooms (step 1 of 3)                   | `/setup/rooms`                   |
 | Setup     | Appliances (step 2 of 3)                   | `/setup/appliances`              |
 | Setup     | Reminders (step 3 of 3)                    | `/setup/reminders`               |
+| Setup     | You’re all set (how the app works)         | `/setup/done`                    |
 | Planning  | Today (and the all-done state)             | `/today`                         |
 | Planning  | This week                                  | `/week`                          |
 | Planning  | Home: rooms                                | `/home`                          |
@@ -51,6 +52,7 @@ Routes that refer to a specific record use a query parameter (`?id=`), because a
 | Planning  | Job detail                                 | `/job?id=`                       |
 | Planning  | Add a job                                  | `/room/add?id=`                  |
 | Settings  | Settings and reminders                     | `/settings`                      |
+| Help      | How the app works (fifth tab)              | `/help`                          |
 | Legal     | Privacy policy, terms, support             | `/privacy`, `/terms`, `/support` |
 
 `/` redirects to `/welcome` when signed out, `/homes/new` when signed in with no home, otherwise `/today`.

@@ -5,6 +5,7 @@ import { ButtonsDemo } from './buttons-demo';
 import { ChoiceControlsDemo } from './choice-controls-demo';
 import { DisplayDemo } from './display-demo';
 import { FormFieldsDemo } from './form-fields-demo';
+import { GuideDemo } from './guide-demo';
 import { JobPiecesDemo } from './job-pieces-demo';
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function ComponentsPage(): ReactNode {
       <JobPiecesDemo />
       <ArtDemo />
       <SheetDemo />
+      <GuideDemo />
     </main>
   );
 }
