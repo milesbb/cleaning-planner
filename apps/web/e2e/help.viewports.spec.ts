@@ -1,3 +1,4 @@
+import { logInToHome } from './support/fake-home';
 import { testAtEveryViewport } from './support/viewport-matrix';
 
-testAtEveryViewport('Help', '/help', { readyText: 'Share your home' });
+testAtEveryViewport('Help', '/help', { prepare: logInToHome, readyText: 'Share your home' });

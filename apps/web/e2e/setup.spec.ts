@@ -105,7 +105,8 @@ test.describe('setting up a home', () => {
   });
 
   test('needs at least one room before going on', async ({ page }) => {
-    await openPage(page, '/setup/rooms');
+    await logInWithoutAHome(page);
+    await page.getByRole('link', { name: 'Start a new home' }).click();
     for (const room of ['Kitchen', 'Living room']) {
       await page.getByRole('switch', { name: room }).click();
     }
