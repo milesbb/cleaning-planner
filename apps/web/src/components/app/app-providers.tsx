@@ -16,10 +16,10 @@ import {
   readAuthSettings,
   storedSessionCheck,
 } from '@/lib/auth/amplify-auth';
-import { signInPathFor } from '@/lib/navigation/start-route';
 import { useInstallPromptCapture } from '@/lib/pwa/use-install-prompt-capture';
 import { useServiceWorker } from '@/lib/pwa/use-service-worker';
 import { onlyWhileSignedIn, savedDataStorage } from '@/lib/storage/saved-data-storage';
+import { sendToSignIn } from './send-to-sign-in';
 
 // Built in at build time from the NEXT_PUBLIC_ variables (Vercel, or the e2e build).
 const authSettings = readAuthSettings({
@@ -58,12 +58,18 @@ export function AppProviders({ children }: AppProvidersProps): ReactNode {
   const router = useRouter();
   useServiceWorker();
   useInstallPromptCapture();
-  const sendToSignIn = useCallback(() => {
-    router.replace(signInPathFor(`${window.location.pathname}${window.location.search}`));
+  const signOutAndLogIn = useCallback(() => {
+    void sendToSignIn(
+      accountAuth,
+      (path) => {
+        router.replace(path);
+      },
+      `${window.location.pathname}${window.location.search}`,
+    );
   }, [router]);
   return (
     <AccountAuthProvider auth={accountAuth}>
-      <ApiProvider client={apiClient} onSignedOut={sendToSignIn} savedData={savedData}>
+      <ApiProvider client={apiClient} onSignedOut={signOutAndLogIn} savedData={savedData}>
         {children}
       </ApiProvider>
     </AccountAuthProvider>

@@ -1,12 +1,15 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
+import { renderWithAuth, stubAccountAuth } from '@/test/account-auth-stub';
 import { forgetHomeSetup } from '@/lib/setup/home-setup-draft';
 import SetupRoomsPage from './page';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: (): typeof router => router }));
+
+const signedIn = stubAccountAuth({ mightBeSignedIn: () => true });
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -19,18 +22,18 @@ async function continueToNextStep(): Promise<void> {
 
 describe('Setup: pick rooms', () => {
   it('has no accessibility violations', async () => {
-    const { container } = render(<SetupRoomsPage />);
+    const { container } = renderWithAuth(<SetupRoomsPage />, signedIn);
     expect(await axe(container)).toHaveNoViolations();
   });
 
   it('shows step 1 of 3 and goes back to start or join', () => {
-    render(<SetupRoomsPage />);
+    renderWithAuth(<SetupRoomsPage />, signedIn);
     expect(screen.getByText('Step 1 of 3')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '/homes/new');
   });
 
   it('starts from a typical home and continues to appliances', async () => {
-    render(<SetupRoomsPage />);
+    renderWithAuth(<SetupRoomsPage />, signedIn);
     expect(screen.getByRole('switch', { name: 'Kitchen' })).toBeChecked();
     expect(screen.getByRole('switch', { name: 'Office' })).not.toBeChecked();
     await continueToNextStep();
@@ -38,20 +41,20 @@ describe('Setup: pick rooms', () => {
   });
 
   it('counts bathrooms and bedrooms, and keeps the choices for the next screens', async () => {
-    const { unmount } = render(<SetupRoomsPage />);
+    const { unmount } = renderWithAuth(<SetupRoomsPage />, signedIn);
     await userEvent.click(screen.getByRole('button', { name: 'More bedrooms' }));
     await userEvent.click(screen.getByRole('switch', { name: 'Office' }));
     await userEvent.clear(screen.getByLabelText('Home name'));
     await userEvent.type(screen.getByLabelText('Home name'), 'Our flat');
     unmount();
-    render(<SetupRoomsPage />);
+    renderWithAuth(<SetupRoomsPage />, signedIn);
     expect(screen.getByLabelText('Home name')).toHaveValue('Our flat');
     expect(screen.getByRole('switch', { name: 'Office' })).toBeChecked();
     expect(screen.getByText('2', { selector: 'output' })).toBeInTheDocument();
   });
 
   it('needs a name for the home', async () => {
-    render(<SetupRoomsPage />);
+    renderWithAuth(<SetupRoomsPage />, signedIn);
     await userEvent.clear(screen.getByLabelText('Home name'));
     await continueToNextStep();
     expect(screen.getByLabelText('Home name')).toHaveAccessibleDescription(/Enter a name/);
@@ -60,7 +63,7 @@ describe('Setup: pick rooms', () => {
   });
 
   it('needs at least one room', async () => {
-    render(<SetupRoomsPage />);
+    renderWithAuth(<SetupRoomsPage />, signedIn);
     for (const room of ['Kitchen', 'Living room']) {
       await userEvent.click(screen.getByRole('switch', { name: room }));
     }
@@ -70,5 +73,13 @@ describe('Setup: pick rooms', () => {
     await continueToNextStep();
     expect(screen.getByRole('alert')).toHaveTextContent('Pick at least one room');
     expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it('asks someone signed out to log in before picking rooms', () => {
+    window.history.replaceState(null, '', '/setup/rooms');
+    renderWithAuth(<SetupRoomsPage />);
+    expect(router.replace).toHaveBeenCalledWith(
+      `/sign-in?next=${encodeURIComponent('/setup/rooms')}`,
+    );
   });
 });

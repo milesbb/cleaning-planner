@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AccountHeading, AccountScreen } from '@/components/account/account-screen';
+import { SignInFirst } from '@/components/start/sign-in-first';
 import { cn } from '@/lib/utils';
 
 const STEP_COUNT = 3;
@@ -38,6 +39,7 @@ function StepProgress({ step }: { step: number }): ReactNode {
 export function SetupScreen({ step, back, title, intro, children }: SetupScreenProps): ReactNode {
   return (
     <AccountScreen back={{ href: back, label: 'Back' }}>
+      <SignInFirst />
       <StepProgress step={step} />
       <AccountHeading title={title}>{intro}</AccountHeading>
       {children}

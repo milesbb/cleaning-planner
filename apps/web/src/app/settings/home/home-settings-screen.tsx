@@ -20,6 +20,7 @@ import { HomeDetailsSection } from './home-details-section';
 import { InviteCard } from './invite-card';
 import { LeaveHomeSheet } from './leave-home-sheet';
 import { ManageMemberSheet } from './manage-member-sheet';
+import { isHomeless } from '@/lib/home/is-homeless';
 
 interface ReadyHome {
   kind: 'ready';
@@ -44,7 +45,7 @@ function useHomeSettings(): HomeSettingsState {
   if (failed !== undefined) {
     return { kind: 'failed', message: failed.error.message, retry: () => void failed.refetch() };
   }
-  if (current.homes.data?.length === 0) return { kind: 'noHome' };
+  if (isHomeless(current.homes)) return { kind: 'noHome' };
   if (me.data === undefined || household.data === undefined || members.data === undefined) {
     return { kind: 'loading' };
   }
