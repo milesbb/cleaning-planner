@@ -4,21 +4,12 @@ import {
   updateProfileRequestSchema,
 } from '@cleaning-planner/contracts/profile';
 import { Router } from 'express';
-import type { Request } from 'express';
+import { accessTokenOf } from '../middlewares/access-token';
 import { signedInUserOf } from '../middlewares/signed-in-user';
 import type { AccountService } from '../services/account-service';
 import type { ProfileService } from '../services/profile-service';
-import { Errors } from '../utils/errors';
 import { HttpStatus } from '../utils/http-status';
 import { parseOrThrow } from '../utils/validation';
-
-const BEARER_PREFIX = /^Bearer\s+/i;
-
-function accessTokenOf(request: Request): string {
-  const token = request.header('authorization')?.replace(BEARER_PREFIX, '').trim();
-  if (token === undefined || token === '') throw Errors.unauthorised();
-  return token;
-}
 
 export function meRouter(profiles: ProfileService, accounts: AccountService): Router {
   const router = Router();

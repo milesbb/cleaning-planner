@@ -1,6 +1,8 @@
 import { inviteCodeSchema } from '@cleaning-planner/contracts/invite';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import { ensureProfile } from '../middlewares/ensure-profile';
+import type { ProfileReader } from '../middlewares/ensure-profile';
 import { membershipOf, requireMember } from '../middlewares/membership';
 import type { MembershipReader } from '../middlewares/membership';
 import { signedInUserOf } from '../middlewares/signed-in-user';
@@ -20,7 +22,11 @@ export function householdInvitesRouter(
   return router;
 }
 
-export function invitesRouter(invites: InviteService, readSourceIp: SourceIpReader): Router {
+export function invitesRouter(
+  invites: InviteService,
+  readSourceIp: SourceIpReader,
+  profiles: ProfileReader,
+): Router {
   const router = Router();
   const codeAndCaller = (request: Request, response: Response): [string, InviteCaller] => [
     parseOrThrow(inviteCodeSchema, request.params.code),
@@ -29,7 +35,7 @@ export function invitesRouter(invites: InviteService, readSourceIp: SourceIpRead
   router.get('/:code', async (request, response) => {
     response.json(await invites.previewInvite(...codeAndCaller(request, response)));
   });
-  router.post('/:code/accept', async (request, response) => {
+  router.post('/:code/accept', ensureProfile(profiles), async (request, response) => {
     response.json(await invites.acceptInvite(...codeAndCaller(request, response)));
   });
   return router;
