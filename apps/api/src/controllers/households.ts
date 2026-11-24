@@ -3,6 +3,8 @@ import {
   updateHouseholdRequestSchema,
 } from '@cleaning-planner/contracts/household';
 import { Router } from 'express';
+import { ensureProfile } from '../middlewares/ensure-profile';
+import type { ProfileReader } from '../middlewares/ensure-profile';
 import { membershipOf, requireMember, requireOwner } from '../middlewares/membership';
 import type { MembershipReader } from '../middlewares/membership';
 import { signedInUserOf } from '../middlewares/signed-in-user';
@@ -13,12 +15,13 @@ import { parseOrThrow } from '../utils/validation';
 export function householdsRouter(
   households: HouseholdService,
   memberships: MembershipReader,
+  profiles: ProfileReader,
 ): Router {
   const router = Router();
   router.get('/', async (_request, response) => {
     response.json(await households.listHomes(signedInUserOf(response).userId));
   });
-  router.post('/', async (request, response) => {
+  router.post('/', ensureProfile(profiles), async (request, response) => {
     const home = parseOrThrow(createHouseholdRequestSchema, request.body);
     const household = await households.createHome(signedInUserOf(response).userId, home);
     response.status(HttpStatus.created).json(household);

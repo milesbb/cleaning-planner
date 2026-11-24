@@ -2,6 +2,12 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import type { Membership, MembershipReader } from '../middlewares/membership';
 import type { InviteService } from '../services/invite-service';
+import type { ProfileService } from '../services/profile-service';
+import {
+  ACCESS_TOKEN,
+  BEARER_ACCESS_TOKEN,
+  profilesThatCreateOnFirstRead,
+} from '../test-support/profiles';
 import { CLAIMS_HEADER, SOURCE_IP_HEADER, signedInAs, testApp } from '../test-support/test-app';
 import { Errors } from '../utils/errors';
 
@@ -32,8 +38,11 @@ function inviteService(): InviteService {
   };
 }
 
-function appWith(invites: InviteService): ReturnType<typeof testApp> {
-  return testApp({ invites, memberships });
+function appWith(
+  invites: InviteService,
+  profiles: ProfileService = profilesThatCreateOnFirstRead(),
+): ReturnType<typeof testApp> {
+  return testApp({ invites, memberships, profiles });
 }
 
 describe('POST /v1/households/:householdId/invites', () => {
@@ -76,9 +85,23 @@ describe('/v1/invites/:code', () => {
     const invites = inviteService();
     const response = await request(appWith(invites))
       .post('/v1/invites/7K3M9QZA/accept')
-      .set(CLAIMS_HEADER, signedInAs('user-alex'));
+      .set(CLAIMS_HEADER, signedInAs('user-alex'))
+      .set('Authorization', BEARER_ACCESS_TOKEN);
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ id: 'home-1', name: 'Our flat', role: 'member' });
+  });
+
+  it('sets up the profile of someone who has just signed up before they join', async () => {
+    const invites = inviteService();
+    const profiles = profilesThatCreateOnFirstRead();
+    await request(appWith(invites, profiles))
+      .post('/v1/invites/7K3M9QZA/accept')
+      .set(CLAIMS_HEADER, signedInAs('user-alex'))
+      .set('Authorization', BEARER_ACCESS_TOKEN);
+    expect(profiles.getMyProfile).toHaveBeenCalledWith('user-alex', ACCESS_TOKEN);
+    expect(vi.mocked(profiles.getMyProfile).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(invites.acceptInvite).mock.invocationCallOrder[0] ?? 0,
+    );
   });
 
   it('turns away a code that cannot exist without looking it up', async () => {
@@ -99,7 +122,8 @@ describe('/v1/invites/:code', () => {
     vi.mocked(invites.acceptInvite).mockRejectedValue(error);
     const response = await request(appWith(invites))
       .post('/v1/invites/7K3M9QZA/accept')
-      .set(CLAIMS_HEADER, signedInAs('user-alex'));
+      .set(CLAIMS_HEADER, signedInAs('user-alex'))
+      .set('Authorization', BEARER_ACCESS_TOKEN);
     expect(response.status).toBe(status);
   });
 

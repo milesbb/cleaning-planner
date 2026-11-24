@@ -3,6 +3,12 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import type { Membership, MembershipReader } from '../middlewares/membership';
 import type { HouseholdService } from '../services/household-service';
+import type { ProfileService } from '../services/profile-service';
+import {
+  ACCESS_TOKEN,
+  BEARER_ACCESS_TOKEN,
+  profilesThatCreateOnFirstRead,
+} from '../test-support/profiles';
 import { CLAIMS_HEADER, signedInAs, testApp } from '../test-support/test-app';
 import { Errors } from '../utils/errors';
 
@@ -38,8 +44,11 @@ function householdService(): HouseholdService {
   };
 }
 
-function appWith(households: HouseholdService): ReturnType<typeof testApp> {
-  return testApp({ households, memberships });
+function appWith(
+  households: HouseholdService,
+  profiles: ProfileService = profilesThatCreateOnFirstRead(),
+): ReturnType<typeof testApp> {
+  return testApp({ households, memberships, profiles });
 }
 
 type Method = 'get' | 'post' | 'patch' | 'delete';
@@ -85,10 +94,25 @@ describe('/v1/households', () => {
     const response = await request(appWith(households))
       .post('/v1/households')
       .set(CLAIMS_HEADER, signedInAs('user-sam'))
+      .set('Authorization', BEARER_ACCESS_TOKEN)
       .send(NEW_HOME);
     expect(response.status).toBe(201);
     expect(response.body).toEqual(FLAT);
     expect(households.createHome).toHaveBeenCalledWith('user-sam', NEW_HOME);
+  });
+
+  it('sets up the profile of someone who has just signed up before creating their first home', async () => {
+    const households = householdService();
+    const profiles = profilesThatCreateOnFirstRead();
+    await request(appWith(households, profiles))
+      .post('/v1/households')
+      .set(CLAIMS_HEADER, signedInAs('user-sam'))
+      .set('Authorization', BEARER_ACCESS_TOKEN)
+      .send(NEW_HOME);
+    expect(profiles.getMyProfile).toHaveBeenCalledWith('user-sam', ACCESS_TOKEN);
+    expect(vi.mocked(profiles.getMyProfile).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(households.createHome).mock.invocationCallOrder[0] ?? 0,
+    );
   });
 
   it('refuses a home with no rooms, or one that names its own owner', async () => {
@@ -97,10 +121,12 @@ describe('/v1/households', () => {
     const noRooms = await request(app)
       .post('/v1/households')
       .set(CLAIMS_HEADER, signedInAs('user-sam'))
+      .set('Authorization', BEARER_ACCESS_TOKEN)
       .send({ ...NEW_HOME, rooms: [] });
     const withOwner = await request(app)
       .post('/v1/households')
       .set(CLAIMS_HEADER, signedInAs('user-sam'))
+      .set('Authorization', BEARER_ACCESS_TOKEN)
       .send({ ...NEW_HOME, ownerId: 'user-alex' });
     expect([noRooms.status, withOwner.status]).toEqual([400, 400]);
     expect(households.createHome).not.toHaveBeenCalled();

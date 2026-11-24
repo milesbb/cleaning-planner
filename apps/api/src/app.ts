@@ -84,13 +84,20 @@ export function createApp(config: AppConfig): Express {
   app.use('/v1/me/reminders', remindersRouter(config.services.reminders));
   app.use('/v1/me/push-devices', pushDevicesRouter(config.services.pushDevices));
   app.use('/v1/me', meRouter(config.services.profiles, config.services.accounts));
-  app.use('/v1/invites', invitesRouter(config.services.invites, config.readSourceIp));
+  app.use(
+    '/v1/invites',
+    invitesRouter(config.services.invites, config.readSourceIp, config.services.profiles),
+  );
   for (const [path, router] of householdRouters(config.services)) {
     app.use(`${ONE_HOME}${path}`, router);
   }
   app.use(
     '/v1/households',
-    householdsRouter(config.services.households, config.services.memberships),
+    householdsRouter(
+      config.services.households,
+      config.services.memberships,
+      config.services.profiles,
+    ),
   );
   app.use((_request, _response, next) => {
     next(Errors.notFound());
