@@ -41,7 +41,7 @@ describe('TabBar', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('links to the four main screens', () => {
+  it('links to the four main screens and Help', () => {
     render(<TabBar activeTab="today" />);
     const navigation = screen.getByRole('navigation', { name: 'Main' });
     expect(navigation).toBeInTheDocument();
@@ -49,6 +49,7 @@ describe('TabBar', () => {
     expect(screen.getByRole('link', { name: 'Week' })).toHaveAttribute('href', '/week');
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/home');
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+    expect(screen.getByRole('link', { name: 'Help' })).toHaveAttribute('href', '/help');
   });
 
   it('marks only the active tab as the current page', () => {

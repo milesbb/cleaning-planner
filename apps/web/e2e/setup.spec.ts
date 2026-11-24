@@ -75,6 +75,9 @@ test.describe('setting up a home', () => {
       ],
       features: ['oven', 'kettle', 'washingMachine', 'hardFloor', 'dishwasher'],
     });
+    await expect(page.getByRole('heading', { name: 'You’re all set', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Today', level: 2, exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Go to Today' }).click();
     await expect(page).toHaveURL(/\/today\/?$/);
   });
 
