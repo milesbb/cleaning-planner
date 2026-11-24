@@ -40,6 +40,12 @@ export function apiOriginFromPage(html: string): string {
   return apiOrigin;
 }
 
+// For git log: anchored to the top of the repository, because the check runs
+// in apps/web, where a bare package.json would be the website's own.
+export function backendPathspecs(): string[] {
+  return BACKEND_PATHS.map((path) => `:(top)${path.replace(/\/\*\*$/, '')}`);
+}
+
 function matchesBackendPath(file: string, backendPath: string): boolean {
   if (backendPath.endsWith('/**')) return file.startsWith(backendPath.slice(0, -'**'.length));
   return file === backendPath;

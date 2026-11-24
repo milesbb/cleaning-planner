@@ -2,7 +2,12 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { setTimeout as wait } from 'node:timers/promises';
 import { checkLiveRelease } from './live-release-check.ts';
-import { BACKEND_PATHS, LIVE_SITE_URL, expectedApiCommit, liveRoutesFrom } from './live-release.ts';
+import {
+  LIVE_SITE_URL,
+  backendPathspecs,
+  expectedApiCommit,
+  liveRoutesFrom,
+} from './live-release.ts';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
@@ -19,7 +24,6 @@ function git(...gitArguments: string[]): string {
 const releaseCommit = requiredEnvironment('RELEASE_COMMIT');
 const previousRelease = requiredEnvironment('PREVIOUS_RELEASE');
 const githubToken = requiredEnvironment('GITHUB_TOKEN');
-const backendPathspecs = BACKEND_PATHS.map((path) => path.replace(/\/\*\*$/, ''));
 
 await checkLiveRelease(
   {
@@ -58,7 +62,7 @@ await checkLiveRelease(
         '--format=%H',
         releaseCommit,
         '--',
-        ...backendPathspecs,
+        ...backendPathspecs(),
       ),
     }),
   },
