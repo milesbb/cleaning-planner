@@ -10,6 +10,7 @@ import { rememberCurrentHome } from '@/lib/home/current-home';
 import { createHouseholdRequestFor, homeTimeZone } from '@/lib/setup/home-setup';
 import type { HomeSetup } from '@/lib/setup/home-setup';
 import { forgetHomeSetup } from '@/lib/setup/home-setup-draft';
+import { rememberJustCreatedHome } from '@/lib/setup/just-created-home';
 import { rememberReminderTime } from '@/lib/setup/reminder-preference';
 
 // Creates the home with its rooms and ready-made jobs, then explains how the app works.
@@ -35,6 +36,7 @@ export function useCreateHome(setup: HomeSetup): UseMutationResult<Household, Er
       await queryClient.invalidateQueries({ queryKey: ['homes'], refetchType: 'all' });
       rememberReminderTime(setup.reminderTime);
       forgetHomeSetup();
+      rememberJustCreatedHome();
       router.replace('/setup/done');
     },
   });

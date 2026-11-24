@@ -18,7 +18,7 @@ interface FakeHomeOptions {
 
 // `failTicks` makes every tick fail with a server error; `isOwner` makes Alex
 // the home's owner.
-async function fakeHome(
+export async function fakeHome(
   page: Page,
   { failTicks = false, isOwner = false }: FakeHomeOptions,
 ): Promise<void> {

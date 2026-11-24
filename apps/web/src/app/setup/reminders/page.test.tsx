@@ -5,6 +5,8 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
+import { stubAccountAuth } from '@/test/account-auth-stub';
+import { hasJustCreatedHome } from '@/lib/setup/just-created-home';
 import { ApiRequestError } from '@/lib/api/api-client';
 import { useHomes } from '@/lib/home/home-queries';
 import { DEFAULT_HOME_SETUP } from '@/lib/setup/home-setup';
@@ -14,6 +16,11 @@ import type { FakeAnswers } from '@/test/fake-api-client';
 import SetupRemindersPage from './page';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const signedIn = stubAccountAuth({
+  mightBeSignedIn: () => true,
+  isSignedIn: () => Promise.resolve(true),
+});
+
 vi.mock('next/navigation', () => ({ useRouter: (): typeof router => router }));
 
 const CREATE_ROUTE = 'POST /v1/households';
@@ -71,6 +78,7 @@ function openReminders(answers: FakeAnswers = {}): ReturnType<typeof clientAnswe
       </span>
     </>,
     client,
+    signedIn,
   );
   return client;
 }
@@ -81,7 +89,7 @@ async function createHome(): Promise<void> {
 
 describe('Setup: reminders', () => {
   it('has no accessibility violations', async () => {
-    const { container } = renderWithApi(<SetupRemindersPage />, clientAnswering({}));
+    const { container } = renderWithApi(<SetupRemindersPage />, clientAnswering({}), signedIn);
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -109,6 +117,7 @@ describe('Setup: reminders', () => {
     expect(request.rooms).toContainEqual({ type: 'kitchen', name: 'Kitchen' });
     expect(window.localStorage.getItem('cleaning-planner.reminder-time')).toBe('evening');
     expect(window.localStorage.getItem('cleaning-planner.current-home')).toBe('home-1');
+    expect(hasJustCreatedHome()).toBe(true);
   });
 
   it('refreshes the list of homes, so Today finds the new one', async () => {
@@ -123,6 +132,7 @@ describe('Setup: reminders', () => {
         <HomeCount />
       </>,
       client,
+      signedIn,
     );
     expect(await screen.findByText('0 homes')).toBeInTheDocument();
     await createHome();
