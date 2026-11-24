@@ -6,6 +6,7 @@ import { homeToday } from './home-day';
 import { useHousehold, useJobs, useMe, useMembers, useProgress, useRooms } from './home-queries';
 import type { RoomSources } from './room-jobs';
 import { useCurrentHome } from './use-current-home';
+import { isHomeless } from './is-homeless';
 
 interface ReadyRooms {
   kind: 'ready';
@@ -65,7 +66,7 @@ export function useRoomSources(): RoomSourcesState {
   if (failed !== undefined) {
     return { kind: 'failed', message: failed.error.message, retry: () => void failed.refetch() };
   }
-  if (current.homes.data?.length === 0) return { kind: 'noHome' };
+  if (isHomeless(current.homes)) return { kind: 'noHome' };
   if (current.home === null || sources === null) return { kind: 'loading' };
   return {
     kind: 'ready',

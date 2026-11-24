@@ -1,6 +1,8 @@
 import { createHouseholdRequestSchema } from '@cleaning-planner/contracts/household';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ApiRequestError } from '@/lib/api/api-client';
@@ -37,6 +39,26 @@ function SetupName(): string {
 function HomeCount(): string {
   const homes = useHomes();
   return homes.data === undefined ? '' : `${String(homes.data.length)} homes`;
+}
+
+// Start or join a home loads the (empty) home list, then setup moves on, so
+// no screen is showing that list when the home is created.
+function HomeCountUntilHidden(): ReactNode {
+  const [isShown, setIsShown] = useState(true);
+  if (!isShown) return null;
+  return (
+    <>
+      <HomeCount />
+      <button
+        type="button"
+        onClick={() => {
+          setIsShown(false);
+        }}
+      >
+        Hide homes
+      </button>
+    </>
+  );
 }
 
 function openReminders(answers: FakeAnswers = {}): ReturnType<typeof clientAnswering> {
@@ -103,6 +125,27 @@ describe('Setup: reminders', () => {
       client,
     );
     expect(await screen.findByText('0 homes')).toBeInTheDocument();
+    await createHome();
+    await waitFor(() => {
+      expect(client.calls.filter((call) => call === homesRoute)).toHaveLength(2);
+    });
+  });
+
+  it('refreshes a home list saved earlier, even when no screen is showing it', async () => {
+    const homesRoute = 'GET /v1/households';
+    const client = clientAnswering({
+      [homesRoute]: () => Promise.resolve([]),
+      [CREATE_ROUTE]: () => Promise.resolve(CREATED),
+    });
+    renderWithApi(
+      <>
+        <SetupRemindersPage />
+        <HomeCountUntilHidden />
+      </>,
+      client,
+    );
+    expect(await screen.findByText('0 homes')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Hide homes' }));
     await createHome();
     await waitFor(() => {
       expect(client.calls.filter((call) => call === homesRoute)).toHaveLength(2);
